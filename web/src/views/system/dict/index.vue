@@ -1,0 +1,298 @@
+<script setup lang="ts">
+import { ref, reactive, onMounted } from 'vue'
+import { Search, Plus, Edit, Trash2, RefreshCw } from 'lucide-vue-next'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
+import { useToast } from '@/components/ui/toast/use-toast'
+import { listType, getType, delType, addType, updateType, type DictType } from '@/api/system/dict'
+
+const { toast } = useToast()
+
+// Query parameters
+const queryParams = reactive({
+  pageNum: 1,
+  pageSize: 10,
+  dictName: '',
+  dictType: '',
+  status: undefined
+})
+
+const loading = ref(true)
+const total = ref(0)
+const typeList = ref<DictType[]>([])
+const showDialog = ref(false)
+const dialogTitle = ref('')
+const form = reactive<Partial<DictType>>({
+  dictId: undefined,
+  dictName: '',
+  dictType: '',
+  status: '0',
+  remark: ''
+})
+
+// Fetch data
+async function getList() {
+  loading.value = true
+  try {
+    const response = await listType(queryParams)
+    typeList.value = response.rows
+    total.value = response.total
+  } finally {
+    loading.value = false
+  }
+}
+
+// Search operations
+function handleQuery() {
+  queryParams.pageNum = 1
+  getList()
+}
+
+function resetQuery() {
+  queryParams.dictName = ''
+  queryParams.dictType = ''
+  queryParams.status = undefined
+  handleQuery()
+}
+
+// Add/Edit operations
+function handleAdd() {
+  resetForm()
+  dialogTitle.value = '添加字典类型'
+  showDialog.value = true
+}
+
+async function handleUpdate(row: DictType) {
+  resetForm()
+  const res = await getType(row.dictId)
+  Object.assign(form, res.data)
+  dialogTitle.value = '修改字典类型'
+  showDialog.value = true
+}
+
+async function handleDelete(row: DictType) {
+  if (confirm('确认要删除"' + row.dictName + '"字典类型吗？')) {
+    await delType([row.dictId])
+    toast({
+      title: "删除成功",
+      description: "字典类型已删除",
+    })
+    getList()
+  }
+}
+
+async function submitForm() {
+  if (!form.dictName || !form.dictType) {
+    toast({
+      title: "验证失败",
+      description: "字典名称和类型不能为空",
+      variant: "destructive"
+    })
+    return
+  }
+  
+  if (form.dictId) {
+    await updateType(form)
+    toast({
+      title: "修改成功",
+      description: "字典类型已更新",
+    })
+  } else {
+    await addType(form)
+    toast({
+      title: "添加成功",
+      description: "字典类型已添加",
+    })
+  }
+  showDialog.value = false
+  getList()
+}
+
+function resetForm() {
+  form.dictId = undefined
+  form.dictName = ''
+  form.dictType = ''
+  form.status = '0'
+  form.remark = ''
+}
+
+onMounted(() => {
+  getList()
+})
+</script>
+
+<template>
+  <div class="p-6 space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-2xl font-bold tracking-tight">字典管理</h2>
+        <p class="text-muted-foreground">
+          管理系统字典数据，用于界面下拉框选项等
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <Button @click="handleAdd">
+          <Plus class="mr-2 h-4 w-4" />
+          新增字典
+        </Button>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex flex-wrap gap-4 items-center bg-background/95 p-4 border rounded-lg backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-medium">字典名称</span>
+        <Input 
+          v-model="queryParams.dictName" 
+          placeholder="请输入字典名称" 
+          class="w-[150px]" 
+          @keyup.enter="handleQuery"
+        />
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-medium">字典类型</span>
+        <Input 
+          v-model="queryParams.dictType" 
+          placeholder="请输入字典类型" 
+          class="w-[150px]"
+          @keyup.enter="handleQuery"
+        />
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-medium">状态</span>
+        <Select v-model="queryParams.status">
+          <SelectTrigger class="w-[120px]">
+            <SelectValue placeholder="请选择" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="0">正常</SelectItem>
+            <SelectItem value="1">停用</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div class="flex gap-2 ml-auto">
+        <Button @click="handleQuery">
+          <Search class="w-4 h-4 mr-2" />
+          搜索
+        </Button>
+        <Button variant="outline" @click="resetQuery">
+          <RefreshCw class="w-4 h-4 mr-2" />
+          重置
+        </Button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="border rounded-md bg-card">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead class="w-[100px]">字典编号</TableHead>
+            <TableHead>字典名称</TableHead>
+            <TableHead>字典类型</TableHead>
+            <TableHead>状态</TableHead>
+            <TableHead>备注</TableHead>
+            <TableHead>创建时间</TableHead>
+            <TableHead class="text-right">操作</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-for="item in typeList" :key="item.dictId">
+            <TableCell>{{ item.dictId }}</TableCell>
+            <TableCell>{{ item.dictName }}</TableCell>
+            <TableCell>
+              <Badge variant="outline">{{ item.dictType }}</Badge>
+            </TableCell>
+            <TableCell>
+              <Badge :variant="item.status === '0' ? 'default' : 'destructive'">
+                {{ item.status === '0' ? '正常' : '停用' }}
+              </Badge>
+            </TableCell>
+            <TableCell class="text-muted-foreground">{{ item.remark }}</TableCell>
+            <TableCell>{{ item.createTime }}</TableCell>
+            <TableCell class="text-right space-x-2">
+              <Button variant="ghost" size="icon" @click="handleUpdate(item)">
+                <Edit class="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="icon" class="text-destructive" @click="handleDelete(item)">
+                <Trash2 class="w-4 h-4" />
+              </Button>
+            </TableCell>
+          </TableRow>
+          <TableRow v-if="typeList.length === 0">
+            <TableCell colspan="7" class="text-center h-24 text-muted-foreground">
+              暂无数据
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </div>
+
+    <!-- Add/Edit Dialog -->
+    <Dialog v-model:open="showDialog">
+      <DialogContent class="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{{ dialogTitle }}</DialogTitle>
+          <DialogDescription>
+            请填写字典类型信息
+          </DialogDescription>
+        </DialogHeader>
+        <div class="grid gap-4 py-4">
+          <div class="grid grid-cols-4 items-center gap-4">
+            <span class="text-right text-sm">字典名称</span>
+            <Input v-model="form.dictName" class="col-span-3" />
+          </div>
+          <div class="grid grid-cols-4 items-center gap-4">
+            <span class="text-right text-sm">字典类型</span>
+            <Input v-model="form.dictType" class="col-span-3" />
+          </div>
+          <div class="grid grid-cols-4 items-center gap-4">
+            <span class="text-right text-sm">状态</span>
+            <Select v-model="form.status">
+              <SelectTrigger class="col-span-3">
+                <SelectValue placeholder="请选择状态" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">正常</SelectItem>
+                <SelectItem value="1">停用</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div class="grid grid-cols-4 items-center gap-4">
+            <span class="text-right text-sm">备注</span>
+            <Input v-model="form.remark" class="col-span-3" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="showDialog = false">取消</Button>
+          <Button @click="submitForm">确定</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </div>
+</template>
