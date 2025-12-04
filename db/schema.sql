@@ -2,8 +2,8 @@
 -- 1. 部门表
 -- ----------------------------
 CREATE TABLE sys_dept (
-  dept_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  parent_id UUID,
+  dept_id BIGSERIAL PRIMARY KEY,
+  parent_id BIGINT,
   ancestors VARCHAR(500) DEFAULT '',
   dept_name VARCHAR(50) NOT NULL,
   order_num INT DEFAULT 0,
@@ -37,8 +37,8 @@ COMMENT ON COLUMN sys_dept.update_time IS '更新时间';
 -- 2. 用户表
 -- ----------------------------
 CREATE TABLE sys_user (
-  user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  dept_id UUID,
+  user_id BIGSERIAL PRIMARY KEY,
+  dept_id BIGINT,
   user_name VARCHAR(30) NOT NULL,
   nick_name VARCHAR(30) NOT NULL,
   user_type VARCHAR(2) DEFAULT '00',
@@ -82,7 +82,7 @@ COMMENT ON COLUMN sys_user.remark IS '备注';
 -- 3. 岗位表
 -- ----------------------------
 CREATE TABLE sys_post (
-  post_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id BIGSERIAL PRIMARY KEY,
   post_code VARCHAR(64) NOT NULL,
   post_name VARCHAR(50) NOT NULL,
   post_sort INT NOT NULL,
@@ -109,7 +109,7 @@ COMMENT ON COLUMN sys_post.remark IS '备注';
 -- 4. 角色表
 -- ----------------------------
 CREATE TABLE sys_role (
-  role_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  role_id BIGSERIAL PRIMARY KEY,
   role_name VARCHAR(30) NOT NULL,
   role_key VARCHAR(100) NOT NULL,
   role_sort INT NOT NULL,
@@ -144,9 +144,9 @@ COMMENT ON COLUMN sys_role.remark IS '备注';
 -- 5. 菜单表
 -- ----------------------------
 CREATE TABLE sys_menu (
-  menu_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  menu_id BIGSERIAL PRIMARY KEY,
   menu_name VARCHAR(50) NOT NULL,
-  parent_id UUID,
+  parent_id BIGINT,
   order_num INT DEFAULT 0,
   path VARCHAR(200) DEFAULT '',
   component VARCHAR(255),
@@ -187,8 +187,8 @@ COMMENT ON COLUMN sys_menu.remark IS '备注';
 -- 6. 用户和角色关联表
 -- ----------------------------
 CREATE TABLE sys_user_role (
-  user_id UUID NOT NULL,
-  role_id UUID NOT NULL,
+  user_id BIGINT NOT NULL,
+  role_id BIGINT NOT NULL,
   PRIMARY KEY (user_id, role_id)
 );
 COMMENT ON TABLE sys_user_role IS '用户和角色关联表';
@@ -199,8 +199,8 @@ COMMENT ON COLUMN sys_user_role.role_id IS '角色ID';
 -- 7. 角色和菜单关联表
 -- ----------------------------
 CREATE TABLE sys_role_menu (
-  role_id UUID NOT NULL,
-  menu_id UUID NOT NULL,
+  role_id BIGINT NOT NULL,
+  menu_id BIGINT NOT NULL,
   PRIMARY KEY (role_id, menu_id)
 );
 COMMENT ON TABLE sys_role_menu IS '角色和菜单关联表';
@@ -211,8 +211,8 @@ COMMENT ON COLUMN sys_role_menu.menu_id IS '菜单ID';
 -- 8. 角色和部门关联表
 -- ----------------------------
 CREATE TABLE sys_role_dept (
-  role_id UUID NOT NULL,
-  dept_id UUID NOT NULL,
+  role_id BIGINT NOT NULL,
+  dept_id BIGINT NOT NULL,
   PRIMARY KEY (role_id, dept_id)
 );
 COMMENT ON TABLE sys_role_dept IS '角色和部门关联表';
@@ -223,8 +223,8 @@ COMMENT ON COLUMN sys_role_dept.dept_id IS '部门ID';
 -- 9. 岗位和用户关联表
 -- ----------------------------
 CREATE TABLE sys_user_post (
-  user_id UUID NOT NULL,
-  post_id UUID NOT NULL,
+  user_id BIGINT NOT NULL,
+  post_id BIGINT NOT NULL,
   PRIMARY KEY (user_id, post_id)
 );
 COMMENT ON TABLE sys_user_post IS '用户与岗位关联表';
@@ -235,7 +235,7 @@ COMMENT ON COLUMN sys_user_post.post_id IS '岗位ID';
 -- 10. 操作日志记录
 -- ----------------------------
 CREATE TABLE sys_oper_log (
-  oper_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  oper_id BIGSERIAL PRIMARY KEY,
   title VARCHAR(50) DEFAULT '',
   business_type INT DEFAULT 0,
   method VARCHAR(100) DEFAULT '',
@@ -274,7 +274,7 @@ COMMENT ON COLUMN sys_oper_log.oper_time IS '操作时间';
 -- 11. 字典类型表
 -- ----------------------------
 CREATE TABLE sys_dict_type (
-  dict_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dict_id BIGSERIAL PRIMARY KEY,
   dict_name VARCHAR(100) DEFAULT '',
   dict_type VARCHAR(100) DEFAULT '',
   status CHAR(1) DEFAULT '0',
@@ -299,7 +299,7 @@ COMMENT ON COLUMN sys_dict_type.remark IS '备注';
 -- 12. 字典数据表
 -- ----------------------------
 CREATE TABLE sys_dict_data (
-  dict_code UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dict_code BIGSERIAL PRIMARY KEY,
   dict_sort INT DEFAULT 0,
   dict_label VARCHAR(100) DEFAULT '',
   dict_value VARCHAR(100) DEFAULT '',
@@ -334,7 +334,7 @@ COMMENT ON COLUMN sys_dict_data.remark IS '备注';
 -- 13. 参数配置表
 -- ----------------------------
 CREATE TABLE sys_config (
-  config_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  config_id BIGSERIAL PRIMARY KEY,
   config_name VARCHAR(100) DEFAULT '',
   config_key VARCHAR(100) DEFAULT '',
   config_value VARCHAR(500) DEFAULT '',
@@ -361,7 +361,7 @@ COMMENT ON COLUMN sys_config.remark IS '备注';
 -- 14. 系统访问记录
 -- ----------------------------
 CREATE TABLE sys_login_log (
-  info_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  info_id BIGSERIAL PRIMARY KEY,
   user_name VARCHAR(50) DEFAULT '',
   ipaddr VARCHAR(128) DEFAULT '',
   login_location VARCHAR(255) DEFAULT '',
@@ -386,7 +386,7 @@ COMMENT ON COLUMN sys_login_log.login_time IS '访问时间';
 -- 15. 通知公告表
 -- ----------------------------
 CREATE TABLE sys_notice (
-  notice_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  notice_id BIGSERIAL PRIMARY KEY,
   notice_title VARCHAR(50) NOT NULL,
   notice_type CHAR(1) NOT NULL,
   notice_content TEXT,
@@ -413,7 +413,7 @@ COMMENT ON COLUMN sys_notice.remark IS '备注';
 -- 16. 定时任务调度表
 -- ----------------------------
 CREATE TABLE sys_job (
-  job_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  job_id BIGSERIAL PRIMARY KEY,
   job_name VARCHAR(64) DEFAULT '',
   job_group VARCHAR(64) DEFAULT 'DEFAULT',
   invoke_target VARCHAR(500) NOT NULL,
@@ -446,7 +446,7 @@ COMMENT ON COLUMN sys_job.remark IS '备注信息';
 -- 17. 定时任务调度日志表
 -- ----------------------------
 CREATE TABLE sys_job_log (
-  job_log_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  job_log_id BIGSERIAL PRIMARY KEY,
   job_name VARCHAR(64) NOT NULL,
   job_group VARCHAR(64) NOT NULL,
   invoke_target VARCHAR(500) NOT NULL,
