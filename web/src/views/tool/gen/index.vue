@@ -66,25 +66,37 @@ function resetQuery() {
 
 async function handleDelete(row: GenTable) {
   if (confirm('确认要删除表"' + row.tableName + '"吗？')) {
-    await delTable([row.tableId])
-    toast({ title: "删除成功", description: "表已删除" })
-    getList()
+    try {
+      await delTable([row.tableId])
+      toast({ title: "删除成功", description: "表已删除" })
+      getList()
+    } catch (error) {
+      console.error('删除失败:', error)
+    }
   }
 }
 
 async function handlePreview(row: GenTable) {
-  const res = await previewTable(row.tableId)
-  previewData.value = res.data
-  const keys = Object.keys(res.data)
-  if (keys.length > 0) {
-    activeTab.value = keys[0] as string
+  try {
+    const res = await previewTable(row.tableId)
+    previewData.value = res.data
+    const keys = Object.keys(res.data)
+    if (keys.length > 0) {
+      activeTab.value = keys[0] as string
+    }
+    showPreview.value = true
+  } catch (error) {
+    console.error('预览失败:', error)
   }
-  showPreview.value = true
 }
 
 async function handleGenCode(row: GenTable) {
-  await genCode(row.tableName)
-  toast({ title: "生成成功", description: "代码已生成" })
+  try {
+    await genCode(row.tableName)
+    toast({ title: "生成成功", description: "代码已生成" })
+  } catch (error) {
+    console.error('生成代码失败:', error)
+  }
 }
 
 async function handleEdit(row: GenTable) {

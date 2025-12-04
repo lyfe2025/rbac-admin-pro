@@ -87,21 +87,29 @@ function handleAdd() {
 }
 
 async function handleUpdate(row: DictType) {
-  resetForm()
-  const res = await getType(row.dictId)
-  Object.assign(form, res.data)
-  dialogTitle.value = '修改字典类型'
-  showDialog.value = true
+  try {
+    resetForm()
+    const res = await getType(row.dictId)
+    Object.assign(form, res.data)
+    dialogTitle.value = '修改字典类型'
+    showDialog.value = true
+  } catch (error) {
+    console.error('获取数据失败:', error)
+  }
 }
 
 async function handleDelete(row: DictType) {
   if (confirm('确认要删除"' + row.dictName + '"字典类型吗？')) {
-    await delType([row.dictId])
-    toast({
-      title: "删除成功",
-      description: "字典类型已删除",
-    })
-    getList()
+    try {
+      await delType([row.dictId])
+      toast({
+        title: "删除成功",
+        description: "字典类型已删除",
+      })
+      getList()
+    } catch (error) {
+      console.error('删除失败:', error)
+    }
   }
 }
 
@@ -115,21 +123,25 @@ async function submitForm() {
     return
   }
   
-  if (form.dictId) {
-    await updateType(form)
-    toast({
-      title: "修改成功",
-      description: "字典类型已更新",
-    })
-  } else {
-    await addType(form)
-    toast({
-      title: "添加成功",
-      description: "字典类型已添加",
-    })
+  try {
+    if (form.dictId) {
+      await updateType(form)
+      toast({
+        title: "修改成功",
+        description: "字典类型已更新",
+      })
+    } else {
+      await addType(form)
+      toast({
+        title: "添加成功",
+        description: "字典类型已添加",
+      })
+    }
+    showDialog.value = false
+    getList()
+  } catch (error) {
+    console.error('提交失败:', error)
   }
-  showDialog.value = false
-  getList()
 }
 
 function resetForm() {

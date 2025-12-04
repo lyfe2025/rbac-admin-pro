@@ -4,18 +4,23 @@ import {
   ArgumentsHost,
   HttpException,
   HttpStatus,
+  Injectable,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Response, Request } from 'express';
+import { LoggerService } from '../logger/logger.service';
 
 /**
  * 全局异常过滤器
  * 捕获所有异常并统一返回格式
  */
 @Catch()
+@Injectable()
 export class AllExceptionsFilter implements ExceptionFilter {
+  constructor(private readonly logger: LoggerService) {}
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
     const status =
       exception instanceof HttpException
         ? exception.getStatus()
@@ -63,8 +68,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
       msg = 'Internal Server Error';
     }
 
-    console.error('[AllExceptionsFilter]', exception);
+    // 记录错误日志
     const err = exception as { name?: string; stack?: string };
+    this.logger.error(
+      `[${request.method}] ${request.url} - ${msg}`,
+      err.stack,
+      'AllExceptionsFilter',
+    );
     const errorDetail = showDetail
       ? {
           name: typeof err?.name === 'string' ? err.name : undefined,

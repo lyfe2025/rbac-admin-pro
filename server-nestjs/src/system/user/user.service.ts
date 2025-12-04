@@ -5,12 +5,17 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { LoggerService } from '../../common/logger/logger.service';
 
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private logger: LoggerService,
+  ) {}
 
   async findByUsername(username: string) {
+    this.logger.debug(`查询用户: ${username}`, 'UserService');
     return this.prisma.sysUser.findFirst({
       where: {
         userName: username,
@@ -28,6 +33,7 @@ export class UserService {
   }
 
   async getUserInfo(userId: string) {
+    this.logger.debug(`获取用户信息: ${userId}`, 'UserService');
     const user = await this.prisma.sysUser.findUnique({
       where: { userId: BigInt(userId) },
       include: {
@@ -184,11 +190,14 @@ export class UserService {
    * 新增用户
    */
   async create(createUserDto: CreateUserDto) {
+    this.logger.log(`创建用户: ${createUserDto.userName}`, 'UserService');
+    
     // 检查用户名唯一性
     const exist = await this.prisma.sysUser.findFirst({
       where: { userName: createUserDto.userName, delFlag: '0' },
     });
     if (exist) {
+      this.logger.warn(`创建用户失败,用户名已存在: ${createUserDto.userName}`, 'UserService');
       throw new BadRequestException('用户账号已存在');
     }
 
@@ -232,6 +241,7 @@ export class UserService {
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password: p, ...result } = user;
+      this.logger.log(`用户创建成功: ${createUserDto.userName} (ID: ${user.userId})`, 'UserService');
       return result;
     });
   }
@@ -240,8 +250,11 @@ export class UserService {
    * 修改用户
    */
   async update(userId: string, updateUserDto: UpdateUserDto) {
+    this.logger.log(`更新用户: ${userId}`, 'UserService');
+    
     const user = await this.prisma.sysUser.findUnique({ where: { userId: BigInt(userId) } });
     if (!user) {
+      this.logger.warn(`更新用户失败,用户不存在: ${userId}`, 'UserService');
       throw new BadRequestException('用户不存在');
     }
 
@@ -288,6 +301,7 @@ export class UserService {
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password: p, ...result } = updatedUser;
+      this.logger.log(`用户更新成功: ${updatedUser.userName} (ID: ${userId})`, 'UserService');
       return result;
     });
   }
@@ -296,38 +310,53 @@ export class UserService {
    * 删除用户
    */
   async remove(userId: string) {
+    this.logger.log(`删除用户: ${userId}`, 'UserService');
+    
     if (userId === '1') {
       // 假设1是超级管理员或者通过其他方式判断
       // throw new BadRequestException('不允许删除超级管理员');
     }
 
     // 逻辑删除
-    return this.prisma.sysUser.update({
+    const result = await this.prisma.sysUser.update({
       where: { userId: BigInt(userId) },
       data: { delFlag: '2' },
     });
+    
+    this.logger.log(`用户删除成功: ${result.userName} (ID: ${userId})`, 'UserService');
+    return result;
   }
 
   /**
    * 重置密码
    */
   async resetPassword(userId: string, password: string) {
+    this.logger.warn(`重置用户密码: ${userId}`, 'UserService');
+    
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    return this.prisma.sysUser.update({
+    const result = await this.prisma.sysUser.update({
       where: { userId: BigInt(userId) },
       data: { password: hashedPassword },
     });
+    
+    this.logger.warn(`密码重置成功: ${result.userName} (ID: ${userId})`, 'UserService');
+    return result;
   }
 
   /**
    * 修改状态
    */
   async changeStatus(userId: string, status: string) {
-    return this.prisma.sysUser.update({
+    this.logger.log(`修改用户状态: ${userId} -> ${status}`, 'UserService');
+    
+    const result = await this.prisma.sysUser.update({
       where: { userId: BigInt(userId) },
       data: { status, updateTime: new Date() },
     });
+    
+    this.logger.log(`用户状态修改成功: ${result.userName} (ID: ${userId}, 状态: ${status})`, 'UserService');
+    return result;
   }
 }

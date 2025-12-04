@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
@@ -15,12 +15,15 @@ import { NoticeModule } from './system/notice/notice.module';
 import { OperLogInterceptor } from './common/interceptors/oper-log.interceptor';
 import { PostModule } from './system/post/post.module';
 import { MonitorModule } from './monitor/monitor.module';
+import { LoggerModule } from './common/logger/logger.module';
+import { HttpLoggerMiddleware } from './common/middleware/http-logger.middleware';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true, // 全局可用
     }),
+    LoggerModule,
     PrismaModule,
     UserModule,
     AuthModule,
@@ -42,4 +45,8 @@ import { MonitorModule } from './monitor/monitor.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(HttpLoggerMiddleware).forRoutes('*');
+  }
+}

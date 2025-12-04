@@ -4,6 +4,7 @@ import { SysMenu, Prisma } from '@prisma/client';
 import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
 import { QueryMenuDto } from './dto/query-menu.dto';
+import { LoggerService } from '../../common/logger/logger.service';
 
 // 扩展 SysMenu 类型以包含 children
 export type SysMenuWithChildren = SysMenu & {
@@ -28,7 +29,10 @@ export interface RouterVo {
 
 @Injectable()
 export class MenuService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private logger: LoggerService,
+  ) {}
 
   /**
    * 查询菜单列表
@@ -65,31 +69,40 @@ export class MenuService {
    * 新增菜单
    */
   async create(createMenuDto: CreateMenuDto) {
+    this.logger.log(`创建菜单: ${createMenuDto.menuName}`, 'MenuService');
+    
     const { parentId, ...rest } = createMenuDto;
-    return this.prisma.sysMenu.create({
+    const result = await this.prisma.sysMenu.create({
       data: {
         ...rest,
         parentId: parentId ? BigInt(parentId) : null,
         createTime: new Date(),
       },
     });
+    
+    this.logger.log(`菜单创建成功: ${result.menuName} (ID: ${result.menuId})`, 'MenuService');
+    return result;
   }
 
   /**
    * 修改菜单
    */
   async update(menuId: string, updateMenuDto: UpdateMenuDto) {
+    this.logger.log(`更新菜单: ${menuId}`, 'MenuService');
+    
     const menu = await this.findOne(menuId);
     if (!menu) {
+      this.logger.warn(`更新菜单失败,菜单不存在: ${menuId}`, 'MenuService');
       throw new BadRequestException('菜单不存在');
     }
 
     if (updateMenuDto.parentId && updateMenuDto.parentId === menuId) {
+      this.logger.warn(`更新菜单失败,上级菜单不能选择自己: ${menuId}`, 'MenuService');
       throw new BadRequestException('上级菜单不能选择自己');
     }
 
     const { parentId, ...rest } = updateMenuDto;
-    return this.prisma.sysMenu.update({
+    const result = await this.prisma.sysMenu.update({
       where: { menuId: BigInt(menuId) },
       data: {
         ...rest,
@@ -97,6 +110,9 @@ export class MenuService {
         updateTime: new Date(),
       },
     });
+    
+    this.logger.log(`菜单更新成功: ${result.menuName} (ID: ${menuId})`, 'MenuService');
+    return result;
   }
 
   /**

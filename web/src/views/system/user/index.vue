@@ -188,6 +188,9 @@ async function handleSubmit() {
     }
     showDialog.value = false
     getList()
+  } catch (error) {
+    console.error('提交失败:', error)
+    // 错误已由请求拦截器处理,这里只需记录日志
   } finally {
     submitLoading.value = false
   }

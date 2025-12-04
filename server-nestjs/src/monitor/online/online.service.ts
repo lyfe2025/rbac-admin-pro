@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { QueryOnlineDto } from './dto/query-online.dto';
+import { LoggerService } from '../../common/logger/logger.service';
 
 export interface OnlineUser {
   token: string;
@@ -17,14 +18,21 @@ export interface OnlineUser {
 @Injectable()
 export class OnlineService {
   private store = new Map<string, OnlineUser>();
+  
+  constructor(private logger: LoggerService) {}
 
   async add(user: OnlineUser) {
     this.store.set(user.token, user);
+    this.logger.debug(`用户上线: ${user.userName} (IP: ${user.ipaddr})`, 'OnlineService');
     await Promise.resolve();
   }
 
   async remove(token: string) {
+    const user = this.store.get(token);
     this.store.delete(token);
+    if (user) {
+      this.logger.debug(`用户下线: ${user.userName}`, 'OnlineService');
+    }
     await Promise.resolve();
   }
 

@@ -3,19 +3,24 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserService } from '../system/user/user.service';
 import { LoginDto } from './dto/login.dto';
+import { LoggerService } from '../common/logger/logger.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
+    private logger: LoggerService,
   ) {}
 
   async login(loginDto: LoginDto) {
     const { username, password } = loginDto;
+    this.logger.debug(`Login attempt for user: ${username}`, 'AuthService');
+    
     const user = await this.userService.findByUsername(username);
 
     if (!user) {
+      this.logger.warn(`Login failed: User not found - ${username}`, 'AuthService');
       throw new UnauthorizedException('账号或密码错误');
     }
 
@@ -30,6 +35,7 @@ export class AuthService {
     }
 
     if (!isMatch) {
+      this.logger.warn(`Login failed: Invalid password - ${username}`, 'AuthService');
       throw new UnauthorizedException('账号或密码错误');
     }
 
@@ -39,6 +45,9 @@ export class AuthService {
       sub: user.userId.toString(), 
       username: user.userName 
     };
+    
+    this.logger.log(`User logged in successfully: ${username} (ID: ${user.userId})`, 'AuthService');
+    
     return {
       token: this.jwtService.sign(payload),
     };
@@ -47,6 +56,7 @@ export class AuthService {
   logout() {
     // JWT 是无状态的，后端其实不需要做特殊处理
     // 如果需要使 token 失效，需要引入 Redis 黑名单机制
+    this.logger.debug('User logout', 'AuthService');
     return {};
   }
 }

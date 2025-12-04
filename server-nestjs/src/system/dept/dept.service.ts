@@ -4,10 +4,14 @@ import { CreateDeptDto } from './dto/create-dept.dto';
 import { UpdateDeptDto } from './dto/update-dept.dto';
 import { QueryDeptDto } from './dto/query-dept.dto';
 import { Prisma } from '@prisma/client';
+import { LoggerService } from '../../common/logger/logger.service';
 
 @Injectable()
 export class DeptService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private logger: LoggerService,
+  ) {}
 
   /**
    * 查询部门列表
@@ -46,6 +50,8 @@ export class DeptService {
    * 新增部门
    */
   async create(createDeptDto: CreateDeptDto) {
+    this.logger.log(`创建部门: ${createDeptDto.deptName}`, 'DeptService');
+    
     // 如果 parentId 为空，说明是顶级部门 (实际上若依前端通常传 0 或 null)
     // 我们需要处理 ancestors 字段 (祖级列表)
 
@@ -65,7 +71,7 @@ export class DeptService {
       ancestors = `${parentDept.ancestors || '0'},${parentId}`;
     }
 
-    return this.prisma.sysDept.create({
+    const result = await this.prisma.sysDept.create({
       data: {
         ...rest,
         parentId: parentIdBigInt,
@@ -73,6 +79,9 @@ export class DeptService {
         createTime: new Date(),
       },
     });
+    
+    this.logger.log(`部门创建成功: ${result.deptName} (ID: ${result.deptId})`, 'DeptService');
+    return result;
   }
 
   /**

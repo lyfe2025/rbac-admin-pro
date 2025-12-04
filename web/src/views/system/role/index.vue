@@ -177,6 +177,8 @@ async function handleSubmit() {
     }
     showDialog.value = false
     getList()
+  } catch (error) {
+    console.error('提交失败:', error)
   } finally {
     submitLoading.value = false
   }
