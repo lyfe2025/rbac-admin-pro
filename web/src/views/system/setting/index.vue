@@ -37,7 +37,7 @@ async function getData() {
     configList.value = res.rows
     
     // Map configs for easy access and fill form
-    configList.value.forEach(item => {
+    configList.value.forEach((item: SysConfig) => {
       configMap.value[item.configKey] = item
       if (item.configKey in form) {
         // @ts-ignore

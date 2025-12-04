@@ -75,7 +75,34 @@ service.interceptors.response.use(
   (error: any) => {
     console.log('err' + error)
     let { message } = error
-    if (message == "Network Error") {
+    let title = "网络错误"
+    
+    // 尝试从响应中获取后端返回的错误信息
+    if (error.response && error.response.data) {
+      const { code, msg } = error.response.data
+      if (code === 400) {
+        title = "参数验证失败"
+        // 将常见的英文验证错误转换为中文
+        if (msg) {
+          if (msg.includes('邮箱格式不正确') || msg.includes('手机号格式不正确')) {
+            message = msg
+          } else if (msg.includes('email must be an email') || msg.includes('must be an email')) {
+            message = "邮箱格式不正确"
+          } else if (msg.includes('should not be empty')) {
+            message = "必填字段不能为空"
+          } else {
+            message = msg
+          }
+        } else {
+          message = "请求参数验证失败"
+        }
+      } else if (code === 403) {
+        title = "权限不足"
+        message = msg || "您没有权限执行此操作"
+      } else if (msg) {
+        message = msg
+      }
+    } else if (message == "Network Error") {
       message = "后端接口连接异常";
     } else if (message.includes("timeout")) {
       message = "系统接口请求超时";
@@ -84,11 +111,11 @@ service.interceptors.response.use(
     }
     
     toast({
-      title: "网络错误",
+      title,
       description: message,
       variant: "destructive",
     })
-    return Promise.reject(error)
+    return Promise.reject(new Error(message))
   }
 )
 

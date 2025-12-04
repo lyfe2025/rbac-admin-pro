@@ -1,3 +1,4 @@
+import request from '@/utils/request'
 import { type BaseEntity } from '@/api/system/types'
 
 export interface GenTable extends BaseEntity {
@@ -15,112 +16,57 @@ export interface GenTable extends BaseEntity {
   genPath: string
 }
 
-const tableList: GenTable[] = [
-  {
-    tableId: 1,
-    tableName: 'sys_user',
-    tableComment: '用户信息表',
-    className: 'SysUser',
-    tplCategory: 'crud',
-    packageName: 'com.ruoyi.system',
-    moduleName: 'system',
-    businessName: 'user',
-    functionName: '用户',
-    functionAuthor: 'ruoyi',
-    genType: '0',
-    genPath: '/',
-    createTime: '2023-01-01 00:00:00',
-    updateTime: '2023-01-01 00:00:00'
-  },
-  {
-    tableId: 2,
-    tableName: 'sys_role',
-    tableComment: '角色信息表',
-    className: 'SysRole',
-    tplCategory: 'crud',
-    packageName: 'com.ruoyi.system',
-    moduleName: 'system',
-    businessName: 'role',
-    functionName: '角色',
-    functionAuthor: 'ruoyi',
-    genType: '0',
-    genPath: '/',
-    createTime: '2023-01-01 00:00:00',
-    updateTime: '2023-01-01 00:00:00'
-  }
-]
 
 export function listTable(query: any) {
-  return new Promise<{ rows: GenTable[]; total: number }>((resolve) => {
-    setTimeout(() => {
-      let list = tableList
-      if (query.tableName) {
-        list = list.filter(item => item.tableName.includes(query.tableName))
-      }
-      if (query.tableComment) {
-        list = list.filter(item => item.tableComment.includes(query.tableComment))
-      }
-      resolve({
-        rows: list,
-        total: list.length
-      })
-    }, 300)
-  })
+  return request<{ data: { rows: GenTable[]; total: number } }>({
+    url: '/tool/gen/table',
+    method: 'get',
+    params: query
+  }).then((res: any) => res.data)
 }
 
 export function getGenTable(tableId: number) {
-  return new Promise<{ data: GenTable }>((resolve) => {
-    setTimeout(() => {
-      const table = tableList.find(item => item.tableId === tableId)
-      resolve({ data: table as GenTable })
-    }, 100)
-  })
+  return request<{ data: { data: GenTable } }>({
+    url: `/tool/gen/table/${tableId}`,
+    method: 'get'
+  }).then((res: any) => res)
 }
 
 export function updateGenTable(data: any) {
-  return new Promise<{ msg: string; code: number }>((resolve) => {
-    setTimeout(() => {
-      resolve({ msg: '操作成功', code: 200 })
-    }, 300)
-  })
+  return request({
+    url: '/tool/gen/table',
+    method: 'put',
+    data
+  }).then((res: any) => res)
 }
 
 export function delTable(tableIds: number[]) {
-  return new Promise<{ msg: string; code: number }>((resolve) => {
-    setTimeout(() => {
-      resolve({ msg: '操作成功', code: 200 })
-    }, 300)
-  })
+  return request({
+    url: '/tool/gen/table',
+    method: 'delete',
+    params: { ids: tableIds.join(',') }
+  }).then((res: any) => res)
 }
 
 export function previewTable(tableId: number) {
-  return new Promise<{ data: Record<string, string> }>((resolve) => {
-    setTimeout(() => {
-      resolve({
-        data: {
-          'domain.java': 'public class SysUser {}',
-          'mapper.java': 'public interface SysUserMapper {}',
-          'service.java': 'public interface ISysUserService {}',
-          'controller.java': 'public class SysUserController {}',
-          'index.vue': '<template>...</template>'
-        }
-      })
-    }, 300)
-  })
+  return request<{ data: { data: Record<string, string> } }>({
+    url: `/tool/gen/preview/${tableId}`,
+    method: 'get'
+  }).then((res: any) => res)
 }
 
 export function genCode(tableName: string) {
-  return new Promise<{ msg: string; code: number }>((resolve) => {
-    setTimeout(() => {
-      resolve({ msg: '生成成功', code: 200 })
-    }, 300)
-  })
+  return request({
+    url: '/tool/gen/genCode',
+    method: 'post',
+    data: { tableName }
+  }).then((res: any) => res)
 }
 
 export function importTable(tableNames: string[]) {
-  return new Promise<{ msg: string; code: number }>((resolve) => {
-    setTimeout(() => {
-      resolve({ msg: '导入成功', code: 200 })
-    }, 300)
-  })
+  return request({
+    url: '/tool/gen/import',
+    method: 'post',
+    data: { tableNames }
+  }).then((res: any) => res)
 }

@@ -28,7 +28,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/toast/use-toast'
-import { Plus, Edit, Trash2, RefreshCw, Search } from 'lucide-vue-next'
+import { Plus, Edit, Trash2, RefreshCw, Search, Loader2 } from 'lucide-vue-next'
 import { listPost, getPost, delPost, addPost, updatePost } from '@/api/system/post'
 import type { SysPost } from '@/api/system/types'
 

@@ -164,3 +164,11 @@ export interface SysLoginLog {
   msg: string
   loginTime: string
 }
+// 6. 参数配置 sys_config
+export interface SysConfig extends BaseEntity {
+  configId: string
+  configName: string
+  configKey: string
+  configValue: string
+  configType: 'Y' | 'N'
+}

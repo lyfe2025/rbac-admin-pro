@@ -29,7 +29,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useToast } from '@/components/ui/toast/use-toast'
-import { Plus, Edit, Trash2, ChevronDown, ChevronRight, RefreshCw, Search } from 'lucide-vue-next'
+import { Plus, Edit, Trash2, ChevronDown, ChevronRight, RefreshCw, Search, Loader2 } from 'lucide-vue-next'
 import { listMenu, getMenu, delMenu, addMenu, updateMenu } from '@/api/system/menu'
 import type { SysMenu } from '@/api/system/types'
 
@@ -70,7 +70,7 @@ async function getList() {
   loading.value = true
   try {
     const res = await listMenu(queryParams)
-    menuList.value = res.data
+    menuList.value = toTreeMenu(res.data)
     // Default expand first level
     menuList.value.forEach(m => isExpanded.value[m.menuId] = true)
   } finally {
@@ -80,7 +80,7 @@ async function getList() {
 
 async function getMenuTree() {
   const res = await listMenu({})
-  menuOptions.value = res.data
+  menuOptions.value = toTreeMenu(res.data)
 }
 
 // Helper to flatten tree for table display with expansion control
@@ -101,16 +101,16 @@ const flattenMenus = computed(() => {
 
 // Helper for Select options (flattened with indentation)
 const flattenedOptions = computed(() => {
-  const result: any[] = []
-  const traverse = (nodes: any[], prefix = '') => {
-    for (const node of nodes) {
-      result.push({ ...node, label: prefix + node.menuName })
-      if (node.children) {
-        traverse(node.children, prefix + '-- ')
+  const result: Array<{ id: string; label: string }> = []
+  const traverse = (nodes: Array<{ menuId: string; menuName: string; children?: any[] }>, prefix = '') => {
+    for (const node of nodes || []) {
+      result.push({ id: node.menuId, label: prefix + node.menuName })
+      if (node.children && node.children.length) {
+        traverse(node.children as any[], prefix + '-- ')
       }
     }
   }
-  traverse(menuOptions.value)
+  traverse(menuOptions.value as any[])
   return result
 })
 
@@ -190,6 +190,30 @@ function resetForm() {
   form.status = '0'
   form.perms = ''
   form.icon = ''
+}
+
+// 将扁平菜单列表转换为树形结构
+function toTreeMenu(list: SysMenu[]): SysMenu[] {
+  const map = new Map<string, SysMenu & { children: SysMenu[] }>()
+  const roots: (SysMenu & { children: SysMenu[] })[] = []
+
+  list.forEach((item) => {
+    const node = { ...item, children: item.children ?? [] }
+    map.set(item.menuId, node)
+  })
+
+  map.forEach((node) => {
+    const pid = node.parentId ?? '0'
+    if (pid === '0' || !map.has(pid)) {
+      roots.push(node)
+    } else {
+      const parent = map.get(pid)!
+      parent.children = parent.children ?? []
+      parent.children.push(node)
+    }
+  })
+
+  return roots
 }
 
 onMounted(() => {

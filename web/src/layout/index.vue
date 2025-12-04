@@ -62,6 +62,7 @@ import {
   LogOut,
   ChevronsUpDown
 } from 'lucide-vue-next'
+import UserMenuButton from '@/components/UserMenuButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -436,6 +437,7 @@ const handleLogout = async () => {
             </div>
             <ThemeCustomizer />
             <ThemeToggle />
+            <UserMenuButton />
           </div>
        </header>
        <main class="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">

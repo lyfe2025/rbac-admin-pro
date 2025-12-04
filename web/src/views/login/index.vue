@@ -37,9 +37,10 @@ const handleLogin = async () => {
     })
     router.push('/')
   } catch (error) {
+    const message = error instanceof Error && error.message ? error.message : '用户名或密码错误'
     toast({
       title: "登录失败",
-      description: "用户名或密码错误",
+      description: message,
       variant: "destructive",
     })
   } finally {

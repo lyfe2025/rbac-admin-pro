@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import router from '@/router'
 import type { RouteRecordRaw } from 'vue-router'
+import { getRouters } from '@/api/login'
 
 // 匹配views里面所有的.vue文件
 const modules = import.meta.glob('./../../views/**/*.vue')
@@ -17,14 +18,18 @@ export const usePermissionStore = defineStore('permission', () => {
 
   function generateRoutes(roles: string[]) {
     return new Promise<RouteRecordRaw[]>((resolve) => {
-      // Mock: 在真实后端中，这里会调用 getRouters() 接口
-      // const res = await getRouters()
-      // const accessedRoutes = filterAsyncRouter(res.data)
-      
-      // 目前我们没有动态路由，所以直接返回空数组，或者如果想模拟，可以手动构造一些
-      const accessedRoutes: RouteRecordRaw[] = []
-      setRoutes(accessedRoutes)
-      resolve(accessedRoutes)
+      // 向后端请求路由数据
+      getRouters().then((res) => {
+        const sdata = JSON.parse(JSON.stringify(res.data))
+        const rdata = JSON.parse(JSON.stringify(res.data))
+        const sidebarRoutes = filterAsyncRouter(sdata)
+        const rewriteRoutes = filterAsyncRouter(rdata, false, true)
+        
+        // 这里的处理可能根据实际需求调整，现在简单处理
+        const accessedRoutes = filterAsyncRouter(res.data)
+        setRoutes(accessedRoutes)
+        resolve(accessedRoutes)
+      })
     })
   }
 

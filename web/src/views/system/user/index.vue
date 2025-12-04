@@ -119,7 +119,7 @@ async function getList() {
 
 async function getDeptTree() {
   const res = await listDeptTree()
-  deptOptions.value = res.data
+  deptOptions.value = toTreeDept(res.data)
 }
 
 // Search Operations
@@ -247,20 +247,44 @@ function resetForm() {
 }
 
 // Dept Tree Helper
-// Simplified for mock, in real app use a Tree Select component
+// 将部门树扁平化为下拉选项，确保拥有有效的 id 与 label 字段
 const flattenedDepts = computed(() => {
-  const result: any[] = []
-  const traverse = (nodes: any[], prefix = '') => {
-    for (const node of nodes) {
-      result.push({ ...node, label: prefix + node.label })
-      if (node.children) {
-        traverse(node.children, prefix + '-- ')
+  const result: Array<{ id: string; label: string }> = []
+  const traverse = (nodes: Array<{ deptId: string; deptName: string; children?: any[] }>, prefix = '') => {
+    for (const node of nodes || []) {
+      result.push({ id: node.deptId, label: prefix + node.deptName })
+      if (node.children && node.children.length) {
+        traverse(node.children as any[], prefix + '-- ')
       }
     }
   }
-  traverse(deptOptions.value)
+  traverse(deptOptions.value as any[])
   return result
 })
+
+// 将扁平部门列表转换为树形结构（用于筛选与表单）
+function toTreeDept(list: any[]): any[] {
+  const map = new Map<string, any>()
+  const roots: any[] = []
+
+  list.forEach((item) => {
+    const node = { ...item, children: item.children ?? [] }
+    map.set(item.deptId, node)
+  })
+
+  map.forEach((node) => {
+    const pid = node.parentId ?? '0'
+    if (pid === '0' || !map.has(pid)) {
+      roots.push(node)
+    } else {
+      const parent = map.get(pid)!
+      parent.children = parent.children ?? []
+      parent.children.push(node)
+    }
+  })
+
+  return roots
+}
 
 onMounted(() => {
   getList()

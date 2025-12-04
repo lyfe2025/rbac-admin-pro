@@ -14,7 +14,7 @@ export interface LoginResult {
 // 登录方法
 export function login(data: LoginData) {
   return request({
-    url: '/login',
+    url: '/auth/login',
     method: 'post',
     data: data
   })
@@ -23,7 +23,7 @@ export function login(data: LoginData) {
 // 获取用户信息
 export function getInfo() {
   return request({
-    url: '/getInfo',
+    url: '/system/user/getInfo',
     method: 'get'
   })
 }
@@ -31,7 +31,15 @@ export function getInfo() {
 // 退出方法
 export function logout() {
   return request({
-    url: '/logout',
+    url: '/auth/logout',
     method: 'post'
+  })
+}
+
+// 获取路由
+export function getRouters() {
+  return request({
+    url: '/getRouters',
+    method: 'get'
   })
 }

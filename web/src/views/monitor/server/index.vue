@@ -65,14 +65,14 @@ onMounted(() => {
           <CardContent>
             <div class="text-2xl font-bold">{{ server.cpu.cpuNum }} 核心</div>
             <p class="text-xs text-muted-foreground mt-1">
-              用户使用率: {{ server.cpu.used }}% | 系统使用率: {{ server.cpu.sys }}%
+              用户使用率: {{ Number(server.cpu.used) || 0 }}% | 系统使用率: {{ Number(server.cpu.sys) || 0 }}%
             </p>
             <div class="mt-4 space-y-2">
                <div class="flex justify-between text-xs">
                  <span>总使用率</span>
-                 <span>{{ (server.cpu.used + server.cpu.sys).toFixed(2) }}%</span>
+                 <span>{{ (((Number(server.cpu.used) || 0) + (Number(server.cpu.sys) || 0))).toFixed(2) }}%</span>
                </div>
-               <Progress :model-value="server.cpu.used + server.cpu.sys" />
+               <Progress :model-value="Math.min(100, Math.max(0, (Number(server.cpu.used) || 0) + (Number(server.cpu.sys) || 0)))" />
             </div>
           </CardContent>
         </Card>
@@ -83,16 +83,16 @@ onMounted(() => {
             <Database class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ server.mem.total }} GB</div>
+            <div class="text-2xl font-bold">{{ Number(server.mem.total) || 0 }} GB</div>
             <p class="text-xs text-muted-foreground mt-1">
-              已用: {{ server.mem.used }} GB | 剩余: {{ server.mem.free }} GB
+              已用: {{ Number(server.mem.used) || 0 }} GB | 剩余: {{ Number(server.mem.free) || 0 }} GB
             </p>
             <div class="mt-4 space-y-2">
                <div class="flex justify-between text-xs">
                  <span>使用率</span>
-                 <span>{{ server.mem.usage }}%</span>
+                 <span>{{ Number(server.mem.usage) || 0 }}%</span>
                </div>
-               <Progress :model-value="server.mem.usage" />
+               <Progress :model-value="Number(server.mem.usage) || 0" />
             </div>
           </CardContent>
         </Card>
@@ -145,23 +145,23 @@ onMounted(() => {
              <div class="grid grid-cols-3 gap-4 text-center">
                <div>
                  <div class="text-sm font-medium text-muted-foreground">总内存</div>
-                 <div class="text-xl font-bold">{{ server.jvm.total }} MB</div>
+                 <div class="text-xl font-bold">{{ Number(server.jvm.total) || 0 }} MB</div>
                </div>
                <div>
                  <div class="text-sm font-medium text-muted-foreground">已用内存</div>
-                 <div class="text-xl font-bold">{{ (server.jvm.total - server.jvm.free).toFixed(2) }} MB</div>
+                 <div class="text-xl font-bold">{{ (Number(server.jvm.total || 0) - Number(server.jvm.free || 0)).toFixed(2) }} MB</div>
                </div>
                 <div>
-                 <div class="text-sm font-medium text-muted-foreground">剩余内存</div>
-                 <div class="text-xl font-bold">{{ server.jvm.free }} MB</div>
+                  <div class="text-sm font-medium text-muted-foreground">剩余内存</div>
+                 <div class="text-xl font-bold">{{ Number(server.jvm.free) || 0 }} MB</div>
                </div>
              </div>
              <div class="space-y-2">
                <div class="flex justify-between text-xs">
                  <span>使用率</span>
-                 <span>{{ server.jvm.usage }}%</span>
+                 <span>{{ Number(server.jvm.usage) || 0 }}%</span>
                </div>
-               <Progress :model-value="server.jvm.usage" class="h-2" />
+               <Progress :model-value="Number(server.jvm.usage) || 0" class="h-2" />
             </div>
            </div>
         </CardContent>
@@ -174,7 +174,7 @@ onMounted(() => {
         </CardHeader>
         <CardContent>
           <div class="space-y-6">
-            <div v-for="(file, index) in server.sysFiles" :key="index" class="space-y-2">
+            <div v-for="(file, index) in (server.sysFiles || [])" :key="index" class="space-y-2">
                <div class="flex items-center justify-between">
                  <div class="flex items-center gap-2">
                    <HardDrive class="h-4 w-4 text-muted-foreground" />
@@ -182,12 +182,12 @@ onMounted(() => {
                  </div>
                  <span class="text-sm text-muted-foreground">{{ file.used }} / {{ file.total }}</span>
                </div>
-               <Progress :model-value="file.usage" class="h-2" />
+               <Progress :model-value="Number(file.usage) || 0" class="h-2" />
                <div class="flex justify-end text-xs text-muted-foreground">
                  已用 {{ file.usage }}%
                </div>
-               <Separator v-if="index < server.sysFiles.length - 1" class="mt-4" />
-            </div>
+               <Separator v-if="(server.sysFiles || []).length > 0 && index < (server.sysFiles || []).length - 1" class="mt-4" />
+           </div>
           </div>
         </CardContent>
       </Card>
