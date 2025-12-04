@@ -37,7 +37,6 @@ export class SystemMenuController {
 
   @Get('roleMenuTreeselect/:roleId')
   async roleMenuTreeselect(@Param('roleId') roleId: string) {
-    console.log('roleId:', roleId);
     const menus = await this.menuService.listTree({});
     return { menus };
   }

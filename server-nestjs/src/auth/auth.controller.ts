@@ -1,4 +1,5 @@
 import { Body, Controller, Post, Req } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import type { Request } from 'express';
@@ -6,6 +7,7 @@ import { LoginLogService } from '../monitor/login-log/login-log.service';
 import { OnlineService } from '../monitor/online/online.service';
 import { TokenBlacklistService } from './token-blacklist.service';
 
+@ApiTags('认证')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -16,6 +18,10 @@ export class AuthController {
   ) {}
 
   @Post('login')
+  @ApiOperation({ summary: '用户登录', description: '用户名密码登录获取 JWT Token' })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({ status: 200, description: '登录成功' })
+  @ApiResponse({ status: 401, description: '用户名或密码错误' })
   async login(@Body() loginDto: LoginDto, @Req() req: Request) {
     try {
       const res = await this.authService.login(loginDto);

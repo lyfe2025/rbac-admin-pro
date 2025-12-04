@@ -4,6 +4,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ValidationPipe } from '@nestjs/common';
 import { LoggerService } from './common/logger/logger.service';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 // 全局 BigInt 序列化支持
 // 解决 "TypeError: Do not know how to serialize a BigInt" 错误
@@ -38,8 +39,44 @@ async function bootstrap() {
   // 启用 CORS (跨域资源共享)
   app.enableCors();
 
+  // 配置 Swagger 文档
+  const config = new DocumentBuilder()
+    .setTitle('RBAC Admin Pro API')
+    .setDescription('企业级全栈后台管理系统 API 文档')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        description: '请输入 JWT Token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
+    .addTag('认证', '用户认证相关接口')
+    .addTag('用户管理', '系统用户管理')
+    .addTag('角色管理', '角色权限管理')
+    .addTag('菜单管理', '菜单权限管理')
+    .addTag('部门管理', '组织部门管理')
+    .addTag('岗位管理', '岗位信息管理')
+    .addTag('字典管理', '数据字典管理')
+    .addTag('参数配置', '系统参数配置')
+    .addTag('通知公告', '系统通知公告')
+    .addTag('监控管理', '系统监控相关')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api-docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true, // 持久化认证信息
+    },
+  });
+
   const port = process.env.PORT ?? 3000;
   await app.listen(port, '0.0.0.0');
   logger.log(`Application is running on: http://0.0.0.0:${port}`, 'Bootstrap');
+  logger.log(`Swagger API Docs: http://0.0.0.0:${port}/api-docs`, 'Bootstrap');
 }
 void bootstrap();

@@ -116,10 +116,9 @@ export class DeptService {
       // 更新 ancestors
       const newAncestors = `${parentDept.ancestors || '0'},${parentId}`;
 
-      // TODO: 更新子部门的 ancestors
-      // await this.updateChildrenAncestors(deptId, newAncestors, dept.ancestors);
+      // 更新自己和所有子部门的 ancestors
+      await this.updateChildrenAncestors(deptId, newAncestors, dept.ancestors || '0');
 
-      // 暂时只更新自己
       return this.prisma.sysDept.update({
         where: { deptId: deptIdBigInt },
         data: {
@@ -184,5 +183,61 @@ export class DeptService {
     return depts.filter(
       (d) => d.deptId !== deptIdBigInt && !d.ancestors?.split(',').includes(deptId),
     );
+  }
+
+  /**
+   * 更新子部门的 ancestors
+   * @param deptId 当前部门ID
+   * @param newAncestors 新的祖级列表
+   * @param oldAncestors 旧的祖级列表
+   */
+  private async updateChildrenAncestors(
+    deptId: string,
+    newAncestors: string,
+    oldAncestors: string,
+  ) {
+    try {
+      // 查找所有子部门（ancestors 包含当前部门ID的）
+      const children = await this.prisma.sysDept.findMany({
+        where: {
+          delFlag: '0',
+          ancestors: {
+            contains: deptId,
+          },
+        },
+      });
+
+      // 批量更新子部门的 ancestors
+      const updatePromises = children.map((child) => {
+        // 替换 ancestors 中的旧路径为新路径
+        // 例如: oldAncestors = "0,100", newAncestors = "0,200,100"
+        // child.ancestors = "0,100,101" => "0,200,100,101"
+        const childAncestors = child.ancestors || '';
+        const updatedAncestors = childAncestors.replace(
+          `${oldAncestors},${deptId}`,
+          `${newAncestors},${deptId}`,
+        );
+
+        return this.prisma.sysDept.update({
+          where: { deptId: child.deptId },
+          data: {
+            ancestors: updatedAncestors,
+            updateTime: new Date(),
+          },
+        });
+      });
+
+      await Promise.all(updatePromises);
+      this.logger.log(
+        `Updated ancestors for ${children.length} child departments`,
+        'DeptService',
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to update children ancestors: ${error}`,
+        'DeptService',
+      );
+      throw error;
+    }
   }
 }
