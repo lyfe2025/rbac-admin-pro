@@ -1,9 +1,11 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserService } from '../system/user/user.service';
 import { LoginDto } from './dto/login.dto';
 import { LoggerService } from '../common/logger/logger.service';
+import { BusinessException } from '../common/exceptions';
+import { ErrorCode } from '../common/enums';
 
 @Injectable()
 export class AuthService {
@@ -21,7 +23,7 @@ export class AuthService {
 
     if (!user) {
       this.logger.warn(`Login failed: User not found - ${username}`, 'AuthService');
-      throw new UnauthorizedException('账号或密码错误');
+      throw new BusinessException(ErrorCode.INVALID_CREDENTIALS, '账号或密码错误');
     }
 
     // 验证密码
@@ -36,7 +38,7 @@ export class AuthService {
 
     if (!isMatch) {
       this.logger.warn(`Login failed: Invalid password - ${username}`, 'AuthService');
-      throw new UnauthorizedException('账号或密码错误');
+      throw new BusinessException(ErrorCode.INVALID_CREDENTIALS, '账号或密码错误');
     }
 
     // 签发 Token

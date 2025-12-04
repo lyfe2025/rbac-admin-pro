@@ -1,10 +1,12 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateDeptDto } from './dto/create-dept.dto';
 import { UpdateDeptDto } from './dto/update-dept.dto';
 import { QueryDeptDto } from './dto/query-dept.dto';
 import { Prisma } from '@prisma/client';
 import { LoggerService } from '../../common/logger/logger.service';
+import { BusinessException } from '../../common/exceptions';
+import { ErrorCode } from '../../common/enums';
 
 @Injectable()
 export class DeptService {
@@ -62,10 +64,10 @@ export class DeptService {
     if (parentId && parentId !== '0') {
       const parentDept = await this.findOne(parentId);
       if (!parentDept) {
-        throw new BadRequestException('父部门不存在');
+        throw new BusinessException(ErrorCode.PARENT_DEPT_NOT_FOUND);
       }
       if (parentDept.status === '1') {
-        throw new BadRequestException('部门停用，不允许新增');
+        throw new BusinessException(ErrorCode.DEPT_STATUS_ERROR, '部门停用，不允许新增');
       }
       parentIdBigInt = BigInt(parentId);
       ancestors = `${parentDept.ancestors || '0'},${parentId}`;
@@ -90,7 +92,7 @@ export class DeptService {
   async update(deptId: string, updateDeptDto: UpdateDeptDto) {
     const dept = await this.findOne(deptId);
     if (!dept) {
-      throw new BadRequestException('部门不存在');
+      throw new BusinessException(ErrorCode.DEPT_NOT_FOUND);
     }
 
     const { parentId, ...rest } = updateDeptDto;
@@ -104,11 +106,11 @@ export class DeptService {
       // 如果修改了父级，需要更新 ancestors
       const parentDept = await this.findOne(parentId);
       if (!parentDept) {
-        throw new BadRequestException('父部门不存在');
+        throw new BusinessException(ErrorCode.PARENT_DEPT_NOT_FOUND);
       }
       // 检查是否将自己设为父级
       if (parentId === deptId) {
-        throw new BadRequestException('不允许将自己设为父级');
+        throw new BusinessException(ErrorCode.CANNOT_SET_SELF_AS_CHILD);
       }
       // 还需要更新所有子部门的 ancestors (这是一个级联操作，略复杂，这里先简单更新自己)
       // 严格来说，若依逻辑是禁止修改父级为自己的子节点
@@ -150,7 +152,7 @@ export class DeptService {
       where: { parentId: deptIdBigInt, delFlag: '0' },
     });
     if (childCount > 0) {
-      throw new BadRequestException('存在下级部门,不允许删除');
+      throw new BusinessException(ErrorCode.DEPT_HAS_CHILDREN);
     }
 
     // 2. 检查是否有用户关联
@@ -158,7 +160,7 @@ export class DeptService {
       where: { deptId: deptIdBigInt, delFlag: '0' },
     });
     if (userCount > 0) {
-      throw new BadRequestException('部门下存在用户,不允许删除');
+      throw new BusinessException(ErrorCode.DEPT_HAS_USERS);
     }
 
     // 逻辑删除

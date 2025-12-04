@@ -1,10 +1,12 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { QueryRoleDto } from './dto/query-role.dto';
 import { Prisma } from '@prisma/client';
 import { LoggerService } from '../../common/logger/logger.service';
+import { BusinessException } from '../../common/exceptions';
+import { ErrorCode } from '../../common/enums';
 
 @Injectable()
 export class RoleService {
@@ -81,7 +83,7 @@ export class RoleService {
     });
     if (exist) {
       this.logger.warn(`创建角色失败,权限字符已存在: ${createRoleDto.roleKey}`, 'RoleService');
-      throw new BadRequestException('角色权限字符已存在');
+      throw new BusinessException(ErrorCode.ROLE_KEY_EXISTS);
     }
 
     const { menuIds, ...roleData } = createRoleDto;
@@ -121,7 +123,7 @@ export class RoleService {
     const role = await this.prisma.sysRole.findUnique({ where: { roleId: BigInt(roleId) } });
     if (!role) {
       this.logger.warn(`更新角色失败,角色不存在: ${roleId}`, 'RoleService');
-      throw new BadRequestException('角色不存在');
+      throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
     }
 
     // 检查 roleKey 唯一性 (如果修改了 roleKey)
@@ -130,7 +132,7 @@ export class RoleService {
         where: { roleKey: updateRoleDto.roleKey, delFlag: '0' },
       });
       if (exist) {
-        throw new BadRequestException('角色权限字符已存在');
+        throw new BusinessException(ErrorCode.ROLE_KEY_EXISTS);
       }
     }
 
@@ -180,7 +182,7 @@ export class RoleService {
     });
     if (userCount > 0) {
       this.logger.warn(`删除角色失败,角色已分配给 ${userCount} 个用户: ${roleId}`, 'RoleService');
-      throw new BadRequestException('角色已分配给用户,不允许删除');
+      throw new BusinessException(ErrorCode.ROLE_HAS_USERS);
     }
 
     // 逻辑删除

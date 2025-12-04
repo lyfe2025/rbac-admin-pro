@@ -253,6 +253,7 @@ start_web() {
   if is_port_in_use "$WEB_PORT"; then kill_by_port "$WEB_PORT"; fi
   (cd "$WEB_DIR" && nohup npm run dev >"$PID_DIR/web-dev.log" 2>&1 & echo $! > "$PID_DIR/web-dev.pid")
   wait_for_port "$WEB_PORT" "前端"
+  printf "${FG_CYAN}  ➜ 前端访问地址: ${BOLD}http://localhost:${WEB_PORT}${RESET}\n"
 }
 
 start_server() {
@@ -261,6 +262,8 @@ start_server() {
   if is_port_in_use "$SERVER_PORT"; then kill_by_port "$SERVER_PORT"; fi
   (cd "$SERVER_DIR" && nohup npm run start:dev >"$PID_DIR/server-dev.log" 2>&1 & echo $! > "$PID_DIR/server-dev.pid")
   wait_for_port "$SERVER_PORT" "后端"
+  printf "${FG_CYAN}  ➜ 后端 API 地址: ${BOLD}http://localhost:${SERVER_PORT}${RESET}\n"
+  printf "${FG_CYAN}  ➜ API 文档地址: ${BOLD}http://localhost:${SERVER_PORT}/api-docs${RESET}\n"
 }
 
 stop_web() {
@@ -299,16 +302,25 @@ status_all() {
   local wstatus sstatus
   if is_running "$wpid" || is_port_in_use "$WEB_PORT"; then wstatus="运行中"; else wstatus="未运行"; fi
   if is_running "$spid" || is_port_in_use "$SERVER_PORT"; then sstatus="运行中"; else sstatus="未运行"; fi
+  
+  echo ""
+  hr
   if [ "$wstatus" = "运行中" ]; then
     printf "${FG_GREEN}前端状态：%s${RESET} (pid: %s, port: %s)\n" "$wstatus" "${wpid:-'-'}" "$WEB_PORT"
+    printf "${FG_CYAN}  ➜ 访问地址: ${BOLD}http://localhost:${WEB_PORT}${RESET}\n"
   else
     printf "${FG_RED}前端状态：%s${RESET} (pid: %s, port: %s)\n" "$wstatus" "${wpid:-'-'}" "$WEB_PORT"
   fi
+  
   if [ "$sstatus" = "运行中" ]; then
     printf "${FG_GREEN}后端状态：%s${RESET} (pid: %s, port: %s)\n" "$sstatus" "${spid:-'-'}" "$SERVER_PORT"
+    printf "${FG_CYAN}  ➜ API 地址: ${BOLD}http://localhost:${SERVER_PORT}${RESET}\n"
+    printf "${FG_CYAN}  ➜ API 文档: ${BOLD}http://localhost:${SERVER_PORT}/api-docs${RESET}\n"
   else
     printf "${FG_RED}后端状态：%s${RESET} (pid: %s, port: %s)\n" "$sstatus" "${spid:-'-'}" "$SERVER_PORT"
   fi
+  hr
+  echo ""
 }
 
 # 跟随日志输出，模拟前台运行效果（Ctrl+C 退出日志跟随，服务仍在运行）

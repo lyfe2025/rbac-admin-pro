@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { LoggerService } from '../logger/logger.service';
+import { BusinessException } from '../exceptions/business.exception';
 
 /**
  * 全局异常过滤器
@@ -21,6 +22,21 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
+    
+    // 处理 BusinessException
+    if (exception instanceof BusinessException) {
+      const exceptionResponse = exception.getResponse() as any;
+      const status = exception.getStatus();
+      
+      // 记录业务异常日志
+      this.logger.warn(
+        `[${request.method}] ${request.url} - 业务异常: ${exceptionResponse.msg} (code: ${exceptionResponse.code})`,
+        'AllExceptionsFilter',
+      );
+      
+      return response.status(status).json(exceptionResponse);
+    }
+    
     const status =
       exception instanceof HttpException
         ? exception.getStatus()

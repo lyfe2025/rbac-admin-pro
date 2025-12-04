@@ -2,6 +2,7 @@ import axios, { type InternalAxiosRequestConfig, type AxiosResponse } from 'axio
 import { useToast } from '@/components/ui/toast/use-toast'
 import { getToken } from '@/utils/auth'
 import { useUserStore } from '@/stores/modules/user'
+import { ErrorCode, shouldRedirectToLogin, getErrorMessage } from '@/types/error-code'
 
 const { toast } = useToast()
 
@@ -38,39 +39,46 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   (response: AxiosResponse) => {
     // 未设置状态码则默认成功状态
-    const code = response.data.code || 200
-    // 获取错误信息
-    const msg = response.data.msg || '系统未知错误，请反馈给管理员'
+    const code = response.data.code || ErrorCode.SUCCESS
+    // 获取错误信息 (优先使用后端返回的 msg,如果没有则使用前端错误码映射)
+    const msg = response.data.msg || getErrorMessage(code)
     
     // 二进制数据则直接返回
     if (response.request.responseType ===  'blob' || response.request.responseType ===  'arraybuffer') {
       return response.data
     }
     
-    if (code === 401) {
-       // 模拟登出
-       const userStore = useUserStore()
-       userStore.logout().then(() => {
-         location.href = '/login'
-       })
-       return Promise.reject('无效的会话，或者会话已过期，请重新登录。')
-    } else if (code === 500) {
+    // 判断是否需要跳转登录页 (使用业务错误码)
+    if (shouldRedirectToLogin(code)) {
+      const userStore = useUserStore()
+      userStore.logout().then(() => {
+        location.href = '/login'
+      })
+      return Promise.reject('无效的会话，或者会话已过期，请重新登录。')
+    }
+    
+    // 判断系统内部错误
+    if (code === ErrorCode.INTERNAL_ERROR || code === ErrorCode.DATABASE_ERROR) {
       toast({
         title: "系统错误",
         description: msg,
         variant: "destructive",
       })
       return Promise.reject(new Error(msg))
-    } else if (code !== 200) {
+    }
+    
+    // 判断是否成功
+    if (code !== ErrorCode.SUCCESS) {
       toast({
         title: "操作失败",
         description: msg,
         variant: "destructive",
       })
       return Promise.reject('error')
-    } else {
-      return response.data
     }
+    
+    // 成功,返回数据
+    return response.data
   },
   (error: any) => {
     console.log('err' + error)
@@ -79,28 +87,30 @@ service.interceptors.response.use(
     
     // 尝试从响应中获取后端返回的错误信息
     if (error.response && error.response.data) {
-      const { code, msg } = error.response.data
-      if (code === 400) {
+      const httpStatus = error.response.status     // HTTP 状态码
+      const { code, msg } = error.response.data    // 业务错误码和消息
+      // 优先使用后端返回的 msg,如果没有则使用错误码映射
+      const errorMessage = msg || (code ? getErrorMessage(code) : '')
+      
+      if (httpStatus === 400) {
         title = "参数验证失败"
-        // 将常见的英文验证错误转换为中文
-        if (msg) {
-          if (msg.includes('邮箱格式不正确') || msg.includes('手机号格式不正确')) {
-            message = msg
-          } else if (msg.includes('email must be an email') || msg.includes('must be an email')) {
-            message = "邮箱格式不正确"
-          } else if (msg.includes('should not be empty')) {
-            message = "必填字段不能为空"
-          } else {
-            message = msg
-          }
-        } else {
-          message = "请求参数验证失败"
-        }
-      } else if (code === 403) {
+        message = errorMessage || "请求参数验证失败"
+      } else if (httpStatus === 401) {
+        title = "未登录"
+        message = errorMessage || "无效的会话，或者会话已过期，请重新登录"
+        // 跳转登录页
+        const userStore = useUserStore()
+        userStore.logout().then(() => {
+          location.href = '/login'
+        })
+      } else if (httpStatus === 403) {
         title = "权限不足"
-        message = msg || "您没有权限执行此操作"
-      } else if (msg) {
-        message = msg
+        message = errorMessage || "您没有权限执行此操作"
+      } else if (httpStatus === 500) {
+        title = "系统错误"
+        message = errorMessage || "系统内部错误"
+      } else if (errorMessage) {
+        message = errorMessage
       }
     } else if (message == "Network Error") {
       message = "后端接口连接异常";
