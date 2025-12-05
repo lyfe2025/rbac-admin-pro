@@ -65,6 +65,7 @@ import {
   ChevronsUpDown
 } from 'lucide-vue-next'
 import UserMenuButton from '@/components/UserMenuButton.vue'
+import DynamicMenu from '@/components/DynamicMenu.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -153,97 +154,8 @@ const handleOpenEditDialog = (userId: string) => {
               <TooltipContent side="right" v-if="isCollapsed">仪表盘</TooltipContent>
             </Tooltip>
 
-            <Accordion type="single" collapsible class="w-full" default-value="system">
-              <AccordionItem value="system" class="border-b-0">
-                <AccordionTrigger class="py-2 hover:no-underline hover:text-primary text-muted-foreground px-3 rounded-lg hover:bg-muted/50">
-                  <div class="flex items-center gap-3">
-                    <Settings class="h-4 w-4" />
-                    系统管理
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent class="pb-0 pl-4 space-y-1 mt-1">
-                  <router-link to="/system/user" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/system/user') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <User class="h-4 w-4" /> 用户管理
-                  </router-link>
-                  <router-link to="/system/role" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/system/role') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <Shield class="h-4 w-4" /> 角色管理
-                  </router-link>
-                  <router-link to="/system/menu" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/system/menu') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <Menu class="h-4 w-4" /> 菜单管理
-                  </router-link>
-                  <router-link to="/system/dept" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/system/dept') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <Network class="h-4 w-4" /> 部门管理
-                  </router-link>
-                  <router-link to="/system/post" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/system/post') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <Briefcase class="h-4 w-4" /> 岗位管理
-                  </router-link>
-                  <router-link to="/system/dict" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/system/dict') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <Book class="h-4 w-4" /> 字典管理
-                  </router-link>
-                  <router-link to="/system/config" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/system/config') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <Settings class="h-4 w-4" /> 参数管理
-                  </router-link>
-                  <router-link to="/system/setting" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/system/setting') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <Settings2 class="h-4 w-4" /> 系统设置
-                  </router-link>
-                  <router-link to="/system/notice" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/system/notice') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <Bell class="h-4 w-4" /> 通知公告
-                  </router-link>
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="monitor" class="border-b-0">
-                <AccordionTrigger class="py-2 hover:no-underline hover:text-primary text-muted-foreground px-3 rounded-lg hover:bg-muted/50">
-                  <div class="flex items-center gap-3">
-                    <Monitor class="h-4 w-4" />
-                    系统监控
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent class="pb-0 pl-4 space-y-1 mt-1">
-                  <router-link to="/monitor/online" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/monitor/online') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <Users class="h-4 w-4" /> 在线用户
-                  </router-link>
-                  <router-link to="/monitor/job" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/monitor/job') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <Clock class="h-4 w-4" /> 定时任务
-                  </router-link>
-                  <router-link to="/monitor/server" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/monitor/server') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <Server class="h-4 w-4" /> 服务监控
-                  </router-link>
-                  <router-link to="/monitor/cache" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/monitor/cache') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <Database class="h-4 w-4" /> 缓存监控
-                  </router-link>
-                  <router-link to="/monitor/druid" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/monitor/druid') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <Activity class="h-4 w-4" /> 连接池监控
-                  </router-link>
-                   <router-link to="/monitor/operlog" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/monitor/operlog') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <FileText class="h-4 w-4" /> 操作日志
-                  </router-link>
-                  <router-link to="/monitor/logininfor" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/monitor/logininfor') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <LogIn class="h-4 w-4" /> 登录日志
-                  </router-link>
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="tool" class="border-b-0">
-                <AccordionTrigger class="py-2 hover:no-underline hover:text-primary text-muted-foreground px-3 rounded-lg hover:bg-muted/50">
-                  <div class="flex items-center gap-3">
-                    <PenTool class="h-4 w-4" />
-                    系统工具
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent class="pb-0 pl-4 space-y-1 mt-1">
-                  <router-link to="/tool/build" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/tool/build') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <LayoutIcon class="h-4 w-4" /> 表单构建
-                  </router-link>
-                  <router-link to="/tool/gen" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/tool/gen') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <Code class="h-4 w-4" /> 代码生成
-                  </router-link>
-                  <router-link to="/tool/swagger" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/tool/swagger') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                    <Link class="h-4 w-4" /> 系统接口
-                  </router-link>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+            <!-- 动态菜单 -->
+            <DynamicMenu />
           </div>
           <!-- Collapsed Icons for Modules (Simplified) -->
           <div v-else class="flex flex-col gap-4 items-center">

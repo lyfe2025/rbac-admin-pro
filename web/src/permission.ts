@@ -1,5 +1,6 @@
 import router from './router'
 import { useUserStore } from './stores/modules/user'
+import { useMenuStore } from './stores/modules/menu'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 
@@ -20,6 +21,19 @@ router.beforeEach(async (to, _from, next) => {
     } else {
       const hasRoles = userStore.roles && userStore.roles.length > 0
       if (hasRoles) {
+        // 已有角色信息,确保菜单已加载
+        const menuStore = useMenuStore()
+        if (menuStore.menuList.length === 0) {
+          try {
+            await menuStore.fetchMenus()
+            // 路由已动态添加,需要重新导航
+            next({ ...to, replace: true })
+            return
+          } catch (error) {
+            console.error('加载菜单失败:', error)
+          }
+        }
+        
         const requiredRoles = (to.meta && (to.meta as any).roles) as string[] | undefined
         if (requiredRoles && !requiredRoles.some(r => userStore.roles.includes(r))) {
           next('/403')
@@ -37,23 +51,13 @@ router.beforeEach(async (to, _from, next) => {
         try {
           // 获取用户信息
           await userStore.getInfo()
-          // 这里后续需要添加生成动态路由的逻辑
-          // const accessRoutes = await permissionStore.generateRoutes(userStore.roles)
-          // accessRoutes.forEach(route => router.addRoute(route))
-          // next({ ...to, replace: true })
-          const requiredRoles = (to.meta && (to.meta as any).roles) as string[] | undefined
-          if (requiredRoles && !requiredRoles.some(r => userStore.roles.includes(r))) {
-            next('/403')
-            NProgress.done()
-            return
-          }
-          const requiredPerms = (to.meta && (to.meta as any).perms) as string[] | undefined
-          if (requiredPerms && !requiredPerms.some(p => userStore.permissions.includes(p) || userStore.permissions.includes('*:*:*'))) {
-            next('/403')
-            NProgress.done()
-            return
-          }
-          next()
+          
+          // 获取动态菜单
+          const menuStore = useMenuStore()
+          await menuStore.fetchMenus()
+          
+          // 路由已动态添加,需要重新导航
+          next({ ...to, replace: true })
         } catch (error) {
           await userStore.logout()
           next(`/login?redirect=${to.path}`)

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, h } from 'vue'
 import {
   Table,
   TableBody,
@@ -40,7 +40,7 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/components/ui/toast/use-toast'
-import { Trash2, Plus, RefreshCw, Search, Edit } from 'lucide-vue-next'
+import { Trash2, Plus, RefreshCw, Search, Edit, Loader2, ChevronRight, ChevronDown } from 'lucide-vue-next'
 import TablePagination from '@/components/common/TablePagination.vue'
 import { formatDate } from '@/utils/format'
 import { listRole, getRole, delRole, addRole, updateRole, changeRoleStatus } from '@/api/system/role'
@@ -91,10 +91,39 @@ async function getList() {
   }
 }
 
+// 将扁平菜单列表转换为树形结构
+function buildMenuTree(flatList: SysMenu[]): SysMenu[] {
+  const map = new Map<string, SysMenu>()
+  const roots: SysMenu[] = []
+  
+  // 先创建所有节点的映射,并添加 children 数组
+  flatList.forEach(item => {
+    map.set(item.menuId, { ...item, children: [] })
+  })
+  
+  // 构建树形结构
+  flatList.forEach(item => {
+    const node = map.get(item.menuId)!
+    if (item.parentId === null || item.parentId === '0') {
+      // 根节点
+      roots.push(node)
+    } else {
+      // 子节点,添加到父节点的 children 中
+      const parent = map.get(item.parentId)
+      if (parent) {
+        parent.children!.push(node)
+      }
+    }
+  })
+  
+  return roots
+}
+
 async function getMenuTree() {
   if (menuList.value.length > 0) return
   const res = await listMenu({})
-  menuList.value = res.data
+  // 将扁平列表转换为树形结构
+  menuList.value = buildMenuTree(res.data)
 }
 
 // Search Operations
@@ -123,9 +152,25 @@ async function handleUpdate(row: SysRole) {
   isEdit.value = true
   const roleId = row.roleId
   await getMenuTree()
-  const res = await getRole(roleId)
-  Object.assign(form, res.data)
-  showDialog.value = true
+  try {
+    // getRole 已经在 API 层做了 .then(res => res.data),所以这里直接使用返回值
+    const roleData = await getRole(roleId)
+    if (roleData) {
+      // 将后端返回的数据赋值给表单,确保 menuIds 是字符串数组
+      Object.assign(form, {
+        ...roleData,
+        menuIds: (roleData.menuIds || []).map((id: any) => String(id))
+      })
+    }
+    showDialog.value = true
+  } catch (error) {
+    console.error('获取角色详情失败:', error)
+    toast({ 
+      title: "获取失败", 
+      description: "无法获取角色详情",
+      variant: "destructive"
+    })
+  }
 }
 
 async function handleDelete(row: SysRole) {
@@ -199,36 +244,44 @@ function resetForm() {
 
 // Simple recursive component for menu tree checklist
 // In real project, use a Tree component with checkbox support
-const MenuTreeItem = {
+const MenuTreeItem: any = {
   name: 'MenuTreeItem',
-  props: ['menu', 'modelValue', 'checkStrictly'],
+  props: ['menu', 'modelValue', 'checkStrictly', 'level'],
   emits: ['update:modelValue'],
-  components: { Checkbox },
   setup(props: any, { emit }: any) {
     const isChecked = computed(() => props.modelValue.includes(props.menu.menuId))
+    const currentLevel = props.level || 0
+    const isExpanded = ref(false) // 默认收起
+    const hasChildren = computed(() => props.menu.children && props.menu.children.length > 0)
     
-    function toggle(checked: boolean) {
+    function toggleExpand() {
+      isExpanded.value = !isExpanded.value
+    }
+    
+    function toggle(checked: boolean | 'indeterminate') {
+      if (checked === 'indeterminate') return
+      
       let newIds = [...props.modelValue]
       if (checked) {
         if (!newIds.includes(props.menu.menuId)) newIds.push(props.menu.menuId)
-        // Select children if strictly is false
-        if (!props.checkStrictly && props.menu.children) {
+        // Select children if checkStrictly is true (联动开启)
+        if (props.checkStrictly && hasChildren.value) {
            const addChildren = (nodes: any[]) => {
              nodes.forEach(n => {
                if (!newIds.includes(n.menuId)) newIds.push(n.menuId)
-               if (n.children) addChildren(n.children)
+               if (n.children && n.children.length > 0) addChildren(n.children)
              })
            }
            addChildren(props.menu.children)
         }
       } else {
         newIds = newIds.filter((id: string) => id !== props.menu.menuId)
-        // Deselect children if strictly is false
-        if (!props.checkStrictly && props.menu.children) {
+        // Deselect children if checkStrictly is true (联动开启)
+        if (props.checkStrictly && hasChildren.value) {
            const removeChildren = (nodes: any[]) => {
              nodes.forEach(n => {
                newIds = newIds.filter((id: string) => id !== n.menuId)
-               if (n.children) removeChildren(n.children)
+               if (n.children && n.children.length > 0) removeChildren(n.children)
              })
            }
            removeChildren(props.menu.children)
@@ -237,26 +290,46 @@ const MenuTreeItem = {
       emit('update:modelValue', newIds)
     }
 
-    return { isChecked, toggle }
-  },
-  template: `
-    <div class="pl-4 py-1">
-      <div class="flex items-center gap-2">
-        <Checkbox :model-value="isChecked" @update:model-value="toggle" />
-        <span class="text-sm">{{ menu.menuName }}</span>
-      </div>
-      <div v-if="menu.children && menu.children.length" class="border-l ml-2">
-        <MenuTreeItem 
-          v-for="child in menu.children" 
-          :key="child.menuId" 
-          :menu="child" 
-          :modelValue="modelValue"
-          :checkStrictly="checkStrictly"
-          @update:modelValue="$emit('update:modelValue', $event)"
-        />
-      </div>
-    </div>
-  `
+    return () => h('div', { class: 'py-1' }, [
+      h('div', { 
+        class: 'flex items-center gap-1',
+        style: { 'padding-left': `${currentLevel * 24}px` }
+      }, [
+        // 展开/收起图标
+        hasChildren.value
+          ? h('button', {
+              class: 'w-4 h-4 flex items-center justify-center hover:bg-accent rounded transition-colors',
+              onClick: (e: Event) => {
+                e.stopPropagation()
+                toggleExpand()
+              }
+            }, [
+              h(isExpanded.value ? ChevronDown : ChevronRight, { class: 'w-3 h-3' })
+            ])
+          : h('span', { class: 'w-4' }), // 占位符保持对齐
+        h(Checkbox, {
+          modelValue: isChecked.value,
+          'onUpdate:modelValue': toggle
+        }),
+        h('span', { class: 'text-sm' }, props.menu.menuName)
+      ]),
+      // 子节点(仅在展开时显示)
+      hasChildren.value && isExpanded.value
+        ? h('div', {}, 
+            props.menu.children.map((child: any) =>
+              h(MenuTreeItem, {
+                key: child.menuId,
+                menu: child,
+                modelValue: props.modelValue,
+                checkStrictly: props.checkStrictly,
+                level: currentLevel + 1,
+                'onUpdate:modelValue': (val: any) => emit('update:modelValue', val)
+              })
+            )
+          )
+        : null
+    ])
+  }
 }
 
 onMounted(() => {
@@ -433,6 +506,7 @@ onMounted(() => {
                 :menu="menu" 
                 v-model="form.menuIds"
                 :checkStrictly="form.menuCheckStrictly"
+                :level="0"
               />
             </div>
           </div>

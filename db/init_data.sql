@@ -76,35 +76,49 @@ FROM sys_dept WHERE dept_name = '华东分公司' AND del_flag = '0'
 ON CONFLICT DO NOTHING;
 
 
--- 2. 初始化角色数据
-INSERT INTO sys_role (role_name, role_key, role_sort, status, del_flag, create_time)
+-- 2. 初始化角色数据(所有角色启用状态)
+INSERT INTO sys_role (role_name, role_key, role_sort, status, data_scope, menu_check_strictly, dept_check_strictly, del_flag, remark, create_time)
 VALUES 
-  ('超级管理员', 'admin', 1, '0', '0', NOW()),
-  ('部门管理员', 'dept_admin', 2, '0', '0', NOW()),
-  ('普通管理员', 'common', 3, '0', '0', NOW())
+  ('超级管理员', 'admin', 1, '0', '1', true, true, '0', '拥有系统所有权限', NOW()),
+  ('系统管理员', 'system_admin', 2, '0', '2', true, true, '0', '负责系统管理模块', NOW()),
+  ('监控管理员', 'monitor_admin', 3, '0', '1', true, true, '0', '负责系统监控模块', NOW()),
+  ('普通用户', 'common_user', 4, '0', '3', true, true, '0', '只读权限,无增删改权限', NOW())
 ON CONFLICT DO NOTHING;
 
 
 -- 3. 初始化用户数据
 -- 注意：这里的密码是 bcrypt 加密后的 '123456'，salt rounds = 10
--- 实际使用时建议通过 Prisma seed.ts 或应用程序创建用户以确保密码正确加密
-INSERT INTO sys_user (user_name, nick_name, password, status, dept_id, del_flag, create_time)
-SELECT 'admin', '超级管理员', 
+INSERT INTO sys_user (user_name, nick_name, email, phonenumber, sex, password, status, dept_id, del_flag, remark, create_time)
+SELECT 'admin', '超级管理员', 'admin@example.com', '13800000000', '0',
   '$2b$10$RpAQ6bSxvyhkD9FOJOf7HeBVwUZAAdH955eMiEyckZ8DgWyIJJXhi', -- 123456
-  '0', dept_id, '0', NOW()
+  '0', dept_id, '0', '系统超级管理员账号', NOW()
 FROM sys_dept WHERE dept_name = '总公司' AND del_flag = '0'
 ON CONFLICT (user_name) WHERE del_flag = '0' DO NOTHING;
 
--- 注释掉测试用户,生产环境不需要
--- INSERT INTO sys_user (user_name, nick_name, password, status, dept_id, del_flag, create_time)
--- SELECT 'test', '测试管理员',
---   '$2b$10$RpAQ6bSxvyhkD9FOJOf7HeBVwUZAAdH955eMiEyckZ8DgWyIJJXhi', -- 123456
---   '0', dept_id, '0', NOW()
--- FROM sys_dept WHERE dept_name = '技术部' AND del_flag = '0'
--- ON CONFLICT (user_name) WHERE del_flag = '0' DO NOTHING;
+INSERT INTO sys_user (user_name, nick_name, email, phonenumber, sex, password, status, dept_id, del_flag, remark, create_time)
+SELECT 'system_admin', '系统管理员', 'system@example.com', '13800000001', '0',
+  '$2b$10$RpAQ6bSxvyhkD9FOJOf7HeBVwUZAAdH955eMiEyckZ8DgWyIJJXhi', -- 123456
+  '0', dept_id, '0', '负责系统管理', NOW()
+FROM sys_dept WHERE dept_name = '技术部' AND del_flag = '0'
+ON CONFLICT (user_name) WHERE del_flag = '0' DO NOTHING;
+
+INSERT INTO sys_user (user_name, nick_name, email, phonenumber, sex, password, status, dept_id, del_flag, remark, create_time)
+SELECT 'monitor_admin', '监控管理员', 'monitor@example.com', '13800000002', '1',
+  '$2b$10$RpAQ6bSxvyhkD9FOJOf7HeBVwUZAAdH955eMiEyckZ8DgWyIJJXhi', -- 123456
+  '0', dept_id, '0', '负责系统监控', NOW()
+FROM sys_dept WHERE dept_name = '研发一部' AND del_flag = '0'
+ON CONFLICT (user_name) WHERE del_flag = '0' DO NOTHING;
+
+INSERT INTO sys_user (user_name, nick_name, email, phonenumber, sex, password, status, dept_id, del_flag, remark, create_time)
+SELECT 'user', '普通用户', 'user@example.com', '13800000003', '1',
+  '$2b$10$RpAQ6bSxvyhkD9FOJOf7HeBVwUZAAdH955eMiEyckZ8DgWyIJJXhi', -- 123456
+  '0', dept_id, '0', '普通用户账号', NOW()
+FROM sys_dept WHERE dept_name = '测试一部' AND del_flag = '0'
+ON CONFLICT (user_name) WHERE del_flag = '0' DO NOTHING;
 
 
 -- 4. 绑定用户角色
+-- 4.1 超级管理员
 INSERT INTO sys_user_role (user_id, role_id)
 SELECT u.user_id, r.role_id
 FROM sys_user u, sys_role r
@@ -112,13 +126,29 @@ WHERE u.user_name = 'admin' AND u.del_flag = '0'
   AND r.role_key = 'admin' AND r.del_flag = '0'
 ON CONFLICT DO NOTHING;
 
--- 测试用户角色绑定(已注释)
--- INSERT INTO sys_user_role (user_id, role_id)
--- SELECT u.user_id, r.role_id
--- FROM sys_user u, sys_role r
--- WHERE u.user_name = 'test' AND u.del_flag = '0'
---   AND r.role_key = 'common' AND r.del_flag = '0'
--- ON CONFLICT DO NOTHING;
+-- 4.2 系统管理员
+INSERT INTO sys_user_role (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM sys_user u, sys_role r
+WHERE u.user_name = 'system_admin' AND u.del_flag = '0'
+  AND r.role_key = 'system_admin' AND r.del_flag = '0'
+ON CONFLICT DO NOTHING;
+
+-- 4.3 监控管理员
+INSERT INTO sys_user_role (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM sys_user u, sys_role r
+WHERE u.user_name = 'monitor_admin' AND u.del_flag = '0'
+  AND r.role_key = 'monitor_admin' AND r.del_flag = '0'
+ON CONFLICT DO NOTHING;
+
+-- 4.4 普通用户
+INSERT INTO sys_user_role (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM sys_user u, sys_role r
+WHERE u.user_name = 'user' AND u.del_flag = '0'
+  AND r.role_key = 'common_user' AND r.del_flag = '0'
+ON CONFLICT DO NOTHING;
 
 
 -- 5. 初始化岗位数据
@@ -134,6 +164,18 @@ INSERT INTO sys_user_post (user_id, post_id)
 SELECT u.user_id, p.post_id
 FROM sys_user u, sys_post p
 WHERE u.user_name = 'admin' AND u.del_flag = '0' AND p.post_code = 'dev'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO sys_user_post (user_id, post_id)
+SELECT u.user_id, p.post_id
+FROM sys_user u, sys_post p
+WHERE u.user_name = 'system_admin' AND u.del_flag = '0' AND p.post_code = 'dev'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO sys_user_post (user_id, post_id)
+SELECT u.user_id, p.post_id
+FROM sys_user u, sys_post p
+WHERE u.user_name = 'monitor_admin' AND u.del_flag = '0' AND p.post_code = 'dev'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_user_post (user_id, post_id)
@@ -522,11 +564,66 @@ FROM sys_menu WHERE path = 'online' AND parent_id = (SELECT menu_id FROM sys_men
 ON CONFLICT DO NOTHING;
 
 
--- 14. 为超级管理员角色授予所有菜单权限
+-- 14. 为不同角色分配菜单权限
+-- 14.1 超级管理员 - 拥有所有权限
 INSERT INTO sys_role_menu (role_id, menu_id)
 SELECT r.role_id, m.menu_id
 FROM sys_role r, sys_menu m
 WHERE r.role_key = 'admin' AND r.del_flag = '0'
+ON CONFLICT DO NOTHING;
+
+-- 14.2 系统管理员 - 拥有系统管理模块的所有权限
+INSERT INTO sys_role_menu (role_id, menu_id)
+SELECT r.role_id, m.menu_id
+FROM sys_role r, sys_menu m
+WHERE r.role_key = 'system_admin' AND r.del_flag = '0'
+  AND (
+    -- 系统管理目录
+    (m.path = 'system' AND m.parent_id IS NULL)
+    -- 系统管理下的所有菜单和按钮
+    OR m.parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
+    OR m.parent_id IN (
+      SELECT menu_id FROM sys_menu 
+      WHERE parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
+    )
+  )
+ON CONFLICT DO NOTHING;
+
+-- 14.3 监控管理员 - 拥有系统监控模块的所有权限
+INSERT INTO sys_role_menu (role_id, menu_id)
+SELECT r.role_id, m.menu_id
+FROM sys_role r, sys_menu m
+WHERE r.role_key = 'monitor_admin' AND r.del_flag = '0'
+  AND (
+    -- 系统监控目录
+    (m.path = 'monitor' AND m.parent_id IS NULL)
+    -- 系统监控下的所有菜单和按钮
+    OR m.parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
+    OR m.parent_id IN (
+      SELECT menu_id FROM sys_menu 
+      WHERE parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
+    )
+    -- 系统工具(接口文档)
+    OR (m.path = 'tool' AND m.parent_id IS NULL)
+    OR m.path = 'swagger'
+  )
+ON CONFLICT DO NOTHING;
+
+-- 14.4 普通用户 - 只有查看权限,无增删改权限
+INSERT INTO sys_role_menu (role_id, menu_id)
+SELECT r.role_id, m.menu_id
+FROM sys_role r, sys_menu m
+WHERE r.role_key = 'common_user' AND r.del_flag = '0'
+  AND (
+    -- 系统管理目录(只读)
+    (m.path = 'system' AND m.parent_id IS NULL)
+    -- 系统管理下的菜单(不包括按钮)
+    OR (m.parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL) AND m.menu_type = 'C')
+    -- 系统监控目录(只读)
+    OR (m.path = 'monitor' AND m.parent_id IS NULL)
+    -- 系统监控下的菜单(不包括按钮)
+    OR (m.parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL) AND m.menu_type = 'C')
+  )
 ON CONFLICT DO NOTHING;
 
 
@@ -542,19 +639,26 @@ BEGIN
   RAISE NOTICE '==============================================';
   RAISE NOTICE '初始化数据导入完成！';
   RAISE NOTICE '==============================================';
-  RAISE NOTICE '默认管理员账号：admin / 123456';
-  RAISE NOTICE '默认普通用户：user / 123456';
+  RAISE NOTICE '默认账号(密码均为 123456)：';
+  RAISE NOTICE '- admin - 超级管理员';
+  RAISE NOTICE '- system_admin - 系统管理员';
+  RAISE NOTICE '- monitor_admin - 监控管理员';
+  RAISE NOTICE '- user - 普通用户';
   RAISE NOTICE '==============================================';
   RAISE NOTICE '数据统计：';
   RAISE NOTICE '- 部门：9 个';
-  RAISE NOTICE '- 角色：2 个';
-  RAISE NOTICE '- 用户：2 个';
+  RAISE NOTICE '- 角色：4 个(全部启用)';
+  RAISE NOTICE '- 用户：4 个';
+  RAISE NOTICE '  * admin - 超级管理员(所有权限)';
+  RAISE NOTICE '  * system_admin - 系统管理员(系统管理模块)';
+  RAISE NOTICE '  * monitor_admin - 监控管理员(系统监控模块)';
+  RAISE NOTICE '  * user - 普通用户(只读权限)';
   RAISE NOTICE '- 岗位：2 个';
   RAISE NOTICE '- 菜单：% 个', menu_count;
   RAISE NOTICE '- 超级管理员权限：% 个菜单', role_menu_count;
   RAISE NOTICE '- 字典类型：10 个';
   RAISE NOTICE '- 字典数据：32 条';
-  RAISE NOTICE '- 系统配置：2 条';
+  RAISE NOTICE '- 系统配置：2 条'
   RAISE NOTICE '==============================================';
   RAISE NOTICE '注意事项：';
   RAISE NOTICE '1. 生产环境请立即修改默认密码';

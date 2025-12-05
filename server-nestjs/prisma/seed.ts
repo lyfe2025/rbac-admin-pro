@@ -71,13 +71,13 @@ async function main() {
     parentId: rootDept.deptId,
     leader: '李工',
   });
-  await ensureDept({
+  const devDept = await ensureDept({
     deptName: '研发一部',
     orderNum: 2,
     parentId: techDept.deptId,
     leader: '王工',
   });
-  await ensureDept({
+  const testDept = await ensureDept({
     deptName: '测试一部',
     orderNum: 3,
     parentId: techDept.deptId,
@@ -115,12 +115,16 @@ async function main() {
   });
   console.log('Initialized department hierarchy');
 
-  // 2. Init Roles (管理后台角色体系 - 幂等)
+  // 2. Init Roles (管理后台角色体系 - 幂等,所有角色启用状态)
   const ensureRole = async (data: {
     roleKey: string;
     roleName: string;
     roleSort: number;
     status?: '0' | '1';
+    dataScope?: '1' | '2' | '3' | '4';
+    menuCheckStrictly?: boolean;
+    deptCheckStrictly?: boolean;
+    remark?: string;
   }) => {
     const existed = await prisma.sysRole.findFirst({
       where: { roleKey: data.roleKey, delFlag: '0' },
@@ -132,6 +136,10 @@ async function main() {
           roleName: data.roleName,
           roleSort: data.roleSort,
           status: data.status ?? '0',
+          dataScope: data.dataScope ?? '1',
+          menuCheckStrictly: data.menuCheckStrictly ?? true,
+          deptCheckStrictly: data.deptCheckStrictly ?? true,
+          remark: data.remark,
         },
       });
     }
@@ -141,6 +149,10 @@ async function main() {
         roleKey: data.roleKey,
         roleSort: data.roleSort,
         status: data.status ?? '0',
+        dataScope: data.dataScope ?? '1',
+        menuCheckStrictly: data.menuCheckStrictly ?? true,
+        deptCheckStrictly: data.deptCheckStrictly ?? true,
+        remark: data.remark,
       },
     });
   };
@@ -149,19 +161,37 @@ async function main() {
     roleKey: 'admin',
     roleName: '超级管理员',
     roleSort: 1,
+    status: '0',
+    dataScope: '1',
+    remark: '拥有系统所有权限',
   });
   console.log(`Ensured admin role with id: ${adminRole.roleId}`);
 
-  await ensureRole({
-    roleKey: 'dept_admin',
-    roleName: '部门管理员',
+  const systemAdminRole = await ensureRole({
+    roleKey: 'system_admin',
+    roleName: '系统管理员',
     roleSort: 2,
+    status: '0',
+    dataScope: '2',
+    remark: '负责系统管理模块',
   });
 
-  await ensureRole({
-    roleKey: 'common',
-    roleName: '普通管理员',
+  const monitorAdminRole = await ensureRole({
+    roleKey: 'monitor_admin',
+    roleName: '监控管理员',
     roleSort: 3,
+    status: '0',
+    dataScope: '1',
+    remark: '负责系统监控模块',
+  });
+
+  const commonUserRole = await ensureRole({
+    roleKey: 'common_user',
+    roleName: '普通用户',
+    roleSort: 4,
+    status: '0',
+    dataScope: '3',
+    remark: '只读权限,无增删改权限',
   });
   console.log('Ensured all admin roles');
 
@@ -172,6 +202,10 @@ async function main() {
     password: string;
     deptId: bigint;
     status?: '0' | '1';
+    email?: string;
+    phonenumber?: string;
+    sex?: '0' | '1' | '2';
+    remark?: string;
   }) => {
     const existed = await prisma.sysUser.findFirst({
       where: { userName: data.userName, delFlag: '0' },
@@ -184,6 +218,10 @@ async function main() {
           nickName: data.nickName,
           deptId: data.deptId,
           status: data.status ?? '0',
+          email: data.email,
+          phonenumber: data.phonenumber,
+          sex: data.sex,
+          remark: data.remark,
         },
       });
     }
@@ -194,38 +232,80 @@ async function main() {
         password: data.password,
         status: data.status ?? '0',
         deptId: data.deptId,
+        email: data.email,
+        phonenumber: data.phonenumber,
+        sex: data.sex,
+        remark: data.remark,
       },
     });
   };
 
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash('123456', salt);
-  const user = await ensureUser({
+  
+  const adminUser = await ensureUser({
     userName: 'admin',
     nickName: '超级管理员',
     password: hashedPassword,
     deptId: rootDept.deptId,
+    email: 'admin@example.com',
+    phonenumber: '13800000000',
+    sex: '0',
+    remark: '系统超级管理员账号',
   });
-  console.log(`Ensured user with id: ${user.userId}`);
+  console.log(`Ensured admin user with id: ${adminUser.userId}`);
+
+  const systemAdminUser = await ensureUser({
+    userName: 'system_admin',
+    nickName: '系统管理员',
+    password: hashedPassword,
+    deptId: techDept.deptId,
+    email: 'system@example.com',
+    phonenumber: '13800000001',
+    sex: '0',
+    remark: '负责系统管理',
+  });
+
+  const monitorAdminUser = await ensureUser({
+    userName: 'monitor_admin',
+    nickName: '监控管理员',
+    password: hashedPassword,
+    deptId: devDept.deptId,
+    email: 'monitor@example.com',
+    phonenumber: '13800000002',
+    sex: '1',
+    remark: '负责系统监控',
+  });
+
+  const commonUser = await ensureUser({
+    userName: 'user',
+    nickName: '普通用户',
+    password: hashedPassword,
+    deptId: testDept.deptId,
+    email: 'user@example.com',
+    phonenumber: '13800000003',
+    sex: '1',
+    remark: '普通用户账号',
+  });
+  console.log('Ensured all users');
 
   // 4. Link User and Role (幂等)
-  const existedUserRole = await prisma.sysUserRole.findFirst({
-    where: {
-      userId: user.userId,
-      roleId: adminRole.roleId,
-    },
-  });
-  if (!existedUserRole) {
-    await prisma.sysUserRole.create({
-      data: {
-        userId: user.userId,
-        roleId: adminRole.roleId,
-      },
+  const ensureUserRole = async (userId: bigint, roleId: bigint) => {
+    const existed = await prisma.sysUserRole.findFirst({
+      where: { userId, roleId },
     });
-    console.log('Linked user and role');
-  } else {
-    console.log('User-role link already exists');
-  }
+    if (!existed) {
+      await prisma.sysUserRole.create({
+        data: { userId, roleId },
+      });
+    }
+  };
+
+  await ensureUserRole(adminUser.userId, adminRole.roleId);
+  await ensureUserRole(systemAdminUser.userId, systemAdminRole.roleId);
+  await ensureUserRole(monitorAdminUser.userId, monitorAdminRole.roleId);
+  await ensureUserRole(commonUser.userId, commonUserRole.roleId);
+  console.log('Linked all users and roles');
 
   // 5. 初始化基础菜单（存在则跳过，避免重复）
   const ensureMenu = async (data: {
@@ -814,16 +894,83 @@ async function main() {
     });
   }
 
-  // 6. 为超级管理员建立角色-菜单关联（授予全部菜单权限）
-  const allMenus = await prisma.sysMenu.findMany({ select: { menuId: true } });
+  // 6. 为不同角色分配菜单权限
+  const allMenus = await prisma.sysMenu.findMany({ 
+    select: { menuId: true, path: true, menuType: true, parentId: true } 
+  });
+  
   if (allMenus.length > 0) {
+    // 6.1 超级管理员 - 拥有所有权限
     await prisma.sysRoleMenu.createMany({
       data: allMenus.map((m) => ({ roleId: adminRole.roleId, menuId: m.menuId })),
       skipDuplicates: true,
     });
     console.log(`Linked role(admin) with ${allMenus.length} menus`);
+
+    // 6.2 系统管理员 - 拥有系统管理模块的所有权限
+    const systemMenu = allMenus.find(m => m.path === 'system' && !m.parentId);
+    if (systemMenu) {
+      const systemMenuIds = allMenus.filter(m => 
+        m.menuId === systemMenu.menuId || 
+        m.parentId === systemMenu.menuId ||
+        allMenus.some(parent => parent.menuId === m.parentId && parent.parentId === systemMenu.menuId)
+      ).map(m => m.menuId);
+      
+      await prisma.sysRoleMenu.createMany({
+        data: systemMenuIds.map(menuId => ({ roleId: systemAdminRole.roleId, menuId })),
+        skipDuplicates: true,
+      });
+      console.log(`Linked role(system_admin) with ${systemMenuIds.length} menus`);
+    }
+
+    // 6.3 监控管理员 - 拥有系统监控模块的所有权限
+    const monitorMenu = allMenus.find(m => m.path === 'monitor' && !m.parentId);
+    const toolMenu = allMenus.find(m => m.path === 'tool' && !m.parentId);
+    const swaggerMenu = allMenus.find(m => m.path === 'swagger');
+    
+    if (monitorMenu) {
+      const monitorMenuIds = allMenus.filter(m => 
+        m.menuId === monitorMenu.menuId || 
+        m.parentId === monitorMenu.menuId ||
+        allMenus.some(parent => parent.menuId === m.parentId && parent.parentId === monitorMenu.menuId)
+      ).map(m => m.menuId);
+      
+      // 添加工具菜单和接口文档
+      if (toolMenu) monitorMenuIds.push(toolMenu.menuId);
+      if (swaggerMenu) monitorMenuIds.push(swaggerMenu.menuId);
+      
+      await prisma.sysRoleMenu.createMany({
+        data: monitorMenuIds.map(menuId => ({ roleId: monitorAdminRole.roleId, menuId })),
+        skipDuplicates: true,
+      });
+      console.log(`Linked role(monitor_admin) with ${monitorMenuIds.length} menus`);
+    }
+
+    // 6.4 普通用户 - 只有查看权限,无增删改权限(只分配C类型菜单,不分配F类型按钮)
+    const systemMenu2 = allMenus.find(m => m.path === 'system' && !m.parentId);
+    const monitorMenu2 = allMenus.find(m => m.path === 'monitor' && !m.parentId);
+    
+    const commonUserMenuIds: bigint[] = [];
+    if (systemMenu2) {
+      commonUserMenuIds.push(systemMenu2.menuId);
+      // 只添加系统管理下的C类型菜单
+      allMenus.filter(m => m.parentId === systemMenu2.menuId && m.menuType === 'C')
+        .forEach(m => commonUserMenuIds.push(m.menuId));
+    }
+    if (monitorMenu2) {
+      commonUserMenuIds.push(monitorMenu2.menuId);
+      // 只添加系统监控下的C类型菜单
+      allMenus.filter(m => m.parentId === monitorMenu2.menuId && m.menuType === 'C')
+        .forEach(m => commonUserMenuIds.push(m.menuId));
+    }
+    
+    await prisma.sysRoleMenu.createMany({
+      data: commonUserMenuIds.map(menuId => ({ roleId: commonUserRole.roleId, menuId })),
+      skipDuplicates: true,
+    });
+    console.log(`Linked role(common_user) with ${commonUserMenuIds.length} menus (read-only)`);
   } else {
-    console.log('No menus found to link with role(admin)');
+    console.log('No menus found to link with roles');
   }
 
   // 7. 初始化常用字典与配置（若不存在则创建）
@@ -1089,13 +1236,17 @@ async function main() {
   const pmPost = await prisma.sysPost.findFirst({
     where: { postCode: 'pm' },
   });
-  if (devPost) {
+  if (devPost && pmPost) {
     await prisma.sysUserPost.createMany({
-      data: [{ userId: user.userId, postId: devPost.postId }],
+      data: [
+        { userId: adminUser.userId, postId: devPost.postId },
+        { userId: systemAdminUser.userId, postId: devPost.postId },
+        { userId: monitorAdminUser.userId, postId: devPost.postId },
+        { userId: commonUser.userId, postId: pmPost.postId },
+      ],
       skipDuplicates: true,
     });
   }
-  // 岗位关联已移除,因为不再创建示例用户
 
   // 10. 公告样例
   const noticeExist = await prisma.sysNotice.findFirst({

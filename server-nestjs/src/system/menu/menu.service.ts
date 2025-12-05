@@ -224,7 +224,8 @@ export class MenuService {
         tree.push(newItem);
       }
     });
-    return tree;
+    // 按 orderNum 排序
+    return tree.sort((a, b) => (a.orderNum ?? 0) - (b.orderNum ?? 0));
   }
 
   /**

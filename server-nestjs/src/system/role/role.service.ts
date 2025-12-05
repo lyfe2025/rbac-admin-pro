@@ -53,14 +53,19 @@ export class RoleService {
    * 查询角色详情
    */
   async findOne(roleId: string) {
+    this.logger.log(`查询角色详情: ${roleId}`, 'RoleService');
+    
     const role = await this.prisma.sysRole.findUnique({
-      where: { roleId: BigInt(roleId) },
+      where: { roleId: BigInt(roleId), delFlag: '0' },
       include: {
         menus: true, // 关联查询 SysRoleMenu
       },
     });
 
-    if (!role) return null;
+    if (!role) {
+      this.logger.warn(`角色不存在: ${roleId}`, 'RoleService');
+      throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
+    }
 
     // 提取 menuIds
     const menuIds = role.menus.map((rm) => rm.menuId);
