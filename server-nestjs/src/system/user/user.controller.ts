@@ -16,6 +16,7 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
+import { Log, BusinessType } from '../../common/decorators/log.decorator';
 
 @ApiTags('用户管理')
 @ApiBearerAuth('JWT-auth')
@@ -34,6 +35,7 @@ export class UserController {
   }
 
   @Post()
+  @Log('用户管理', BusinessType.INSERT)
   @ApiOperation({ summary: '新增用户' })
   @ApiBody({ type: CreateUserDto })
   @ApiResponse({ status: 201, description: '创建成功' })
@@ -71,6 +73,7 @@ export class UserController {
   }
 
   @Put(':userId')
+  @Log('用户管理', BusinessType.UPDATE)
   @ApiOperation({ summary: '修改用户' })
   @ApiParam({ name: 'userId', description: '用户ID' })
   @ApiBody({ type: UpdateUserDto })
@@ -83,6 +86,7 @@ export class UserController {
   }
 
   @Delete(':userId')
+  @Log('用户管理', BusinessType.DELETE)
   @ApiOperation({ summary: '删除用户' })
   @ApiParam({ name: 'userId', description: '用户ID' })
   @ApiResponse({ status: 200, description: '删除成功' })

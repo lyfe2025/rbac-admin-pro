@@ -205,7 +205,7 @@ ${fields.map(f => {
     componentCode = `
               <div class="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                 <FormControl>
-                  <Checkbox :checked="componentField.value" @update:checked="componentField.onChange" />
+                  <Checkbox :model-value="componentField.value" @update:model-value="componentField.onChange" />
                 </FormControl>
                 <div class="space-y-1 leading-none">
                   <FormLabel>

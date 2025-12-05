@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import {
   Table,
   TableBody,
@@ -10,14 +11,6 @@ import {
 } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import {
   Dialog,
   DialogContent,
@@ -38,15 +31,6 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination'
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -57,12 +41,30 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/components/ui/toast/use-toast'
-import { MoreHorizontal, Plus, Search, FileDown, Trash2, Loader2, RefreshCw, Key } from 'lucide-vue-next'
+import { 
+  Plus, 
+  Search, 
+  FileDown, 
+  Trash2, 
+  Loader2, 
+  RefreshCw, 
+  Key, 
+  Eye,
+  CheckSquare,
+  XSquare,
+  Filter,
+  Edit
+} from 'lucide-vue-next'
 import { listUser, getUser, delUser, addUser, updateUser, resetUserPwd, changeUserStatus } from '@/api/system/user'
 import { listDeptTree } from '@/api/system/dept'
 import { listRole } from '@/api/system/role'
 import { listPost } from '@/api/system/post'
 import type { SysUser, SysDept, SysRole, SysPost } from '@/api/system/types'
+import DeptTreeSelect from '@/components/business/DeptTreeSelect.vue'
+import UserForm from '@/components/business/UserForm.vue'
+import UserDetailDialog from '@/components/business/UserDetailDialog.vue'
+import TablePagination from '@/components/common/TablePagination.vue'
+import { formatDate } from '@/utils/format'
 
 // State
 const loading = ref(true)
@@ -74,8 +76,17 @@ const queryParams = reactive({
   userName: '',
   phonenumber: '',
   status: undefined,
-  deptId: undefined
+  deptId: undefined,
+  roleId: undefined
 })
+
+// 高级搜索
+const showAdvancedSearch = ref(false)
+const selectedRows = ref<string[]>([])
+const selectAll = ref(false)
+
+// 计算属性:是否有选中的行
+const hasSelectedRows = computed(() => selectedRows.value.length > 0)
 
 const deptOptions = ref<any[]>([])
 const roleOptions = ref<SysRole[]>([])
@@ -83,9 +94,13 @@ const postOptions = ref<SysPost[]>([])
 
 const showDialog = ref(false)
 const showDeleteDialog = ref(false)
+const showDetailDialog = ref(false)
+const showBatchDeleteDialog = ref(false)
 const userToDelete = ref<SysUser | null>(null)
+const currentUser = ref<SysUser | null>(null)
 const isEdit = ref(false)
 const submitLoading = ref(false)
+const userFormRef = ref<InstanceType<typeof UserForm> | null>(null)
 
 // Form Data
 const form = reactive<Partial<SysUser>>({
@@ -104,6 +119,17 @@ const form = reactive<Partial<SysUser>>({
 })
 
 const { toast } = useToast()
+
+// 获取完整的头像URL
+function getAvatarUrl(avatar: string | undefined | null): string {
+  if (!avatar) return ''
+  // 如果已经是完整URL,直接返回
+  if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+    return avatar
+  }
+  // 如果是相对路径,拼接后端地址
+  return `${import.meta.env.VITE_API_URL}${avatar}`
+}
 
 // Fetch Data
 async function getList() {
@@ -133,7 +159,13 @@ function resetQuery() {
   queryParams.phonenumber = ''
   queryParams.status = undefined
   queryParams.deptId = undefined
+  queryParams.roleId = undefined
   handleQuery()
+}
+
+// 切换高级搜索
+function toggleAdvancedSearch() {
+  showAdvancedSearch.value = !showAdvancedSearch.value
 }
 
 // Add/Edit Operations
@@ -151,11 +183,13 @@ async function handleUpdate(row: SysUser) {
   resetForm()
   isEdit.value = true
   const userId = row.userId
+  
   const [userRes, roleRes, postRes] = await Promise.all([
     getUser(userId),
     listRole({}),
     listPost({})
   ])
+  
   Object.assign(form, userRes.data)
   form.postIds = userRes.postIds
   form.roleIds = userRes.roleIds
@@ -168,12 +202,8 @@ async function handleUpdate(row: SysUser) {
 }
 
 async function handleSubmit() {
-  if (!form.userName || !form.nickName) {
-    toast({
-      title: "验证失败",
-      description: "用户名和昵称不能为空",
-      variant: "destructive"
-    })
+  // 使用表单组件的验证方法
+  if (userFormRef.value && !userFormRef.value.validate()) {
     return
   }
 
@@ -189,11 +219,134 @@ async function handleSubmit() {
     showDialog.value = false
     getList()
   } catch (error) {
-    console.error('提交失败:', error)
-    // 错误已由请求拦截器处理,这里只需记录日志
+    // 错误已由请求拦截器处理
   } finally {
     submitLoading.value = false
   }
+}
+
+// 查看详情
+async function handleDetail(row: SysUser) {
+  // 获取完整的用户信息(包含角色和岗位)
+  const userRes = await getUser(row.userId)
+  currentUser.value = {
+    ...userRes.data,
+    roles: userRes.roles,
+    posts: userRes.posts,
+  } as any
+  showDetailDialog.value = true
+}
+
+// 批量删除
+function handleBatchDelete() {
+  if (selectedRows.value.length === 0) {
+    toast({
+      title: "提示",
+      description: "请选择要删除的用户",
+      variant: "destructive"
+    })
+    return
+  }
+  showBatchDeleteDialog.value = true
+}
+
+async function confirmBatchDelete() {
+  try {
+    // 逐个删除
+    for (const userId of selectedRows.value) {
+      await delUser([userId])
+    }
+    toast({ 
+      title: "删除成功", 
+      description: `已删除 ${selectedRows.value.length} 个用户` 
+    })
+    selectedRows.value = []
+    selectAll.value = false
+    getList()
+    showBatchDeleteDialog.value = false
+  } catch (error) {
+    // Error handled by interceptor
+  }
+}
+
+// 批量启用/停用
+const showBatchStatusDialog = ref(false)
+const batchStatusType = ref<'0' | '1'>('0')
+
+function handleBatchStatus(status: '0' | '1') {
+  if (selectedRows.value.length === 0) {
+    toast({
+      title: "提示",
+      description: "请选择要操作的用户",
+      variant: "destructive"
+    })
+    return
+  }
+  batchStatusType.value = status
+  showBatchStatusDialog.value = true
+}
+
+async function confirmBatchStatus() {
+  const status = batchStatusType.value
+  const text = status === '0' ? '启用' : '停用'
+  
+  try {
+    for (const userId of selectedRows.value) {
+      await changeUserStatus(userId, status)
+    }
+    toast({ 
+      title: "操作成功", 
+      description: `已${text} ${selectedRows.value.length} 个用户` 
+    })
+    selectedRows.value = []
+    selectAll.value = false
+    getList()
+    showBatchStatusDialog.value = false
+  } catch (error) {
+    // Error handled by interceptor
+  }
+}
+
+// 导出功能
+function handleExport() {
+  // 简单的 CSV 导出
+  const headers = ['用户编号', '用户名', '用户昵称', '部门', '手机号码', '邮箱', '状态', '创建时间']
+  const rows = userList.value.map(user => [
+    user.userId,
+    user.userName,
+    user.nickName,
+    user.dept?.deptName || '',
+    user.phonenumber,
+    user.email,
+    user.status === '0' ? '正常' : '停用',
+    user.createTime
+  ])
+  
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.join(','))
+  ].join('\n')
+  
+  const blob = new Blob([`\ufeff${csvContent}`], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = `用户列表_${new Date().getTime()}.csv`
+  link.click()
+  
+  toast({ title: "导出成功", description: "用户数据已导出" })
+}
+
+
+// 切换单个选择
+function toggleRowSelection(userId: string) {
+  const index = selectedRows.value.indexOf(userId)
+  if (index > -1) {
+    selectedRows.value.splice(index, 1)
+  } else {
+    selectedRows.value.push(userId)
+  }
+  // 更新全选状态
+  selectAll.value = selectedRows.value.length > 0 && selectedRows.value.length === userList.value.length
 }
 
 async function handleDelete(row: SysUser) {
@@ -213,24 +366,35 @@ async function confirmDelete() {
   }
 }
 
-async function handleResetPwd(row: SysUser) {
-  const password = prompt('请输入新密码', '123456')
-  if (password) {
-    await resetUserPwd(row.userId, password)
+// 重置密码
+const showResetPwdDialog = ref(false)
+const userToResetPwd = ref<SysUser | null>(null)
+const newPassword = ref('123456')
+
+function handleResetPwd(row: SysUser) {
+  userToResetPwd.value = row
+  newPassword.value = '123456'
+  showResetPwdDialog.value = true
+}
+
+async function confirmResetPwd() {
+  if (!userToResetPwd.value || !newPassword.value) return
+  try {
+    await resetUserPwd(userToResetPwd.value.userId, newPassword.value)
     toast({ title: "操作成功", description: "密码已重置" })
+    showResetPwdDialog.value = false
+  } catch (error) {
+    // Error handled by interceptor
   }
 }
 
 async function handleStatusChange(row: SysUser) {
-  const text = row.status === '0' ? '停用' : '启用'
-  if (confirm('确认要' + text + '用户"' + row.userName + '"吗？')) {
-    try {
-      await changeUserStatus(row.userId, row.status === '0' ? '1' : '0')
-      row.status = row.status === '0' ? '1' : '0'
-      toast({ title: "操作成功", description: "用户状态已变更" })
-    } catch {
-      // revert on error
-    }
+  try {
+    await changeUserStatus(row.userId, row.status === '0' ? '1' : '0')
+    row.status = row.status === '0' ? '1' : '0'
+    toast({ title: "操作成功", description: "用户状态已变更" })
+  } catch {
+    // revert on error
   }
 }
 
@@ -289,9 +453,32 @@ function toTreeDept(list: any[]): any[] {
   return roots
 }
 
-onMounted(() => {
+// 监听全选状态变化
+watch(selectAll, (newVal) => {
+  if (newVal) {
+    selectedRows.value = userList.value.map(u => u.userId)
+  } else {
+    selectedRows.value = []
+  }
+})
+
+const route = useRoute()
+
+onMounted(async () => {
   getList()
   getDeptTree()
+  // 加载角色列表用于高级搜索
+  const roleRes = await listRole({})
+  roleOptions.value = roleRes.rows
+  
+  // 检查URL参数,如果有edit参数则自动打开编辑对话框
+  const editUserId = route.query.edit as string
+  if (editUserId) {
+    const user = userList.value.find(u => u.userId === editUserId)
+    if (user) {
+      handleUpdate(user)
+    }
+  }
 })
 </script>
 
@@ -306,7 +493,34 @@ onMounted(() => {
         </p>
       </div>
       <div class="flex items-center gap-2">
-        <Button variant="outline">
+        <Button 
+          variant="outline" 
+          size="sm"
+          :disabled="!hasSelectedRows"
+          @click="handleBatchDelete"
+        >
+          <Trash2 class="mr-2 h-4 w-4" />
+          批量删除
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm"
+          :disabled="!hasSelectedRows"
+          @click="handleBatchStatus('0')"
+        >
+          <CheckSquare class="mr-2 h-4 w-4" />
+          批量启用
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm"
+          :disabled="!hasSelectedRows"
+          @click="handleBatchStatus('1')"
+        >
+          <XSquare class="mr-2 h-4 w-4" />
+          批量停用
+        </Button>
+        <Button variant="outline" @click="handleExport">
           <FileDown class="mr-2 h-4 w-4" />
           导出
         </Button>
@@ -318,59 +532,80 @@ onMounted(() => {
     </div>
 
     <!-- Filters -->
-    <div class="flex flex-wrap gap-4 items-center bg-background/95 p-4 border rounded-lg backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div class="flex items-center gap-2">
-        <span class="text-sm font-medium">用户名</span>
-        <Input 
-          v-model="queryParams.userName" 
-          placeholder="请输入用户名" 
-          class="w-[150px]"
-          @keyup.enter="handleQuery"
-        />
+    <div class="space-y-4">
+      <!-- 基础搜索 -->
+      <div class="flex flex-wrap gap-4 items-center bg-background/95 p-4 border rounded-lg backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-medium">用户名</span>
+          <Input 
+            v-model="queryParams.userName" 
+            placeholder="请输入用户名" 
+            class="w-[150px]"
+            @keyup.enter="handleQuery"
+          />
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-medium">手机号码</span>
+          <Input 
+            v-model="queryParams.phonenumber" 
+            placeholder="请输入手机号码" 
+            class="w-[150px]"
+            @keyup.enter="handleQuery"
+          />
+        </div>
+        <div class="flex gap-2 ml-auto">
+          <Button variant="outline" size="sm" @click="toggleAdvancedSearch">
+            <Filter class="w-4 h-4 mr-2" />
+            {{ showAdvancedSearch ? '收起' : '高级搜索' }}
+          </Button>
+          <Button @click="handleQuery">
+            <Search class="w-4 h-4 mr-2" />
+            搜索
+          </Button>
+          <Button variant="outline" @click="resetQuery">
+            <RefreshCw class="w-4 h-4 mr-2" />
+            重置
+          </Button>
+        </div>
       </div>
-      <div class="flex items-center gap-2">
-        <span class="text-sm font-medium">手机号码</span>
-        <Input 
-          v-model="queryParams.phonenumber" 
-          placeholder="请输入手机号码" 
-          class="w-[150px]"
-          @keyup.enter="handleQuery"
-        />
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="text-sm font-medium">状态</span>
-        <Select v-model="queryParams.status">
-          <SelectTrigger class="w-[120px]">
-            <SelectValue placeholder="请选择" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="0">正常</SelectItem>
-            <SelectItem value="1">停用</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="text-sm font-medium">部门</span>
-        <Select v-model="queryParams.deptId">
-           <SelectTrigger class="w-[180px]">
-            <SelectValue placeholder="请选择部门" />
-          </SelectTrigger>
-          <SelectContent>
-             <SelectItem v-for="dept in flattenedDepts" :key="dept.id" :value="dept.id">
-              {{ dept.label }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div class="flex gap-2 ml-auto">
-        <Button @click="handleQuery">
-          <Search class="w-4 h-4 mr-2" />
-          搜索
-        </Button>
-        <Button variant="outline" @click="resetQuery">
-          <RefreshCw class="w-4 h-4 mr-2" />
-          重置
-        </Button>
+
+      <!-- 高级搜索 -->
+      <div v-if="showAdvancedSearch" class="bg-background/95 p-4 border rounded-lg backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div class="grid grid-cols-3 gap-4">
+          <div class="grid gap-2">
+            <Label>状态</Label>
+            <Select v-model="queryParams.status">
+              <SelectTrigger>
+                <SelectValue placeholder="请选择状态" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">正常</SelectItem>
+                <SelectItem value="1">停用</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div class="grid gap-2">
+            <Label>部门</Label>
+            <DeptTreeSelect
+              v-model="queryParams.deptId"
+              :depts="deptOptions"
+              placeholder="请选择部门"
+            />
+          </div>
+          <div class="grid gap-2">
+            <Label>角色</Label>
+            <Select v-model="queryParams.roleId">
+              <SelectTrigger>
+                <SelectValue placeholder="请选择角色" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="role in roleOptions" :key="role.roleId" :value="role.roleId">
+                  {{ role.roleName }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -379,6 +614,11 @@ onMounted(() => {
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead class="w-[50px]">
+              <Checkbox 
+                v-model="selectAll"
+              />
+            </TableHead>
             <TableHead class="w-[100px]">用户编号</TableHead>
             <TableHead>用户名</TableHead>
             <TableHead>用户昵称</TableHead>
@@ -391,8 +631,22 @@ onMounted(() => {
         </TableHeader>
         <TableBody>
           <TableRow v-for="user in userList" :key="user.userId">
+            <TableCell>
+              <Checkbox 
+                :model-value="selectedRows.includes(user.userId)"
+                @update:model-value="() => toggleRowSelection(user.userId)"
+              />
+            </TableCell>
             <TableCell>{{ user.userId }}</TableCell>
-            <TableCell class="font-medium">{{ user.userName }}</TableCell>
+            <TableCell class="font-medium">
+              <div class="flex items-center gap-2">
+                <Avatar class="h-8 w-8">
+                  <AvatarImage :src="getAvatarUrl(user.avatar)" />
+                  <AvatarFallback>{{ user.nickName?.charAt(0) || 'U' }}</AvatarFallback>
+                </Avatar>
+                {{ user.userName }}
+              </div>
+            </TableCell>
             <TableCell>{{ user.nickName }}</TableCell>
             <TableCell>{{ user.dept?.deptName }}</TableCell>
             <TableCell>{{ user.phonenumber }}</TableCell>
@@ -403,36 +657,24 @@ onMounted(() => {
                 </Badge>
               </div>
             </TableCell>
-            <TableCell>{{ user.createTime }}</TableCell>
-            <TableCell class="text-right">
-              <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                  <Button variant="ghost" class="h-8 w-8 p-0">
-                    <span class="sr-only">Open menu</span>
-                    <MoreHorizontal class="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>操作</DropdownMenuLabel>
-                  <DropdownMenuItem @click="handleUpdate(user)">
-                    <RefreshCw class="mr-2 h-4 w-4" />
-                    修改
-                  </DropdownMenuItem>
-                  <DropdownMenuItem @click="handleResetPwd(user)">
-                    <Key class="mr-2 h-4 w-4" />
-                    重置密码
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem class="text-destructive" @click="handleDelete(user)">
-                    <Trash2 class="mr-2 h-4 w-4" />
-                    删除
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            <TableCell>{{ formatDate(user.createTime) }}</TableCell>
+            <TableCell class="text-right space-x-2">
+              <Button variant="ghost" size="icon" @click="handleDetail(user)" title="查看详情">
+                <Eye class="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="icon" @click="handleUpdate(user)" title="修改">
+                <Edit class="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="icon" @click="handleResetPwd(user)" title="重置密码">
+                <Key class="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="icon" class="text-destructive" @click="handleDelete(user)" title="删除">
+                <Trash2 class="w-4 h-4" />
+              </Button>
             </TableCell>
           </TableRow>
           <TableRow v-if="userList.length === 0">
-            <TableCell colspan="8" class="text-center h-24 text-muted-foreground">
+            <TableCell colspan="9" class="text-center h-24 text-muted-foreground">
               暂无数据
             </TableCell>
           </TableRow>
@@ -441,16 +683,16 @@ onMounted(() => {
     </div>
 
     <!-- Pagination -->
-    <div class="flex justify-end">
-       <!-- Pagination Logic Simplified for Mock -->
-       <div class="text-sm text-muted-foreground p-2">
-         共 {{ total }} 条
-       </div>
-    </div>
+    <TablePagination
+      v-model:page-num="queryParams.pageNum"
+      v-model:page-size="queryParams.pageSize"
+      :total="total"
+      @change="getList"
+    />
 
     <!-- Add/Edit Dialog -->
     <Dialog v-model:open="showDialog">
-      <DialogContent class="sm:max-w-[600px]">
+      <DialogContent class="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{{ isEdit ? '修改用户' : '新增用户' }}</DialogTitle>
           <DialogDescription>
@@ -458,116 +700,14 @@ onMounted(() => {
           </DialogDescription>
         </DialogHeader>
         
-        <div class="grid gap-4 py-4">
-          <div class="grid grid-cols-2 gap-4">
-            <div class="grid gap-2">
-              <Label for="nickName">用户昵称 *</Label>
-              <Input id="nickName" v-model="form.nickName" placeholder="请输入昵称" />
-            </div>
-            <div class="grid gap-2">
-              <Label for="deptId">归属部门</Label>
-              <Select v-model="form.deptId">
-                <SelectTrigger>
-                  <SelectValue placeholder="选择部门" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem v-for="dept in flattenedDepts" :key="dept.id" :value="dept.id">
-                    {{ dept.label }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div class="grid grid-cols-2 gap-4">
-            <div class="grid gap-2">
-              <Label for="phonenumber">手机号码</Label>
-              <Input id="phonenumber" v-model="form.phonenumber" placeholder="请输入手机号" />
-            </div>
-            <div class="grid gap-2">
-              <Label for="email">邮箱</Label>
-              <Input id="email" v-model="form.email" placeholder="请输入邮箱" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div class="grid gap-2">
-              <Label for="userName">用户名称 *</Label>
-              <Input id="userName" v-model="form.userName" :disabled="isEdit" placeholder="请输入用户名称" />
-            </div>
-            <div class="grid gap-2" v-if="!isEdit">
-              <Label for="password">用户密码</Label>
-              <Input id="password" type="password" v-model="form.password" placeholder="请输入密码" />
-            </div>
-          </div>
-
-           <div class="grid grid-cols-2 gap-4">
-            <div class="grid gap-2">
-              <Label for="sex">用户性别</Label>
-              <Select v-model="form.sex">
-                <SelectTrigger>
-                  <SelectValue placeholder="选择性别" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">男</SelectItem>
-                  <SelectItem value="1">女</SelectItem>
-                  <SelectItem value="2">未知</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div class="grid gap-2">
-              <Label for="status">状态</Label>
-              <Select v-model="form.status">
-                <SelectTrigger>
-                  <SelectValue placeholder="选择状态" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">正常</SelectItem>
-                  <SelectItem value="1">停用</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div class="grid gap-2">
-            <Label>岗位</Label>
-            <div class="flex flex-wrap gap-2 border rounded-md p-2">
-              <label v-for="post in postOptions" :key="post.postId" class="flex items-center gap-2 text-sm cursor-pointer">
-                 <Checkbox 
-                   :checked="form.postIds?.includes(post.postId)"
-                   @update:checked="(checked: boolean) => {
-                     if (!form.postIds) form.postIds = []
-                     if (checked) form.postIds.push(post.postId)
-                     else form.postIds = form.postIds.filter(id => id !== post.postId)
-                   }"
-                 />
-                 {{ post.postName }}
-              </label>
-            </div>
-          </div>
-
-          <div class="grid gap-2">
-            <Label>角色</Label>
-            <div class="flex flex-wrap gap-2 border rounded-md p-2">
-              <label v-for="role in roleOptions" :key="role.roleId" class="flex items-center gap-2 text-sm cursor-pointer">
-                 <Checkbox 
-                   :checked="form.roleIds?.includes(role.roleId)"
-                   @update:checked="(checked: boolean) => {
-                     if (!form.roleIds) form.roleIds = []
-                     if (checked) form.roleIds.push(role.roleId)
-                     else form.roleIds = form.roleIds.filter(id => id !== role.roleId)
-                   }"
-                 />
-                 {{ role.roleName }}
-              </label>
-            </div>
-          </div>
-
-          <div class="grid gap-2">
-            <Label for="remark">备注</Label>
-            <Input id="remark" v-model="form.remark" placeholder="请输入备注" />
-          </div>
-        </div>
+        <UserForm
+          ref="userFormRef"
+          v-model="form"
+          :is-edit="isEdit"
+          :depts="deptOptions"
+          :roles="roleOptions"
+          :posts="postOptions"
+        />
 
         <DialogFooter>
           <Button variant="outline" @click="showDialog = false">取消</Button>
@@ -592,6 +732,77 @@ onMounted(() => {
           <AlertDialogCancel>取消</AlertDialogCancel>
           <AlertDialogAction @click="confirmDelete" class="bg-destructive text-destructive-foreground hover:bg-destructive/90">
             删除
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <!-- Batch Delete Confirmation Dialog -->
+    <AlertDialog v-model:open="showBatchDeleteDialog">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>确认批量删除?</AlertDialogTitle>
+          <AlertDialogDescription>
+            您确定要删除选中的 {{ selectedRows.length }} 个用户吗？此操作无法撤销。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction @click="confirmBatchDelete" class="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            删除
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <!-- User Detail Dialog -->
+    <UserDetailDialog
+      v-model:open="showDetailDialog"
+      :user="currentUser"
+    />
+
+    <!-- Reset Password Dialog -->
+    <AlertDialog v-model:open="showResetPwdDialog">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>重置密码</AlertDialogTitle>
+          <AlertDialogDescription>
+            为用户 "{{ userToResetPwd?.userName }}" 重置密码
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div class="grid gap-4 py-4">
+          <div class="grid gap-2">
+            <Label for="newPassword">新密码</Label>
+            <Input
+              id="newPassword"
+              v-model="newPassword"
+              type="password"
+              placeholder="请输入新密码"
+            />
+          </div>
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction @click="confirmResetPwd">
+            确定
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <!-- Batch Status Dialog -->
+    <AlertDialog v-model:open="showBatchStatusDialog">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>确认{{ batchStatusType === '0' ? '启用' : '停用' }}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            您确定要{{ batchStatusType === '0' ? '启用' : '停用' }}选中的 {{ selectedRows.length }} 个用户吗？
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction @click="confirmBatchStatus">
+            确定
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

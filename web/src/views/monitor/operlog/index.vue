@@ -29,6 +29,8 @@ import { useToast } from '@/components/ui/toast/use-toast'
 import { Trash2, RefreshCw, Search, Eye } from 'lucide-vue-next'
 import { listOperLog, delOperLog, cleanOperLog } from '@/api/monitor/operlog'
 import type { SysOperLog } from '@/api/system/types'
+import { formatDate } from '@/utils/format'
+import TablePagination from '@/components/common/TablePagination.vue'
 
 const { toast } = useToast()
 
@@ -216,7 +218,7 @@ onMounted(() => {
                 {{ item.status === 0 ? '成功' : '失败' }}
               </Badge>
             </TableCell>
-            <TableCell>{{ item.operTime }}</TableCell>
+            <TableCell>{{ formatDate(item.operTime) }}</TableCell>
             <TableCell class="text-right space-x-2">
               <Button variant="ghost" size="icon" @click="handleView(item)">
                 <Eye class="w-4 h-4" />
@@ -233,11 +235,12 @@ onMounted(() => {
     </div>
 
     <!-- Pagination -->
-    <div class="flex justify-end">
-       <div class="text-sm text-muted-foreground p-2">
-         共 {{ total }} 条
-       </div>
-    </div>
+    <TablePagination
+      v-model:page-num="queryParams.pageNum"
+      v-model:page-size="queryParams.pageSize"
+      :total="total"
+      @change="getList"
+    />
 
     <!-- Detail Dialog -->
     <Dialog v-model:open="showDetail">

@@ -38,11 +38,19 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsString()
+  userType?: string;
+
+  @IsOptional()
+  @IsString()
   status?: string;
 
   @IsOptional()
   @IsString()
   remark?: string;
+
+  @IsOptional()
+  @IsString()
+  avatar?: string;
 
   @IsOptional()
   @IsArray()

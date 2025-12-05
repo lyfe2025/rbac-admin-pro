@@ -4,6 +4,7 @@ import {
   IsNumber,
   IsOptional,
   IsArray,
+  IsBoolean,
 } from 'class-validator';
 
 export class CreateRoleDto {
@@ -18,6 +19,18 @@ export class CreateRoleDto {
   @IsNotEmpty({ message: '显示顺序不能为空' })
   @IsNumber()
   roleSort: number;
+
+  @IsOptional()
+  @IsString()
+  dataScope?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  menuCheckStrictly?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  deptCheckStrictly?: boolean;
 
   @IsOptional()
   @IsString()

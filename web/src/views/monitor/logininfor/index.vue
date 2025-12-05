@@ -22,6 +22,8 @@ import { useToast } from '@/components/ui/toast/use-toast'
 import { Trash2, RefreshCw, Search } from 'lucide-vue-next'
 import { listLogininfor, delLogininfor, cleanLogininfor } from '@/api/monitor/logininfor'
 import type { SysLoginLog } from '@/api/system/types'
+import { formatDate } from '@/utils/format'
+import TablePagination from '@/components/common/TablePagination.vue'
 
 const { toast } = useToast()
 
@@ -164,7 +166,7 @@ onMounted(() => {
               </Badge>
             </TableCell>
             <TableCell>{{ item.msg }}</TableCell>
-            <TableCell>{{ item.loginTime }}</TableCell>
+            <TableCell>{{ formatDate(item.loginTime) }}</TableCell>
           </TableRow>
           <TableRow v-if="logList.length === 0">
             <TableCell colspan="9" class="text-center h-24 text-muted-foreground">
@@ -176,10 +178,11 @@ onMounted(() => {
     </div>
 
     <!-- Pagination -->
-    <div class="flex justify-end">
-       <div class="text-sm text-muted-foreground p-2">
-         共 {{ total }} 条
-       </div>
-    </div>
+    <TablePagination
+      v-model:page-num="queryParams.pageNum"
+      v-model:page-size="queryParams.pageSize"
+      :total="total"
+      @change="getList"
+    />
   </div>
 </template>

@@ -47,6 +47,11 @@ export class CreateUserDto {
   @IsString()
   sex?: string;
 
+  /** 用户类型 (00=系统用户) */
+  @IsOptional()
+  @IsString()
+  userType?: string;
+
   /** 用户状态 (0=正常 1=停用) */
   @IsOptional()
   @IsString()
@@ -56,6 +61,11 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   remark?: string;
+
+  /** 头像地址 */
+  @IsOptional()
+  @IsString()
+  avatar?: string;
 
   /** 角色ID列表 */
   @IsOptional()

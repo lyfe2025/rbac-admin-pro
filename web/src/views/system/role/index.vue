@@ -40,7 +40,9 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/components/ui/toast/use-toast'
-import { Plus, Edit, Trash2, Shield, RefreshCw, Search, Check, Loader2 } from 'lucide-vue-next'
+import { Trash2, Plus, RefreshCw, Search, Edit } from 'lucide-vue-next'
+import TablePagination from '@/components/common/TablePagination.vue'
+import { formatDate } from '@/utils/format'
 import { listRole, getRole, delRole, addRole, updateRole, changeRoleStatus } from '@/api/system/role'
 import { listMenu } from '@/api/system/menu'
 import type { SysRole, SysMenu } from '@/api/system/types'
@@ -240,7 +242,7 @@ const MenuTreeItem = {
   template: `
     <div class="pl-4 py-1">
       <div class="flex items-center gap-2">
-        <Checkbox :checked="isChecked" @update:checked="toggle" />
+        <Checkbox :model-value="isChecked" @update:model-value="toggle" />
         <span class="text-sm">{{ menu.menuName }}</span>
       </div>
       <div v-if="menu.children && menu.children.length" class="border-l ml-2">
@@ -350,7 +352,7 @@ onMounted(() => {
                  @update:checked="handleStatusChange(item)"
                />
             </TableCell>
-            <TableCell>{{ item.createTime }}</TableCell>
+            <TableCell>{{ formatDate(item.createTime) }}</TableCell>
             <TableCell class="text-right space-x-2">
               <Button variant="ghost" size="icon" @click="handleUpdate(item)">
                 <Edit class="w-4 h-4" />
@@ -370,11 +372,12 @@ onMounted(() => {
     </div>
     
     <!-- Pagination -->
-    <div class="flex justify-end">
-       <div class="text-sm text-muted-foreground p-2">
-         共 {{ total }} 条
-       </div>
-    </div>
+    <TablePagination
+      v-model:page-num="queryParams.pageNum"
+      v-model:page-size="queryParams.pageSize"
+      :total="total"
+      @change="getList"
+    />
 
     <!-- Add/Edit Dialog -->
     <Dialog v-model:open="showDialog">
@@ -420,7 +423,7 @@ onMounted(() => {
           <div class="grid gap-2">
             <Label>菜单权限</Label>
             <div class="flex items-center space-x-2 mb-2">
-               <Checkbox id="checkStrictly" :checked="form.menuCheckStrictly" @update:checked="(val: boolean) => form.menuCheckStrictly = val" />
+               <Checkbox id="checkStrictly" :model-value="form.menuCheckStrictly" @update:model-value="(val) => form.menuCheckStrictly = !!val" />
                <Label for="checkStrictly" class="text-sm text-muted-foreground">父子联动</Label>
             </div>
             <div class="border rounded-md p-2 h-[200px] overflow-y-auto">

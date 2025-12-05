@@ -3,6 +3,8 @@ import { ref } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import ThemeCustomizer from '@/components/ThemeCustomizer.vue'
+import ProfileDialog from '@/components/ProfileDialog.vue'
+import SettingsDialog from '@/components/SettingsDialog.vue'
 import { useUserStore } from '@/stores/modules/user'
 import { useToast } from '@/components/ui/toast/use-toast'
 import {
@@ -70,6 +72,17 @@ const userStore = useUserStore()
 const { toast } = useToast()
 const isCollapsed = ref(false)
 
+// 获取完整的头像URL
+function getAvatarUrl(avatar: string | undefined | null): string {
+  if (!avatar) return ''
+  // 如果已经是完整URL,直接返回
+  if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+    return avatar
+  }
+  // 如果是相对路径,拼接后端地址
+  return `${import.meta.env.VITE_API_URL}${avatar}`
+}
+
 const isActive = (path: string) => route.path === path
 
 const toggleSidebar = () => {
@@ -83,6 +96,24 @@ const handleLogout = async () => {
     description: "您已安全退出系统",
   })
   router.push('/login')
+}
+
+// 个人中心 - 打开个人资料对话框
+const showProfile = ref(false)
+const handleProfile = async () => {
+  showProfile.value = true
+}
+
+// 打开设置
+const showSettings = ref(false)
+const handleSettings = () => {
+  showSettings.value = true
+}
+
+// 打开编辑用户对话框
+const handleOpenEditDialog = (userId: string) => {
+  showProfile.value = false
+  router.push(`/system/user?edit=${userId}`)
 }
 </script>
 
@@ -252,12 +283,12 @@ const handleLogout = async () => {
             <Button variant="ghost" :class="cn('flex items-center gap-2 w-full h-auto py-2', isCollapsed ? 'justify-center px-0' : 'justify-between px-2')">
               <div class="flex items-center gap-2 overflow-hidden">
                 <Avatar class="h-8 w-8 rounded-lg">
-                  <AvatarImage :src="userStore.avatar" :alt="userStore.name" />
+                  <AvatarImage :src="getAvatarUrl(userStore.avatar)" :alt="userStore.name" />
                   <AvatarFallback class="rounded-lg">{{ userStore.name ? userStore.name.slice(0, 2).toUpperCase() : 'AD' }}</AvatarFallback>
                 </Avatar>
                 <div v-if="!isCollapsed" class="flex flex-col items-start text-left text-sm leading-tight overflow-hidden">
                   <span class="font-semibold truncate w-full">{{ userStore.name || 'Admin' }}</span>
-                  <span class="text-xs text-muted-foreground truncate w-full">admin@example.com</span>
+                  <span class="text-xs text-muted-foreground truncate w-full">{{ userStore.email || '暂无邮箱' }}</span>
                 </div>
               </div>
               <ChevronsUpDown v-if="!isCollapsed" class="ml-auto h-4 w-4 text-muted-foreground" />
@@ -267,21 +298,19 @@ const handleLogout = async () => {
             <DropdownMenuLabel class="p-0 font-normal">
               <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar class="h-8 w-8 rounded-lg">
-                  <AvatarImage :src="userStore.avatar" :alt="userStore.name" />
+                  <AvatarImage :src="getAvatarUrl(userStore.avatar)" :alt="userStore.name" />
                   <AvatarFallback class="rounded-lg">{{ userStore.name ? userStore.name.slice(0, 2).toUpperCase() : 'AD' }}</AvatarFallback>
                 </Avatar>
                 <div class="grid flex-1 text-left text-sm leading-tight">
                   <span class="truncate font-semibold">{{ userStore.name || 'Admin' }}</span>
-                  <span class="truncate text-xs text-muted-foreground">admin@example.com</span>
+                  <span class="truncate text-xs text-muted-foreground">{{ userStore.email || '暂无邮箱' }}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem @click="handleProfile">
+              <User class="mr-2 h-4 w-4" />
               个人中心
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              设置
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem class="text-destructive focus:text-destructive" @click="handleLogout">
@@ -444,5 +473,15 @@ const handleLogout = async () => {
          <RouterView />
        </main>
     </div>
+
+    <!-- 个人资料对话框 -->
+    <ProfileDialog 
+      v-model:open="showProfile" 
+      @open-settings="showSettings = true"
+      @open-edit-dialog="handleOpenEditDialog"
+    />
+
+    <!-- 设置对话框 -->
+    <SettingsDialog v-model:open="showSettings" />
   </div>
 </template>

@@ -308,3 +308,18 @@ ALTER TABLE "sys_user_post" ADD CONSTRAINT "sys_user_post_user_id_fkey" FOREIGN 
 -- AddForeignKey
 ALTER TABLE "sys_user_post" ADD CONSTRAINT "sys_user_post_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "sys_post"("post_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
+-- CreateTable: sys_logininfor
+CREATE TABLE "sys_logininfor" (
+    "info_id" BIGSERIAL NOT NULL,
+    "user_name" VARCHAR(50) DEFAULT '',
+    "ipaddr" VARCHAR(128) DEFAULT '',
+    "login_location" VARCHAR(255) DEFAULT '',
+    "browser" VARCHAR(50) DEFAULT '',
+    "os" VARCHAR(50) DEFAULT '',
+    "status" CHAR(1) DEFAULT '0',
+    "msg" VARCHAR(255) DEFAULT '',
+    "login_time" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "sys_logininfor_pkey" PRIMARY KEY ("info_id")
+);
+

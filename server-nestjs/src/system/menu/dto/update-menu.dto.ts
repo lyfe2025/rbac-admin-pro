@@ -53,4 +53,8 @@ export class UpdateMenuDto {
   @IsOptional()
   @IsNumber()
   isCache?: number;
+
+  @IsOptional()
+  @IsString()
+  remark?: string;
 }

@@ -271,7 +271,32 @@ COMMENT ON COLUMN sys_oper_log.error_msg IS '错误消息';
 COMMENT ON COLUMN sys_oper_log.oper_time IS '操作时间';
 
 -- ----------------------------
--- 11. 字典类型表
+-- 11. 系统访问记录(登录日志)
+-- ----------------------------
+CREATE TABLE sys_logininfor (
+  info_id BIGSERIAL PRIMARY KEY,
+  user_name VARCHAR(50) DEFAULT '',
+  ipaddr VARCHAR(128) DEFAULT '',
+  login_location VARCHAR(255) DEFAULT '',
+  browser VARCHAR(50) DEFAULT '',
+  os VARCHAR(50) DEFAULT '',
+  status CHAR(1) DEFAULT '0',
+  msg VARCHAR(255) DEFAULT '',
+  login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+COMMENT ON TABLE sys_logininfor IS '系统访问记录';
+COMMENT ON COLUMN sys_logininfor.info_id IS '访问ID';
+COMMENT ON COLUMN sys_logininfor.user_name IS '用户账号';
+COMMENT ON COLUMN sys_logininfor.ipaddr IS '登录IP地址';
+COMMENT ON COLUMN sys_logininfor.login_location IS '登录地点';
+COMMENT ON COLUMN sys_logininfor.browser IS '浏览器类型';
+COMMENT ON COLUMN sys_logininfor.os IS '操作系统';
+COMMENT ON COLUMN sys_logininfor.status IS '登录状态（0成功 1失败）';
+COMMENT ON COLUMN sys_logininfor.msg IS '提示消息';
+COMMENT ON COLUMN sys_logininfor.login_time IS '访问时间';
+
+-- ----------------------------
+-- 12. 字典类型表
 -- ----------------------------
 CREATE TABLE sys_dict_type (
   dict_id BIGSERIAL PRIMARY KEY,

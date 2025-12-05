@@ -54,4 +54,8 @@ export class CreateMenuDto {
   @IsOptional()
   @IsNumber()
   isCache?: number;
+
+  @IsOptional()
+  @IsString()
+  remark?: string;
 }

@@ -3,6 +3,7 @@ import {
   IsString,
   IsNumber,
   IsArray,
+  IsBoolean,
 } from 'class-validator';
 
 export class UpdateRoleDto {
@@ -17,6 +18,18 @@ export class UpdateRoleDto {
   @IsOptional()
   @IsNumber()
   roleSort?: number;
+
+  @IsOptional()
+  @IsString()
+  dataScope?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  menuCheckStrictly?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  deptCheckStrictly?: boolean;
 
   @IsOptional()
   @IsString()

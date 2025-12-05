@@ -21,15 +21,36 @@ export class LogininforService {
         where,
         skip: Number((pageNum - 1) * pageSize),
         take: Number(pageSize),
-        orderBy: { infoId: 'asc' },
+        orderBy: { loginTime: 'desc' },
       }),
     ]);
-    return { total, rows };
+
+    // 转换 BigInt 为字符串
+    const safeRows = rows.map((row) => ({
+      ...row,
+      infoId: row.infoId.toString(),
+    }));
+
+    return { total, rows: safeRows };
+  }
+
+  async create(data: {
+    userName: string;
+    ipaddr: string;
+    loginLocation?: string;
+    browser?: string;
+    os?: string;
+    status: string;
+    msg?: string;
+  }) {
+    await this.prisma.sysLoginLog.create({
+      data,
+    });
   }
 
   async remove(infoIds: string[]) {
     await this.prisma.sysLoginLog.deleteMany({
-      where: { infoId: { in: infoIds.map(id => BigInt(id)) } },
+      where: { infoId: { in: infoIds.map((id) => BigInt(id)) } },
     });
     return {};
   }

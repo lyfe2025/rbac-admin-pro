@@ -37,7 +37,8 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { useToast } from '@/components/ui/toast/use-toast'
-import { Plus, Edit, Trash2, RefreshCw, Search, Play, MoreHorizontal, Eye } from 'lucide-vue-next'
+import { Trash2, Plus, RefreshCw, Search, Edit, Play, Pause } from 'lucide-vue-next'
+import TablePagination from '@/components/common/TablePagination.vue'
 import { listJob, getJob, delJob, addJob, updateJob, runJob, changeJobStatus } from '@/api/monitor/job'
 import type { SysJob } from '@/api/system/types'
 
@@ -311,11 +312,12 @@ onMounted(() => {
     </div>
 
     <!-- Pagination -->
-    <div class="flex justify-end">
-       <div class="text-sm text-muted-foreground p-2">
-         共 {{ total }} 条
-       </div>
-    </div>
+    <TablePagination
+      v-model:page-num="queryParams.pageNum"
+      v-model:page-size="queryParams.pageSize"
+      :total="total"
+      @change="getList"
+    />
 
     <!-- Add/Edit Dialog -->
     <Dialog v-model:open="showDialog">

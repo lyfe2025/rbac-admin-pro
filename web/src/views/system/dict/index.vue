@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { Search, Plus, Edit, Trash2, RefreshCw } from 'lucide-vue-next'
+import { formatDate } from '@/utils/format'
 import {
   Table,
   TableBody,
@@ -246,7 +247,7 @@ onMounted(() => {
               </Badge>
             </TableCell>
             <TableCell class="text-muted-foreground">{{ item.remark }}</TableCell>
-            <TableCell>{{ item.createTime }}</TableCell>
+            <TableCell>{{ formatDate(item.createTime) }}</TableCell>
             <TableCell class="text-right space-x-2">
               <Button variant="ghost" size="icon" @click="handleUpdate(item)">
                 <Edit class="w-4 h-4" />

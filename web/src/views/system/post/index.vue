@@ -29,6 +29,8 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/toast/use-toast'
 import { Plus, Edit, Trash2, RefreshCw, Search, Loader2 } from 'lucide-vue-next'
+import TablePagination from '@/components/common/TablePagination.vue'
+import { formatDate } from '@/utils/format'
 import { listPost, getPost, delPost, addPost, updatePost } from '@/api/system/post'
 import type { SysPost } from '@/api/system/types'
 
@@ -232,7 +234,7 @@ onMounted(() => {
                 {{ item.status === '0' ? '正常' : '停用' }}
               </Badge>
             </TableCell>
-            <TableCell>{{ item.createTime }}</TableCell>
+            <TableCell>{{ formatDate(item.createTime) }}</TableCell>
             <TableCell class="text-right space-x-2">
               <Button variant="ghost" size="icon" @click="handleUpdate(item)">
                 <Edit class="w-4 h-4" />
@@ -252,11 +254,12 @@ onMounted(() => {
     </div>
 
     <!-- Pagination -->
-    <div class="flex justify-end">
-       <div class="text-sm text-muted-foreground p-2">
-         共 {{ total }} 条
-       </div>
-    </div>
+    <TablePagination
+      v-model:page-num="queryParams.pageNum"
+      v-model:page-size="queryParams.pageSize"
+      :total="total"
+      @change="getList"
+    />
 
     <!-- Add/Edit Dialog -->
     <Dialog v-model:open="showDialog">

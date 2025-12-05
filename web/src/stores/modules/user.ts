@@ -2,20 +2,32 @@ import { defineStore } from 'pinia'
 import { login, logout, getInfo, type LoginData } from '@/api/login'
 import { getToken, setToken, removeToken } from '@/utils/auth'
 
+interface RoleInfo {
+  roleId: string
+  roleName: string
+  roleKey: string
+}
+
 interface UserState {
   token: string
+  userId: string
   name: string
   avatar: string
+  email: string
   roles: string[]
+  roleList: RoleInfo[]
   permissions: string[]
 }
 
 export const useUserStore = defineStore('user', {
   state: (): UserState => ({
     token: getToken() || '',
+    userId: '',
     name: '',
     avatar: '',
+    email: '',
     roles: [],
+    roleList: [],
     permissions: []
   }),
   actions: {
@@ -48,17 +60,21 @@ export const useUserStore = defineStore('user', {
     // 获取用户信息
     async getInfo() {
       const res = await getInfo()
-      const data = res.data // { user, roles, permissions }
+      const data = res.data // { user, roles, roleList, permissions }
       
       if (data.roles && data.roles.length > 0) {
         this.roles = data.roles
+        this.roleList = data.roleList || []
         this.permissions = data.permissions
       } else {
         this.roles = ['ROLE_DEFAULT']
+        this.roleList = []
       }
       
+      this.userId = data.user.userId?.toString() || ''
       this.name = data.user.nickName || data.user.userName
-      this.avatar = data.user.avatar || '' // 后端可能没有 avatar
+      this.avatar = data.user.avatar || ''
+      this.email = data.user.email || ''
       return data
     },
     // 退出系统

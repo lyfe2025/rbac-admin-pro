@@ -48,8 +48,13 @@ export class UserService {
 
     if (!user) return null;
 
-    const roles = user.roles.map((ur) => ur.role.roleKey);
-    const isAdmin = roles.includes('admin');
+    const roleKeys = user.roles.map((ur) => ur.role.roleKey);
+    const roleList = user.roles.map((ur) => ({
+      roleId: ur.role.roleId.toString(),
+      roleName: ur.role.roleName,
+      roleKey: ur.role.roleKey,
+    }));
+    const isAdmin = roleKeys.includes('admin');
 
     let permissions: string[] = [];
 
@@ -83,7 +88,8 @@ export class UserService {
 
     return {
       user: userInfo,
-      roles,
+      roles: roleKeys, // 保持兼容性,返回roleKey数组
+      roleList, // 新增:返回完整的角色信息
       permissions,
     };
   }
@@ -166,23 +172,36 @@ export class UserService {
     const user = await this.prisma.sysUser.findUnique({
       where: { userId: BigInt(userId) },
       include: {
-        roles: true, // 关联 SysUserRole
-        // posts: true,
+        dept: true, // 包含部门信息
+        roles: {
+          include: {
+            role: true, // 包含完整的角色信息
+          },
+        },
+        posts: {
+          include: {
+            post: true, // 包含完整的岗位信息
+          },
+        },
       },
     });
 
     if (!user) return null;
 
-    const roleIds = user.roles.map((ur) => ur.roleId);
-    // const postIds = user.posts.map(up => up.postId);
+    const roleIds = user.roles.map((ur) => ur.roleId.toString());
+    const postIds = user.posts.map((up) => up.postId.toString());
+    const roleList = user.roles.map((ur) => ur.role);
+    const postList = user.posts.map((up) => up.post);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, roles, ...userInfo } = user;
+    const { password, roles, posts, ...userInfo } = user;
 
     return {
       data: userInfo,
       roleIds,
-      // postIds
+      postIds,
+      roles: roleList,
+      posts: postList,
     };
   }
 

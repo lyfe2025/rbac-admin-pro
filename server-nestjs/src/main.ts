@@ -5,6 +5,8 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ValidationPipe } from '@nestjs/common';
 import { LoggerService } from './common/logger/logger.service';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 // 全局 BigInt 序列化支持
 // 解决 "TypeError: Do not know how to serialize a BigInt" 错误
@@ -13,16 +15,27 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 };
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true, // 缓冲日志直到自定义 logger 就绪
+    bodyParser: true,
+    rawBody: true,
   });
 
   // 使用自定义日志服务
   const logger = app.get(LoggerService);
   app.useLogger(logger);
 
+  // 配置静态文件服务 (用于访问上传的文件)
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads/',
+  });
+
   // 全局前缀
   // app.setGlobalPrefix('api'); // 前端 .env 配置为 /api，如果我们不使用代理重写，可能需要这个配置
+
+  // 增加请求体大小限制 (支持文件上传,如头像)
+  app.use(require('body-parser').json({ limit: '10mb' }));
+  app.use(require('body-parser').urlencoded({ limit: '10mb', extended: true }));
 
   // 全局参数校验管道
   app.useGlobalPipes(

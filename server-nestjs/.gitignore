@@ -7,3 +7,7 @@ node_modules
 # 日志文件
 logs/
 *.log
+
+# 上传文件
+uploads/
+!uploads/avatars/.gitkeep

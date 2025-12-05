@@ -13,10 +13,12 @@ import { DictModule } from './system/dict/dict.module';
 import { SysConfigModule } from './system/config/config.module';
 import { NoticeModule } from './system/notice/notice.module';
 import { OperLogInterceptor } from './common/interceptors/oper-log.interceptor';
+import { OperationLogInterceptor } from './common/interceptors/operation-log.interceptor';
 import { PostModule } from './system/post/post.module';
 import { MonitorModule } from './monitor/monitor.module';
 import { LoggerModule } from './common/logger/logger.module';
 import { HttpLoggerMiddleware } from './common/middleware/http-logger.middleware';
+import { UploadModule } from './common/upload/upload.module';
 
 @Module({
   imports: [
@@ -35,13 +37,19 @@ import { HttpLoggerMiddleware } from './common/middleware/http-logger.middleware
     NoticeModule,
     MonitorModule,
     PostModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
+    // 禁用旧的拦截器,使用新的 OperationLogInterceptor
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: OperLogInterceptor,
+    // },
     {
       provide: APP_INTERCEPTOR,
-      useClass: OperLogInterceptor,
+      useClass: OperationLogInterceptor,
     },
   ],
 })

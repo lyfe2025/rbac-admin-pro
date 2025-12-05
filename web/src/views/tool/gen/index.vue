@@ -21,6 +21,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/components/ui/toast/use-toast'
 import { Download, Edit, Trash2, RefreshCw, Search, Eye, FileCode } from 'lucide-vue-next'
+import TablePagination from '@/components/common/TablePagination.vue'
 import { listTable, delTable, genCode, previewTable, type GenTable } from '@/api/tool/gen'
 
 const { toast } = useToast()
@@ -205,11 +206,12 @@ onMounted(() => {
     </div>
 
     <!-- Pagination -->
-    <div class="flex justify-end">
-       <div class="text-sm text-muted-foreground p-2">
-         共 {{ total }} 条
-       </div>
-    </div>
+    <TablePagination
+      v-model:page-num="queryParams.pageNum"
+      v-model:page-size="queryParams.pageSize"
+      :total="total"
+      @change="getList"
+    />
 
     <!-- Preview Dialog -->
     <Dialog v-model:open="showPreview">

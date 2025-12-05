@@ -1,54 +1,144 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, Scope } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import type { Request } from 'express';
 import { UserService } from '../system/user/user.service';
 import { LoginDto } from './dto/login.dto';
 import { LoggerService } from '../common/logger/logger.service';
+import { LogininforService } from '../monitor/logininfor/logininfor.service';
 import { BusinessException } from '../common/exceptions';
 import { ErrorCode } from '../common/enums';
+import { IpUtil } from '../common/utils/ip.util';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class AuthService {
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
     private logger: LoggerService,
+    private logininforService: LogininforService,
+    @Inject(REQUEST) private request: Request,
   ) {}
 
   async login(loginDto: LoginDto) {
     const { username, password } = loginDto;
     this.logger.debug(`Login attempt for user: ${username}`, 'AuthService');
     
-    const user = await this.userService.findByUsername(username);
-
-    if (!user) {
-      this.logger.warn(`Login failed: User not found - ${username}`, 'AuthService');
-      throw new BusinessException(ErrorCode.INVALID_CREDENTIALS, '账号或密码错误');
-    }
-
-    // 验证密码
-    let isMatch = false;
-    if (user.password) {
-      isMatch = await bcrypt.compare(password, user.password);
-    }
-
-    if (!isMatch) {
-      this.logger.warn(`Login failed: Invalid password - ${username}`, 'AuthService');
-      throw new BusinessException(ErrorCode.INVALID_CREDENTIALS, '账号或密码错误');
-    }
-
-    // 签发 Token
-    // 注意：BigInt 无法被 JSON.stringify，需要转换为 string
-    const payload = { 
-      sub: user.userId.toString(), 
-      username: user.userName 
-    };
+    // 获取请求信息
+    const ipaddr = this.getClientIp();
+    const userAgent = this.request.headers['user-agent'] || '';
+    const { browser, os } = this.parseUserAgent(userAgent);
     
-    this.logger.log(`User logged in successfully: ${username} (ID: ${user.userId})`, 'AuthService');
-    
-    return {
-      token: this.jwtService.sign(payload),
-    };
+    try {
+      const user = await this.userService.findByUsername(username);
+
+      if (!user) {
+        this.logger.warn(`Login failed: User not found - ${username}`, 'AuthService');
+        // 记录登录失败
+        await this.recordLoginLog(username, ipaddr, browser, os, '1', '用户不存在');
+        throw new BusinessException(ErrorCode.INVALID_CREDENTIALS, '账号或密码错误');
+      }
+
+      // 验证密码
+      let isMatch = false;
+      if (user.password) {
+        isMatch = await bcrypt.compare(password, user.password);
+      }
+
+      if (!isMatch) {
+        this.logger.warn(`Login failed: Invalid password - ${username}`, 'AuthService');
+        // 记录登录失败
+        await this.recordLoginLog(username, ipaddr, browser, os, '1', '密码错误');
+        throw new BusinessException(ErrorCode.INVALID_CREDENTIALS, '账号或密码错误');
+      }
+
+      // 签发 Token
+      // 注意：BigInt 无法被 JSON.stringify，需要转换为 string
+      const payload = { 
+        sub: user.userId.toString(), 
+        username: user.userName 
+      };
+      
+      this.logger.log(`User logged in successfully: ${username} (ID: ${user.userId})`, 'AuthService');
+      
+      // 记录登录成功
+      await this.recordLoginLog(username, ipaddr, browser, os, '0', '登录成功');
+      
+      return {
+        token: this.jwtService.sign(payload),
+      };
+    } catch (error) {
+      // 如果是业务异常,直接抛出
+      if (error instanceof BusinessException) {
+        throw error;
+      }
+      // 其他异常记录日志
+      this.logger.error(`Login error: ${error.message}`, error.stack, 'AuthService');
+      await this.recordLoginLog(username, ipaddr, browser, os, '1', '系统错误');
+      throw error;
+    }
+  }
+
+  /**
+   * 记录登录日志
+   */
+  private async recordLoginLog(
+    userName: string,
+    ipaddr: string,
+    browser: string,
+    os: string,
+    status: string,
+    msg: string,
+  ) {
+    try {
+      // 通过IP获取地理位置
+      const loginLocation = IpUtil.getLocation(ipaddr);
+      
+      await this.logininforService.create({
+        userName,
+        ipaddr,
+        loginLocation,
+        browser,
+        os,
+        status,
+        msg,
+      });
+    } catch (error) {
+      // 记录日志失败不应该影响登录流程
+      this.logger.error(`Failed to record login log: ${error.message}`, error.stack, 'AuthService');
+    }
+  }
+
+  /**
+   * 获取客户端IP
+   */
+  private getClientIp(): string {
+    return IpUtil.getClientIp(this.request);
+  }
+
+  /**
+   * 解析 User-Agent
+   */
+  private parseUserAgent(userAgent: string): { browser: string; os: string } {
+    let browser = 'Unknown';
+    let os = 'Unknown';
+
+    // 解析浏览器
+    if (userAgent.includes('Chrome')) browser = 'Chrome';
+    else if (userAgent.includes('Firefox')) browser = 'Firefox';
+    else if (userAgent.includes('Safari')) browser = 'Safari';
+    else if (userAgent.includes('Edge')) browser = 'Edge';
+    else if (userAgent.includes('Opera')) browser = 'Opera';
+
+    // 解析操作系统
+    if (userAgent.includes('Windows')) os = 'Windows';
+    else if (userAgent.includes('Mac OS')) os = 'macOS';
+    else if (userAgent.includes('Linux')) os = 'Linux';
+    else if (userAgent.includes('Android')) os = 'Android';
+    else if (userAgent.includes('iOS')) os = 'iOS';
+
+    return { browser, os };
   }
 
   logout() {

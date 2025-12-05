@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/toast/use-toast'
 import { LogOut, RefreshCw, Search } from 'lucide-vue-next'
+import TablePagination from '@/components/common/TablePagination.vue'
 import { listOnline, forceLogout, type SysUserOnline } from '@/api/monitor/online'
 
 const { toast } = useToast()
@@ -149,10 +150,11 @@ onMounted(() => {
     </div>
 
     <!-- Pagination -->
-    <div class="flex justify-end">
-       <div class="text-sm text-muted-foreground p-2">
-         共 {{ total }} 条
-       </div>
-    </div>
+    <TablePagination
+      v-model:page-num="queryParams.pageNum"
+      v-model:page-size="queryParams.pageSize"
+      :total="total"
+      @change="getList"
+    />
   </div>
 </template>

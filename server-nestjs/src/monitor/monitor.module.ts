@@ -33,6 +33,12 @@ import { RedisModule } from '../redis/redis.module';
     ServerController,
     CacheController,
   ],
-  exports: [LoginLogService, OnlineService, ServerService, CacheService],
+  exports: [
+    LoginLogService,
+    OnlineService,
+    LogininforService,
+    ServerService,
+    CacheService,
+  ],
 })
 export class MonitorModule {}
