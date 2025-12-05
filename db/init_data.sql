@@ -80,7 +80,8 @@ ON CONFLICT DO NOTHING;
 INSERT INTO sys_role (role_name, role_key, role_sort, status, del_flag, create_time)
 VALUES 
   ('超级管理员', 'admin', 1, '0', '0', NOW()),
-  ('普通用户', 'user', 2, '0', '0', NOW())
+  ('部门管理员', 'dept_admin', 2, '0', '0', NOW()),
+  ('普通管理员', 'common', 3, '0', '0', NOW())
 ON CONFLICT DO NOTHING;
 
 
@@ -89,17 +90,18 @@ ON CONFLICT DO NOTHING;
 -- 实际使用时建议通过 Prisma seed.ts 或应用程序创建用户以确保密码正确加密
 INSERT INTO sys_user (user_name, nick_name, password, status, dept_id, del_flag, create_time)
 SELECT 'admin', '超级管理员', 
-  '$2b$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', -- 123456
+  '$2b$10$RpAQ6bSxvyhkD9FOJOf7HeBVwUZAAdH955eMiEyckZ8DgWyIJJXhi', -- 123456
   '0', dept_id, '0', NOW()
 FROM sys_dept WHERE dept_name = '总公司' AND del_flag = '0'
 ON CONFLICT (user_name) WHERE del_flag = '0' DO NOTHING;
 
-INSERT INTO sys_user (user_name, nick_name, password, status, dept_id, del_flag, create_time)
-SELECT 'user', '普通用户',
-  '$2b$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', -- 123456
-  '0', dept_id, '0', NOW()
-FROM sys_dept WHERE dept_name = '总公司' AND del_flag = '0'
-ON CONFLICT (user_name) WHERE del_flag = '0' DO NOTHING;
+-- 注释掉测试用户,生产环境不需要
+-- INSERT INTO sys_user (user_name, nick_name, password, status, dept_id, del_flag, create_time)
+-- SELECT 'test', '测试管理员',
+--   '$2b$10$RpAQ6bSxvyhkD9FOJOf7HeBVwUZAAdH955eMiEyckZ8DgWyIJJXhi', -- 123456
+--   '0', dept_id, '0', NOW()
+-- FROM sys_dept WHERE dept_name = '技术部' AND del_flag = '0'
+-- ON CONFLICT (user_name) WHERE del_flag = '0' DO NOTHING;
 
 
 -- 4. 绑定用户角色
@@ -110,12 +112,13 @@ WHERE u.user_name = 'admin' AND u.del_flag = '0'
   AND r.role_key = 'admin' AND r.del_flag = '0'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO sys_user_role (user_id, role_id)
-SELECT u.user_id, r.role_id
-FROM sys_user u, sys_role r
-WHERE u.user_name = 'user' AND u.del_flag = '0'
-  AND r.role_key = 'user' AND r.del_flag = '0'
-ON CONFLICT DO NOTHING;
+-- 测试用户角色绑定(已注释)
+-- INSERT INTO sys_user_role (user_id, role_id)
+-- SELECT u.user_id, r.role_id
+-- FROM sys_user u, sys_role r
+-- WHERE u.user_name = 'test' AND u.del_flag = '0'
+--   AND r.role_key = 'common' AND r.del_flag = '0'
+-- ON CONFLICT DO NOTHING;
 
 
 -- 5. 初始化岗位数据

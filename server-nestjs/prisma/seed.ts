@@ -115,39 +115,117 @@ async function main() {
   });
   console.log('Initialized department hierarchy');
 
-  // 2. Init Role
-  const role = await prisma.sysRole.create({
-    data: {
-      roleName: '超级管理员',
-      roleKey: 'admin',
-      roleSort: 1,
-      status: '0',
-    },
-  });
-  console.log(`Created role with id: ${role.roleId}`);
+  // 2. Init Roles (管理后台角色体系 - 幂等)
+  const ensureRole = async (data: {
+    roleKey: string;
+    roleName: string;
+    roleSort: number;
+    status?: '0' | '1';
+  }) => {
+    const existed = await prisma.sysRole.findFirst({
+      where: { roleKey: data.roleKey, delFlag: '0' },
+    });
+    if (existed) {
+      return prisma.sysRole.update({
+        where: { roleId: existed.roleId },
+        data: {
+          roleName: data.roleName,
+          roleSort: data.roleSort,
+          status: data.status ?? '0',
+        },
+      });
+    }
+    return prisma.sysRole.create({
+      data: {
+        roleName: data.roleName,
+        roleKey: data.roleKey,
+        roleSort: data.roleSort,
+        status: data.status ?? '0',
+      },
+    });
+  };
 
-  // 3. 初始化用户（使用 bcrypt 加密密码，保持与服务层一致）
+  const adminRole = await ensureRole({
+    roleKey: 'admin',
+    roleName: '超级管理员',
+    roleSort: 1,
+  });
+  console.log(`Ensured admin role with id: ${adminRole.roleId}`);
+
+  await ensureRole({
+    roleKey: 'dept_admin',
+    roleName: '部门管理员',
+    roleSort: 2,
+  });
+
+  await ensureRole({
+    roleKey: 'common',
+    roleName: '普通管理员',
+    roleSort: 3,
+  });
+  console.log('Ensured all admin roles');
+
+  // 3. 初始化用户（使用 bcrypt 加密密码，保持与服务层一致 - 幂等）
+  const ensureUser = async (data: {
+    userName: string;
+    nickName: string;
+    password: string;
+    deptId: bigint;
+    status?: '0' | '1';
+  }) => {
+    const existed = await prisma.sysUser.findFirst({
+      where: { userName: data.userName, delFlag: '0' },
+    });
+    if (existed) {
+      // 存在则更新(但不更新密码,避免覆盖用户修改的密码)
+      return prisma.sysUser.update({
+        where: { userId: existed.userId },
+        data: {
+          nickName: data.nickName,
+          deptId: data.deptId,
+          status: data.status ?? '0',
+        },
+      });
+    }
+    return prisma.sysUser.create({
+      data: {
+        userName: data.userName,
+        nickName: data.nickName,
+        password: data.password,
+        status: data.status ?? '0',
+        deptId: data.deptId,
+      },
+    });
+  };
+
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash('123456', salt);
-  const user = await prisma.sysUser.create({
-    data: {
-      userName: 'admin',
-      nickName: '超级管理员',
-      password: hashedPassword,
-      status: '0',
-      deptId: rootDept.deptId,
-    },
+  const user = await ensureUser({
+    userName: 'admin',
+    nickName: '超级管理员',
+    password: hashedPassword,
+    deptId: rootDept.deptId,
   });
-  console.log(`Created user with id: ${user.userId}`);
+  console.log(`Ensured user with id: ${user.userId}`);
 
-  // 4. Link User and Role (Optional but recommended)
-  await prisma.sysUserRole.create({
-    data: {
+  // 4. Link User and Role (幂等)
+  const existedUserRole = await prisma.sysUserRole.findFirst({
+    where: {
       userId: user.userId,
-      roleId: role.roleId,
+      roleId: adminRole.roleId,
     },
   });
-  console.log('Linked user and role');
+  if (!existedUserRole) {
+    await prisma.sysUserRole.create({
+      data: {
+        userId: user.userId,
+        roleId: adminRole.roleId,
+      },
+    });
+    console.log('Linked user and role');
+  } else {
+    console.log('User-role link already exists');
+  }
 
   // 5. 初始化基础菜单（存在则跳过，避免重复）
   const ensureMenu = async (data: {
@@ -740,7 +818,7 @@ async function main() {
   const allMenus = await prisma.sysMenu.findMany({ select: { menuId: true } });
   if (allMenus.length > 0) {
     await prisma.sysRoleMenu.createMany({
-      data: allMenus.map((m) => ({ roleId: role.roleId, menuId: m.menuId })),
+      data: allMenus.map((m) => ({ roleId: adminRole.roleId, menuId: m.menuId })),
       skipDuplicates: true,
     });
     console.log(`Linked role(admin) with ${allMenus.length} menus`);

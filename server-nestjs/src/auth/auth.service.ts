@@ -30,10 +30,6 @@ export class AuthService {
     let isMatch = false;
     if (user.password) {
       isMatch = await bcrypt.compare(password, user.password);
-      // 兼容明文密码 (开发阶段)
-      if (!isMatch && user.password === password) {
-        isMatch = true;
-      }
     }
 
     if (!isMatch) {
