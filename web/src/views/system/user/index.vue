@@ -465,7 +465,7 @@ watch(selectAll, (newVal) => {
 const route = useRoute()
 
 onMounted(async () => {
-  getList()
+  await getList()
   getDeptTree()
   // 加载角色列表用于高级搜索
   const roleRes = await listRole({})
@@ -474,7 +474,7 @@ onMounted(async () => {
   // 检查URL参数,如果有edit参数则自动打开编辑对话框
   const editUserId = route.query.edit as string
   if (editUserId) {
-    const user = userList.value.find(u => u.userId === editUserId)
+    const user = userList.value.find(u => String(u.userId) === editUserId)
     if (user) {
       handleUpdate(user)
     }
