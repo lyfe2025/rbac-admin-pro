@@ -1068,42 +1068,7 @@ async function main() {
     }
   }
 
-  // 8. 新增普通角色与示例用户
-  const userRole =
-    (await prisma.sysRole.findFirst({ where: { roleKey: 'user' } })) ||
-    (await prisma.sysRole.create({
-      data: {
-        roleName: '普通用户',
-        roleKey: 'user',
-        roleSort: 2,
-        status: '0',
-      },
-    }));
-
-  const demoSalt = await bcrypt.genSalt(10);
-  const demoHashed = await bcrypt.hash('123456', demoSalt);
-  const demoUser = await prisma.sysUser.findFirst({
-    where: { userName: 'user', delFlag: '0' },
-  });
-  const demoUserId = await (async () => {
-    if (demoUser) return demoUser.userId;
-    const u = await prisma.sysUser.create({
-      data: {
-        userName: 'user',
-        nickName: '普通用户',
-        password: demoHashed,
-        status: '0',
-        deptId: rootDept.deptId,
-      },
-    });
-    return u.userId;
-  })();
-  await prisma.sysUserRole.createMany({
-    data: [{ userId: demoUserId, roleId: userRole.roleId }],
-    skipDuplicates: true,
-  });
-
-  // 9. 岗位样例
+  // 8. 岗位样例
   const posts = [
     { postCode: 'dev', postName: '开发', postSort: 1, status: '0' },
     { postCode: 'pm', postName: '产品经理', postSort: 2, status: '0' },
@@ -1130,12 +1095,7 @@ async function main() {
       skipDuplicates: true,
     });
   }
-  if (pmPost) {
-    await prisma.sysUserPost.createMany({
-      data: [{ userId: demoUserId, postId: pmPost.postId }],
-      skipDuplicates: true,
-    });
-  }
+  // 岗位关联已移除,因为不再创建示例用户
 
   // 10. 公告样例
   const noticeExist = await prisma.sysNotice.findFirst({
