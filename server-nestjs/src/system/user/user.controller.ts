@@ -60,6 +60,22 @@ export class UserController {
     return this.userService.updateProfile(userId, body);
   }
 
+  @Put('profile/updatePwd')
+  @ApiOperation({ summary: '修改个人密码' })
+  @ApiResponse({ status: 200, description: '修改成功' })
+  async updatePassword(
+    @Request() req: any,
+    @Body() body: { oldPassword: string; newPassword: string },
+  ) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const userId = req.user.userId as string;
+    return this.userService.updatePassword(
+      userId,
+      body.oldPassword,
+      body.newPassword,
+    );
+  }
+
   @Post()
   @Log('用户管理', BusinessType.INSERT)
   @ApiOperation({ summary: '新增用户' })

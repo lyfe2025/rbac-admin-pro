@@ -1,91 +1,89 @@
 # Project Structure
 
-## Root
 ```
-├── web/                 # Vue 3 frontend
-├── server-nestjs/       # NestJS backend
-├── db/                  # Database scripts (schema.sql, init_data.sql)
-├── docs/                # Documentation (Chinese)
-└── docker-compose.yml   # Full stack deployment
-```
-
-## Backend (server-nestjs/src/)
-```
-├── main.ts              # Bootstrap, Swagger setup
-├── app.module.ts        # Root module, global interceptors
-├── auth/                # JWT authentication
-│   ├── auth.controller.ts
-│   ├── auth.service.ts
-│   ├── jwt.strategy.ts
-│   └── dto/
-├── system/              # Core business modules
-│   ├── user/            # User management
-│   ├── role/            # Role management
-│   ├── menu/            # Menu/permission management
-│   ├── dept/            # Department management
-│   ├── dict/            # Dictionary (type + data)
-│   ├── config/          # System parameters
-│   ├── notice/          # Announcements
-│   └── post/            # Job positions
-├── monitor/             # Monitoring modules
-│   ├── operlog/         # Operation logs
-│   ├── logininfor/      # Login history
-│   ├── online/          # Online users
-│   ├── server/          # Server status
-│   ├── cache/           # Redis cache
-│   └── job/             # Scheduled jobs
-├── common/              # Shared utilities
-│   ├── decorators/      # @Log decorator
-│   ├── enums/           # ErrorCode enum
-│   ├── exceptions/      # BusinessException
-│   ├── filters/         # Global exception filter
-│   ├── interceptors/    # Transform, OperationLog
-│   ├── logger/          # Winston logger service
-│   ├── middleware/      # HTTP logger
-│   └── utils/           # IP utilities
-├── prisma/              # Prisma module
-└── redis/               # Redis module
+rbac-admin-pro/
+├── web/                          # Frontend (Vue 3)
+│   ├── src/
+│   │   ├── api/                  # API modules by domain
+│   │   │   ├── system/           # System management APIs
+│   │   │   └── monitor/          # Monitoring APIs
+│   │   ├── components/
+│   │   │   ├── ui/               # shadcn-vue components (CLI installed)
+│   │   │   ├── common/           # Reusable business components
+│   │   │   └── business/         # Domain-specific components
+│   │   ├── views/                # Page components by route
+│   │   │   ├── system/           # System management pages
+│   │   │   ├── monitor/          # Monitoring pages
+│   │   │   └── tool/             # Tool pages
+│   │   ├── stores/modules/       # Pinia stores
+│   │   ├── router/               # Vue Router config
+│   │   ├── utils/                # Utilities (request, auth, format)
+│   │   ├── types/                # TypeScript types
+│   │   └── directive/            # Vue directives (permissions)
+│   └── components.json           # shadcn-vue config
+│
+├── server-nestjs/                # Backend (NestJS)
+│   ├── src/
+│   │   ├── auth/                 # Authentication module
+│   │   ├── system/               # System management modules
+│   │   │   ├── user/             # User CRUD
+│   │   │   ├── role/             # Role management
+│   │   │   ├── dept/             # Department hierarchy
+│   │   │   ├── menu/             # Menu configuration
+│   │   │   ├── dict/             # Dictionary data
+│   │   │   ├── config/           # System parameters
+│   │   │   ├── post/             # Job positions
+│   │   │   └── notice/           # Announcements
+│   │   ├── monitor/              # Monitoring modules
+│   │   │   ├── operlog/          # Operation logs
+│   │   │   ├── logininfor/       # Login history
+│   │   │   ├── online/           # Online users
+│   │   │   ├── server/           # Server status
+│   │   │   ├── cache/            # Cache management
+│   │   │   └── job/              # Scheduled jobs
+│   │   ├── common/               # Shared utilities
+│   │   │   ├── decorators/       # Custom decorators (@Log)
+│   │   │   ├── enums/            # Error codes
+│   │   │   ├── exceptions/       # BusinessException
+│   │   │   ├── filters/          # Exception filters
+│   │   │   ├── interceptors/     # Response transform, logging
+│   │   │   ├── logger/           # Winston logger
+│   │   │   └── middleware/       # HTTP logging
+│   │   ├── prisma/               # Prisma service
+│   │   └── redis/                # Redis service
+│   ├── prisma/
+│   │   ├── schema.prisma         # Database schema
+│   │   ├── migrations/           # Migration history
+│   │   └── seed.ts               # Seed data
+│   └── uploads/                  # File uploads
+│
+├── db/                           # Database scripts
+│   ├── schema.sql                # Table definitions
+│   └── init_data.sql             # Initial data
+│
+├── docs/                         # Documentation (Chinese)
+│   ├── 指南/                     # Usage guides
+│   ├── 开发规范/                 # Development standards
+│   └── 历史记录/                 # Change history
+│
+└── docker-compose.yml            # Docker orchestration
 ```
 
 ## Module Pattern (Backend)
-Each module follows:
+Each module follows this structure:
 ```
 module-name/
-├── module-name.module.ts    # NestJS module
-├── module-name.controller.ts # REST endpoints
-├── module-name.service.ts   # Business logic
-└── dto/
-    ├── create-*.dto.ts      # Create validation
-    ├── update-*.dto.ts      # Update validation
-    └── query-*.dto.ts       # Query params
+├── dto/
+│   ├── create-xxx.dto.ts
+│   ├── update-xxx.dto.ts
+│   └── query-xxx.dto.ts
+├── xxx.controller.ts
+├── xxx.service.ts
+└── xxx.module.ts
 ```
 
-## Frontend (web/src/)
-```
-├── main.ts              # App bootstrap
-├── App.vue              # Root component
-├── permission.ts        # Route guards
-├── api/                 # API calls by module
-│   ├── login.ts
-│   ├── system/          # system/* endpoints
-│   └── monitor/         # monitor/* endpoints
-├── components/
-│   ├── ui/              # shadcn-vue components
-│   ├── common/          # Shared (TablePagination)
-│   └── business/        # Domain components
-├── views/               # Page components
-│   ├── system/          # System management pages
-│   ├── monitor/         # Monitoring pages
-│   └── tool/            # Dev tools
-├── stores/modules/      # Pinia stores
-├── router/              # Vue Router config
-├── directive/           # Custom directives (v-permission)
-├── utils/               # Helpers (request, format, auth)
-└── types/               # TypeScript types
-```
-
-## API Conventions
-- Base path: `/api` (proxied in dev)
-- Auth: Bearer JWT token
-- Response format: `{ code, msg, data }` or `{ code, msg, rows, total }`
-- Pagination: `pageNum`, `pageSize` query params
+## Component Pattern (Frontend)
+- Views: Full page components in `views/{domain}/index.vue`
+- UI: shadcn-vue primitives in `components/ui/`
+- Business: Domain components in `components/business/`
+- Common: Reusable widgets in `components/common/`

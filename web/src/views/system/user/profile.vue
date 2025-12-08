@@ -16,9 +16,10 @@ import {
 import { useToast } from '@/components/ui/toast/use-toast'
 import { User, Shield, Key, Loader2 } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/modules/user'
-import { updateProfile } from '@/api/system/user'
+import { updateProfile, updatePassword } from '@/api/system/user'
 import { getInfo } from '@/api/login'
 import ImageUpload from '@/components/common/ImageUpload.vue'
+import PasswordInput from '@/components/common/PasswordInput.vue'
 import TwoFactorSettings from './TwoFactorSettings.vue'
 
 const { toast } = useToast()
@@ -75,6 +76,20 @@ onMounted(async () => {
 
 // 更新个人信息
 const handleUpdateProfile = async () => {
+  // 前端校验
+  if (userInfo.value.phonenumber && userInfo.value.phonenumber.length > 11) {
+    toast({ title: '验证失败', description: '手机号码不能超过11位', variant: 'destructive' })
+    return
+  }
+  if (userInfo.value.nickName && userInfo.value.nickName.length > 30) {
+    toast({ title: '验证失败', description: '用户昵称不能超过30个字符', variant: 'destructive' })
+    return
+  }
+  if (userInfo.value.email && userInfo.value.email.length > 50) {
+    toast({ title: '验证失败', description: '邮箱不能超过50个字符', variant: 'destructive' })
+    return
+  }
+
   loading.value = true
   try {
     await updateProfile({
@@ -115,8 +130,8 @@ const handleChangePassword = async () => {
 
   passwordLoading.value = true
   try {
-    // TODO: 调用修改密码接口
-    toast({ title: '修改成功', description: '密码已更新，请重新登录' })
+    await updatePassword(passwordForm.value.oldPassword, passwordForm.value.newPassword)
+    toast({ title: '修改成功', description: '密码已更新' })
     passwordForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
   } catch (error) {
     toast({
@@ -214,25 +229,20 @@ const handleChangePassword = async () => {
           <CardContent class="space-y-4 max-w-md">
             <div class="space-y-2">
               <Label>当前密码</Label>
-              <Input
-                v-model="passwordForm.oldPassword"
-                type="password"
-                placeholder="请输入当前密码"
-              />
+              <PasswordInput v-model="passwordForm.oldPassword" placeholder="请输入当前密码" />
             </div>
             <div class="space-y-2">
               <Label>新密码</Label>
-              <Input
+              <PasswordInput
                 v-model="passwordForm.newPassword"
-                type="password"
                 placeholder="请输入新密码"
+                show-strength
               />
             </div>
             <div class="space-y-2">
               <Label>确认新密码</Label>
-              <Input
+              <PasswordInput
                 v-model="passwordForm.confirmPassword"
-                type="password"
                 placeholder="请再次输入新密码"
               />
             </div>

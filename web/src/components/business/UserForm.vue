@@ -13,7 +13,8 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { Upload, Eye, EyeOff } from 'lucide-vue-next'
+import { Upload } from 'lucide-vue-next'
+import PasswordInput from '@/components/common/PasswordInput.vue'
 import DeptTreeSelect from './DeptTreeSelect.vue'
 import type { SysUser, SysDept, SysRole, SysPost } from '@/api/system/types'
 
@@ -30,7 +31,6 @@ const emit = defineEmits<{
   'update:modelValue': [value: Partial<SysUser>]
 }>()
 
-const showPassword = ref(false)
 const avatarPreview = ref<string>('')
 
 // 获取完整的头像URL
@@ -50,22 +50,7 @@ const formData = computed({
   set: (value) => emit('update:modelValue', value)
 })
 
-// 密码强度计算
-const passwordStrength = computed(() => {
-  const pwd = formData.value.password || ''
-  if (!pwd) return { level: 0, text: '', color: '' }
-  
-  let strength = 0
-  if (pwd.length >= 8) strength++
-  if (/[a-z]/.test(pwd)) strength++
-  if (/[A-Z]/.test(pwd)) strength++
-  if (/[0-9]/.test(pwd)) strength++
-  if (/[^a-zA-Z0-9]/.test(pwd)) strength++
-  
-  if (strength <= 2) return { level: 1, text: '弱', color: 'text-red-500' }
-  if (strength <= 3) return { level: 2, text: '中', color: 'text-yellow-500' }
-  return { level: 3, text: '强', color: 'text-green-500' }
-})
+
 
 // 表单验证
 const errors = reactive({
@@ -334,39 +319,11 @@ defineExpose({
       <Label for="password">
         用户密码 <span class="text-red-500">*</span>
       </Label>
-      <div class="relative">
-        <Input
-          id="password"
-          v-model="formData.password"
-          :type="showPassword ? 'text' : 'password'"
-          placeholder="请输入密码(至少6位)"
-          :class="errors.password ? 'border-red-500' : ''"
-        />
-        <Button
-          variant="ghost"
-          size="sm"
-          class="absolute right-0 top-0 h-full px-3"
-          @click="showPassword = !showPassword"
-        >
-          <Eye v-if="!showPassword" class="h-4 w-4" />
-          <EyeOff v-else class="h-4 w-4" />
-        </Button>
-      </div>
-      <div v-if="formData.password" class="flex items-center gap-2 text-xs">
-        <span>密码强度:</span>
-        <span :class="passwordStrength.color">{{ passwordStrength.text }}</span>
-        <div class="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
-          <div
-            class="h-full transition-all"
-            :class="{
-              'bg-red-500': passwordStrength.level === 1,
-              'bg-yellow-500': passwordStrength.level === 2,
-              'bg-green-500': passwordStrength.level === 3
-            }"
-            :style="{ width: `${(passwordStrength.level / 3) * 100}%` }"
-          />
-        </div>
-      </div>
+      <PasswordInput
+        v-model="formData.password!"
+        placeholder="请输入密码(至少6位)"
+        show-strength
+      />
       <p v-if="errors.password" class="text-xs text-red-500">{{ errors.password }}</p>
     </div>
 

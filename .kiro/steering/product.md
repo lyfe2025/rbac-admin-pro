@@ -2,21 +2,21 @@
 
 Enterprise full-stack admin system with role-based access control (RBAC).
 
-## Core Features
-- User management with department hierarchy
-- Role-based permission system with menu/button-level access control
-- System configuration (dictionaries, parameters, notices)
-- Monitoring (operation logs, login history, online users, server status)
-- Scheduled job management
+## Purpose
+A comprehensive backend management system for enterprise applications, providing user management, role/permission management, department hierarchy, menu configuration, and system monitoring.
 
-## Domain Model
-- Users belong to departments and can have multiple roles/posts
-- Roles define menu permissions and data scope (全部/本部门/自定义)
-- Menus are hierarchical (目录/菜单/按钮) with permission identifiers
-- Soft delete pattern: `delFlag` field (0=exists, 2=deleted)
-- Status pattern: `status` field (0=normal, 1=disabled)
+## Core Features
+- User Management: CRUD, role assignment, department assignment, status control
+- Role Management: Role-based permissions with menu access control
+- Department Management: Hierarchical organization structure
+- Menu Management: Dynamic menu configuration with permission binding
+- System Configuration: Dictionary data, system parameters, notices
+- Monitoring: Operation logs, login history, online users, server status, scheduled jobs
+
+## Target Users
+- System administrators managing enterprise applications
+- Developers building admin dashboards on this foundation
 
 ## Language
-- Primary language: Chinese (中文)
-- Code comments and documentation in Chinese
-- API responses include Chinese messages
+- UI and documentation are primarily in Chinese (简体中文)
+- Code comments use Chinese

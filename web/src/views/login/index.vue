@@ -91,6 +91,7 @@ const handleLogin = async () => {
     } else if (result.token) {
       // 直接登录成功
       setToken(result.token)
+      userStore.$patch({ token: result.token })
       await userStore.getInfo()
       toast({ title: '登录成功', description: '欢迎回来，' + username.value })
       router.push('/')
@@ -122,6 +123,7 @@ const handleTwoFactorVerify = async () => {
     })) as unknown as { data: { token: string } }
 
     setToken(response.data.token)
+    userStore.$patch({ token: response.data.token })
     await userStore.getInfo()
     toast({ title: '登录成功', description: '欢迎回来，' + username.value })
     router.push('/')

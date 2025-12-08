@@ -73,3 +73,12 @@ export function updateProfile(data: {
     data
   })
 }
+
+// 修改个人密码
+export function updatePassword(oldPassword: string, newPassword: string) {
+  return request({
+    url: '/system/user/profile/updatePwd',
+    method: 'put',
+    data: { oldPassword, newPassword }
+  })
+}

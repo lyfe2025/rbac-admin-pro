@@ -1,65 +1,75 @@
 # Tech Stack
 
-## Monorepo Structure
-- `web/` - Vue 3 frontend
-- `server-nestjs/` - NestJS backend
-- `db/` - PostgreSQL schema and seed data
+## Architecture
+Monorepo with two main packages:
+- `web/` - Frontend (Vue 3 SPA)
+- `server-nestjs/` - Backend (NestJS REST API)
 
-## Backend (server-nestjs)
-- **Framework**: NestJS 11 with TypeScript
-- **ORM**: Prisma 7 with PostgreSQL
-- **Auth**: JWT (passport-jwt), bcrypt for passwords
-- **Cache**: Redis (ioredis)
-- **Logging**: Winston with daily rotate
-- **API Docs**: Swagger (@nestjs/swagger)
-- **Validation**: class-validator, class-transformer
+## Frontend (`web/`)
+- Framework: Vue 3 with Composition API (`<script setup lang="ts">`)
+- Build: Vite 7
+- Language: TypeScript
+- UI Library: shadcn-vue (Radix-based components)
+- Styling: Tailwind CSS
+- State: Pinia
+- Routing: Vue Router 4
+- HTTP: Axios
+- Forms: VeeValidate + Zod
+- Icons: Lucide Vue
 
-## Frontend (web)
-- **Framework**: Vue 3.5 with Composition API (`<script setup>`)
-- **Build**: Vite 7
-- **State**: Pinia
-- **Router**: Vue Router 4
-- **UI**: shadcn-vue (radix-vue based), Tailwind CSS
-- **Forms**: vee-validate with zod
-- **HTTP**: Axios
-- **Icons**: lucide-vue-next
-
-## Infrastructure
-- **Database**: PostgreSQL 16
-- **Cache**: Redis 7
-- **Container**: Docker Compose
+## Backend (`server-nestjs/`)
+- Framework: NestJS 11
+- Language: TypeScript
+- ORM: Prisma 7
+- Database: PostgreSQL
+- Auth: JWT (Passport)
+- Validation: class-validator + class-transformer
+- API Docs: Swagger (@nestjs/swagger)
+- Logging: Winston with daily rotation
+- Cache: Redis (ioredis)
 
 ## Common Commands
 
-### Backend (server-nestjs/)
+### Frontend (`web/` directory)
 ```bash
-npm run start:dev     # Dev server with watch
-npm run build         # Production build
-npm run lint          # ESLint fix
-npm run check         # TypeScript check (tsc --noEmit)
-npm run validate      # lint + check
-npx prisma generate   # Generate Prisma client
-npx prisma migrate dev # Run migrations
-npx prisma db seed    # Seed database
+npm run dev          # Start dev server
+npm run build        # Production build (includes type-check)
+npm run type-check   # TypeScript validation
+npm run lint         # ESLint
+npm run format       # Prettier
 ```
 
-### Frontend (web/)
+### Backend (`server-nestjs/` directory)
 ```bash
-npm run dev           # Vite dev server
-npm run build         # Production build (vue-tsc + vite)
-npm run type-check    # TypeScript check
-npm run lint          # ESLint fix
-npm run format        # Prettier format
+npm run start:dev    # Start with hot reload
+npm run build        # Compile to dist/
+npm run check        # TypeScript check (tsc --noEmit)
+npm run lint         # ESLint
+npm run validate     # lint + check combined
+```
+
+### Database (Prisma)
+```bash
+npx prisma migrate dev    # Create and apply migration
+npx prisma generate       # Regenerate client types
+npx prisma studio         # Database GUI
+npx prisma db seed        # Run seed script
 ```
 
 ### Docker
 ```bash
-docker-compose up -d           # Start all services
-docker-compose up postgres redis  # Start only DB services
+docker-compose up -d      # Start all services
+docker-compose down       # Stop services
 ```
 
-## Code Style
-- **Backend**: Prettier (singleQuote, trailingComma: all)
-- **Frontend**: Prettier (no semi, singleQuote, printWidth: 100)
-- ESLint with TypeScript rules
-- `@typescript-eslint/no-explicit-any`: off (allowed)
+## API Response Format
+All API responses follow this structure:
+```json
+{
+  "code": 10000,
+  "msg": "操作成功",
+  "data": { ... }
+}
+```
+- `code: 10000` = success
+- Other codes indicate specific business errors (see error-code.enum.ts)

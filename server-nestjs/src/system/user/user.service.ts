@@ -6,6 +6,8 @@ import { QueryUserDto } from './dto/query-user.dto';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { LoggerService } from '../../common/logger/logger.service';
+import { BusinessException } from '../../common/exceptions/business.exception';
+import { ErrorCode } from '../../common/enums/error-code.enum';
 
 @Injectable()
 export class UserService {
@@ -401,6 +403,46 @@ export class UserService {
   }
 
   /**
+   * 修改个人密码
+   */
+  async updatePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string,
+  ) {
+    this.logger.log(`修改个人密码: ${userId}`, 'UserService');
+
+    const user = await this.prisma.sysUser.findUnique({
+      where: { userId: BigInt(userId) },
+    });
+
+    if (!user) {
+      throw new BadRequestException('用户不存在');
+    }
+
+    // 验证旧密码
+    const isMatch = await bcrypt.compare(oldPassword, user.password || '');
+    if (!isMatch) {
+      throw new BadRequestException('当前密码错误');
+    }
+
+    // 加密新密码
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    await this.prisma.sysUser.update({
+      where: { userId: BigInt(userId) },
+      data: { password: hashedPassword, updateTime: new Date() },
+    });
+
+    this.logger.log(
+      `密码修改成功: ${user.userName} (ID: ${userId})`,
+      'UserService',
+    );
+    return { msg: '密码修改成功' };
+  }
+
+  /**
    * 更新个人信息
    */
   async updateProfile(
@@ -415,12 +457,37 @@ export class UserService {
   ) {
     this.logger.log(`更新个人信息: ${userId}`, 'UserService');
 
+    // 字段长度校验
+    if (data.nickName && data.nickName.length > 30) {
+      throw new BusinessException(
+        ErrorCode.INVALID_PARAMS,
+        '用户昵称不能超过30个字符',
+      );
+    }
+    if (data.email && data.email.length > 50) {
+      throw new BusinessException(
+        ErrorCode.INVALID_PARAMS,
+        '邮箱不能超过50个字符',
+      );
+    }
+    if (data.phonenumber && data.phonenumber.length > 11) {
+      throw new BusinessException(
+        ErrorCode.INVALID_PARAMS,
+        '手机号码不能超过11位',
+      );
+    }
+    if (data.avatar && data.avatar.length > 100) {
+      throw new BusinessException(ErrorCode.INVALID_PARAMS, '头像地址过长');
+    }
+
     const result = await this.prisma.sysUser.update({
       where: { userId: BigInt(userId) },
       data: {
         ...(data.nickName !== undefined && { nickName: data.nickName }),
         ...(data.email !== undefined && { email: data.email }),
-        ...(data.phonenumber !== undefined && { phonenumber: data.phonenumber }),
+        ...(data.phonenumber !== undefined && {
+          phonenumber: data.phonenumber,
+        }),
         ...(data.sex !== undefined && { sex: data.sex }),
         ...(data.avatar !== undefined && { avatar: data.avatar }),
         updateTime: new Date(),
