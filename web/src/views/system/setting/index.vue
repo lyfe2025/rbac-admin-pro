@@ -22,12 +22,10 @@ import {
   RefreshCw,
   Shield,
   KeyRound,
-  UserPlus,
   Globe,
   Mail,
   HardDrive,
   FileText,
-  Lock,
   Clock,
   Send,
   Database,
@@ -52,11 +50,7 @@ const form = reactive({
   // 安全设置
   'sys.account.captchaEnabled': 'false',
   'sys.account.twoFactorEnabled': 'false',
-  'sys.account.registerEnabled': 'false',
-  // 密码策略
-  'sys.password.minLength': '6',
-  'sys.password.complexity': 'low',
-  'sys.password.expireDays': '0',
+
   // 登录限制
   'sys.login.maxRetry': '5',
   'sys.login.lockTime': '10',
@@ -95,7 +89,6 @@ async function getData() {
     const prefixes = [
       'sys.app.',
       'sys.account.',
-      'sys.password.',
       'sys.login.',
       'sys.session.',
       'sys.mail.',
@@ -198,10 +191,7 @@ function getConfigName(key: string): string {
     'sys.app.favicon': '网站图标',
     'sys.account.captchaEnabled': '验证码开关',
     'sys.account.twoFactorEnabled': '两步验证开关',
-    'sys.account.registerEnabled': '用户注册开关',
-    'sys.password.minLength': '密码最小长度',
-    'sys.password.complexity': '密码复杂度',
-    'sys.password.expireDays': '密码过期天数',
+
     'sys.login.maxRetry': '登录失败次数',
     'sys.login.lockTime': '账户锁定时长',
     'sys.session.timeout': '会话超时时间',
@@ -230,9 +220,7 @@ function getConfigName(key: string): string {
 
 function getConfigRemark(key: string): string {
   const remarks: Record<string, string> = {
-    'sys.password.minLength': '用户密码的最小长度要求',
-    'sys.password.complexity': '密码复杂度要求',
-    'sys.password.expireDays': '密码过期天数，0表示永不过期',
+
     'sys.login.maxRetry': '连续登录失败次数达到后锁定账户',
     'sys.login.lockTime': '账户锁定时长（分钟）',
     'sys.session.timeout': 'Token有效期（分钟）',
@@ -263,12 +251,7 @@ const twoFactorEnabled = computed({
   }
 })
 
-const registerEnabled = computed({
-  get: () => form['sys.account.registerEnabled'] === 'true',
-  set: (val: boolean) => {
-    form['sys.account.registerEnabled'] = val ? 'true' : 'false'
-  }
-})
+
 
 const mailEnabled = computed({
   get: () => form['sys.mail.enabled'] === 'true',
@@ -402,45 +385,6 @@ onMounted(() => {
               </div>
               <Switch v-model:checked="twoFactorEnabled" />
             </div>
-            <div class="flex items-center justify-between">
-              <div class="space-y-0.5">
-                <Label class="text-base flex items-center gap-2"><UserPlus class="h-4 w-4" />用户注册</Label>
-                <p class="text-sm text-muted-foreground">开启后，允许新用户自行注册账号</p>
-              </div>
-              <Switch v-model:checked="registerEnabled" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle class="flex items-center gap-2"><Lock class="h-5 w-5" />密码策略</CardTitle>
-            <CardDescription>配置用户密码的安全要求</CardDescription>
-          </CardHeader>
-          <CardContent class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="grid gap-2">
-                <Label>最小长度</Label>
-                <Input v-model="form['sys.password.minLength']" type="number" min="4" max="32" />
-                <p class="text-xs text-muted-foreground">密码最少字符数</p>
-              </div>
-              <div class="grid gap-2">
-                <Label>复杂度要求</Label>
-                <Select v-model="form['sys.password.complexity']">
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">低 - 仅字母数字</SelectItem>
-                    <SelectItem value="medium">中 - 需特殊字符</SelectItem>
-                    <SelectItem value="high">高 - 大小写+特殊字符</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div class="grid gap-2">
-                <Label>过期天数</Label>
-                <Input v-model="form['sys.password.expireDays']" type="number" min="0" />
-                <p class="text-xs text-muted-foreground">0 表示永不过期</p>
-              </div>
-            </div>
           </CardContent>
         </Card>
 
@@ -550,7 +494,7 @@ onMounted(() => {
                   <SelectItem value="local">本地存储</SelectItem>
                   <SelectItem value="oss">阿里云 OSS</SelectItem>
                   <SelectItem value="cos">腾讯云 COS</SelectItem>
-                  <SelectItem value="minio">MinIO</SelectItem>
+                  <SelectItem value="r2">Cloudflare R2</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -565,21 +509,24 @@ onMounted(() => {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="grid gap-2">
                   <Label>服务端点 (Endpoint)</Label>
-                  <Input v-model="form['sys.storage.oss.endpoint']" placeholder="oss-cn-hangzhou.aliyuncs.com" />
+                  <Input
+                    v-model="form['sys.storage.oss.endpoint']"
+                    :placeholder="form['sys.storage.type'] === 'oss' ? 'oss-cn-hangzhou.aliyuncs.com' : form['sys.storage.type'] === 'cos' ? 'cos.ap-guangzhou.myqcloud.com' : 'xxxx.r2.cloudflarestorage.com'"
+                  />
                 </div>
                 <div class="grid gap-2">
                   <Label>存储桶 (Bucket)</Label>
-                  <Input v-model="form['sys.storage.oss.bucket']" placeholder="存储桶名称" />
+                  <Input v-model="form['sys.storage.oss.bucket']" placeholder="my-bucket" />
                 </div>
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="grid gap-2">
-                  <Label>AccessKey ID</Label>
-                  <Input v-model="form['sys.storage.oss.accessKey']" placeholder="访问密钥 ID" />
+                  <Label>{{ form['sys.storage.type'] === 'r2' ? 'Access Key ID' : 'AccessKey ID' }}</Label>
+                  <Input v-model="form['sys.storage.oss.accessKey']" placeholder="LTAI5t..." />
                 </div>
                 <div class="grid gap-2">
-                  <Label>AccessKey Secret</Label>
-                  <Input v-model="form['sys.storage.oss.secretKey']" type="password" placeholder="访问密钥" />
+                  <Label>{{ form['sys.storage.type'] === 'r2' ? 'Secret Access Key' : 'AccessKey Secret' }}</Label>
+                  <Input v-model="form['sys.storage.oss.secretKey']" type="password" placeholder="••••••••" />
                 </div>
               </div>
             </div>

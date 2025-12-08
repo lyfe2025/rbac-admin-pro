@@ -253,7 +253,7 @@ VALUES
   ('初始密码', 'sys.account.initPassword', '123456', 'Y', NOW()),
   ('验证码开关', 'sys.account.captchaEnabled', 'false', 'Y', NOW()),
   ('两步验证开关', 'sys.account.twoFactorEnabled', 'false', 'Y', NOW()),
-  ('用户注册开关', 'sys.account.registerEnabled', 'false', 'Y', NOW()),
+
   -- 网站信息设置
   ('网站名称', 'sys.app.name', 'RBAC Admin Pro', 'Y', NOW()),
   ('网站描述', 'sys.app.description', '企业级全栈权限管理系统', 'Y', NOW()),
@@ -281,10 +281,7 @@ VALUES
   -- 网站Logo和图标
   ('网站Logo', 'sys.app.logo', '', 'Y', NOW()),
   ('网站图标', 'sys.app.favicon', '', 'Y', NOW()),
-  -- 密码策略
-  ('密码最小长度', 'sys.password.minLength', '6', 'Y', NOW()),
-  ('密码复杂度', 'sys.password.complexity', 'low', 'Y', NOW()),
-  ('密码过期天数', 'sys.password.expireDays', '0', 'Y', NOW()),
+
   -- 登录限制
   ('登录失败次数', 'sys.login.maxRetry', '5', 'Y', NOW()),
   ('账户锁定时长', 'sys.login.lockTime', '10', 'Y', NOW()),

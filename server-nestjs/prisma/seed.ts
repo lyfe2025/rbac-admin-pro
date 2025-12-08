@@ -1244,12 +1244,7 @@ async function main() {
       configValue: 'false',
       configType: 'Y',
     },
-    {
-      configName: '用户注册开关',
-      configKey: 'sys.account.registerEnabled',
-      configValue: 'false',
-      configType: 'Y',
-    },
+
     // 网站信息设置
     {
       configName: '网站名称',
@@ -1387,25 +1382,7 @@ async function main() {
       configValue: '',
       configType: 'Y',
     },
-    // 密码策略
-    {
-      configName: '密码最小长度',
-      configKey: 'sys.password.minLength',
-      configValue: '6',
-      configType: 'Y',
-    },
-    {
-      configName: '密码复杂度',
-      configKey: 'sys.password.complexity',
-      configValue: 'low',
-      configType: 'Y',
-    },
-    {
-      configName: '密码过期天数',
-      configKey: 'sys.password.expireDays',
-      configValue: '0',
-      configType: 'Y',
-    },
+
     // 登录限制
     {
       configName: '登录失败次数',
