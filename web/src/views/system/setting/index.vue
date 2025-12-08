@@ -17,6 +17,7 @@ import {
 import { useToast } from '@/components/ui/toast/use-toast'
 import ImageUpload from '@/components/common/ImageUpload.vue'
 import { listConfig, updateConfig, addConfig, type SysConfig } from '@/api/system/config'
+import { testMail } from '@/api/system/mail'
 import {
   Save,
   RefreshCw,
@@ -169,12 +170,20 @@ async function handleSubmit() {
 }
 
 async function handleTestMail() {
+  // 先保存当前配置
+  await handleSubmit()
+  
   testMailLoading.value = true
   try {
-    // TODO: 调用测试邮件接口
-    toast({ title: '发送成功', description: '测试邮件已发送，请检查收件箱' })
-  } catch (error) {
-    toast({ title: '发送失败', description: '请检查邮件配置', variant: 'destructive' })
+    const res = await testMail() as unknown as { data: { success: boolean; message: string } }
+    const result = res.data
+    if (result.success) {
+      toast({ title: '发送成功', description: result.message || '测试邮件已发送，请检查收件箱' })
+    } else {
+      toast({ title: '发送失败', description: result.message || '请检查邮件配置', variant: 'destructive' })
+    }
+  } catch (error: any) {
+    toast({ title: '发送失败', description: error?.message || '请检查邮件配置', variant: 'destructive' })
   } finally {
     testMailLoading.value = false
   }
@@ -456,16 +465,19 @@ onMounted(() => {
               <div class="grid gap-2">
                 <Label>邮箱账号</Label>
                 <Input v-model="form['sys.mail.username']" placeholder="登录邮箱账号" />
+                <p class="text-xs text-muted-foreground">用于登录 SMTP 服务器的认证账号</p>
               </div>
               <div class="grid gap-2">
                 <Label>邮箱密码/授权码</Label>
                 <Input v-model="form['sys.mail.password']" type="password" placeholder="邮箱密码或授权码" />
+                <p class="text-xs text-muted-foreground">QQ/163 等邮箱需使用授权码，非登录密码</p>
               </div>
             </div>
 
             <div class="grid gap-2">
               <Label>发件人地址</Label>
               <Input v-model="form['sys.mail.from']" placeholder="noreply@example.com" />
+              <p class="text-xs text-muted-foreground">收件人看到的发件人，QQ 邮箱需与账号一致</p>
             </div>
 
             <div class="pt-4 border-t">
