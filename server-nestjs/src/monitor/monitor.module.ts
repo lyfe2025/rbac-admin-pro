@@ -12,11 +12,14 @@ import { JobService } from './job/job.service';
 import { JobController } from './job/job.controller';
 import { CacheService } from './cache/cache.service';
 import { CacheController } from './cache/cache.controller';
+import { DatabaseService } from './database/database.service';
+import { DatabaseController } from './database/database.controller';
 import { RedisModule } from '../redis/redis.module';
+import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [RedisModule, forwardRef(() => AuthModule)],
+  imports: [RedisModule, PrismaModule, forwardRef(() => AuthModule)],
   providers: [
     LoginLogService,
     OnlineService,
@@ -25,6 +28,7 @@ import { AuthModule } from '../auth/auth.module';
     JobService,
     CacheService,
     ServerService,
+    DatabaseService,
   ],
   controllers: [
     OnlineController,
@@ -33,6 +37,7 @@ import { AuthModule } from '../auth/auth.module';
     JobController,
     ServerController,
     CacheController,
+    DatabaseController,
   ],
   exports: [
     LoginLogService,
@@ -40,6 +45,7 @@ import { AuthModule } from '../auth/auth.module';
     LogininforService,
     ServerService,
     CacheService,
+    DatabaseService,
   ],
 })
 export class MonitorModule {}

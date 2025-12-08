@@ -7,12 +7,13 @@ export interface CacheInfo {
   connected_clients: string
   uptime_in_days: string
   used_memory_human: string
-  used_cpu_user_children: string
+  used_memory_peak_human: string
   maxmemory_human: string
   aof_enabled: string
   rdb_last_bgsave_status: string
   dbSize: number
   commandStats: { name: string; value: string }[]
+  isMemoryMode: boolean
 }
 
 export function getCache() {

@@ -33,7 +33,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       strict: false,
     });
     if (blacklist && token && (await blacklist.isBlacklisted(token))) {
-      throw new UnauthorizedException('Token 已失效');
+      throw new UnauthorizedException('Token 已失效，请重新登录');
     }
 
     // 滑动过期：检查 Token 是否快过期，如果是则刷新

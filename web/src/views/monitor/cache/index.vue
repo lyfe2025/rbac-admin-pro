@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import {
   Card,
   CardContent,
@@ -11,30 +11,71 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
 } from '@/components/ui/table'
 import { getCache, type CacheInfo } from '@/api/monitor/cache'
-import { Loader2, RefreshCw, Database, Activity, Server, Clock } from 'lucide-vue-next'
-// Note: For real charts, we would use echarts or chart.js. 
-// Here we use simple progress bars or text for mock visualization
+import { Loader2, RefreshCw, Database, Activity, Server, Clock, AlertTriangle } from 'lucide-vue-next'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { toast } from '@/components/ui/toast'
 
 const loading = ref(true)
 const cache = ref<CacheInfo | null>(null)
+const autoRefresh = ref(false)
+const refreshInterval = ref<ReturnType<typeof setInterval> | null>(null)
+const lastUpdateTime = ref<string>('')
+
+// 命令统计最大值，用于计算进度条
+const maxCommandCalls = computed(() => {
+  if (!cache.value?.commandStats?.length) return 1
+  return Math.max(...cache.value.commandStats.map((s) => parseInt(s.value) || 0))
+})
 
 async function getData() {
   loading.value = true
   try {
     const res = await getCache()
     cache.value = res.data
+    lastUpdateTime.value = new Date().toLocaleTimeString('zh-CN')
+  } catch {
+    toast({
+      title: '获取缓存信息失败',
+      description: '请检查 Redis 连接或稍后重试',
+      variant: 'destructive',
+    })
   } finally {
     loading.value = false
   }
 }
 
+function toggleAutoRefresh() {
+  autoRefresh.value = !autoRefresh.value
+  if (autoRefresh.value) {
+    startAutoRefresh()
+    toast({ title: '已开启自动刷新', description: '每 5 秒更新一次' })
+  } else {
+    stopAutoRefresh()
+    toast({ title: '已关闭自动刷新' })
+  }
+}
+
+function startAutoRefresh() {
+  if (refreshInterval.value) return
+  refreshInterval.value = setInterval(() => getData(), 5000)
+}
+
+function stopAutoRefresh() {
+  if (refreshInterval.value) {
+    clearInterval(refreshInterval.value)
+    refreshInterval.value = null
+  }
+}
+
 onMounted(() => {
   getData()
+})
+
+onUnmounted(() => {
+  stopAutoRefresh()
 })
 </script>
 
@@ -44,13 +85,22 @@ onMounted(() => {
     <div class="flex items-center justify-between">
       <div>
         <h2 class="text-2xl font-bold tracking-tight">缓存监控</h2>
-        <p class="text-muted-foreground">
-          监控Redis缓存服务器状态
-        </p>
+        <p class="text-muted-foreground">监控 Redis 缓存服务器状态</p>
       </div>
       <div class="flex items-center gap-2">
-        <Button variant="outline" @click="getData">
-          <RefreshCw class="mr-2 h-4 w-4" />
+        <span v-if="lastUpdateTime" class="text-xs text-muted-foreground">
+          更新于 {{ lastUpdateTime }}
+        </span>
+        <Button
+          :variant="autoRefresh ? 'default' : 'outline'"
+          size="sm"
+          @click="toggleAutoRefresh"
+        >
+          <Activity class="mr-2 h-4 w-4" :class="{ 'animate-pulse': autoRefresh }" />
+          {{ autoRefresh ? '自动刷新中' : '自动刷新' }}
+        </Button>
+        <Button variant="outline" size="sm" @click="getData" :disabled="loading">
+          <RefreshCw class="mr-2 h-4 w-4" :class="{ 'animate-spin': loading }" />
           刷新
         </Button>
       </div>
@@ -61,6 +111,15 @@ onMounted(() => {
     </div>
 
     <div v-else-if="cache" class="space-y-6">
+      <!-- Memory Mode Warning -->
+      <Alert v-if="cache.isMemoryMode" class="border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950/20">
+        <AlertTriangle class="h-4 w-4 text-yellow-600" />
+        <AlertTitle class="text-yellow-700 dark:text-yellow-500">内存模式</AlertTitle>
+        <AlertDescription class="text-yellow-600 dark:text-yellow-500/80">
+          当前使用内存模拟 Redis，数据仅供参考。如需真实监控数据，请在 .env 中设置 REDIS_ENABLED=true 并配置 Redis 连接。
+        </AlertDescription>
+      </Alert>
+
       <!-- Key Metrics -->
       <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -100,12 +159,14 @@ onMounted(() => {
           </CardHeader>
           <CardContent>
             <div class="text-2xl font-bold">{{ cache.used_memory_human }}</div>
-            <p class="text-xs text-muted-foreground">CPU: {{ cache.used_cpu_user_children }}</p>
+            <p class="text-xs text-muted-foreground">
+              峰值: {{ cache.used_memory_peak_human || '-' }}
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      <!-- Command Stats (Simulated Chart) -->
+      <!-- Command Stats -->
       <Card>
         <CardHeader>
           <CardTitle>命令统计</CardTitle>
@@ -113,14 +174,20 @@ onMounted(() => {
         <CardContent>
           <div class="space-y-4">
             <div v-for="item in cache.commandStats" :key="item.name" class="space-y-1">
-               <div class="flex items-center justify-between text-sm">
-                 <span class="font-medium">{{ item.name }}</span>
-                 <span>{{ item.value }}次</span>
-               </div>
-               <div class="h-2 bg-secondary rounded-full overflow-hidden">
-                 <div class="h-full bg-primary" :style="{ width: Math.min(100, (parseInt(item.value) / 1500) * 100) + '%' }" />
-               </div>
+              <div class="flex items-center justify-between text-sm">
+                <span class="font-medium">{{ item.name }}</span>
+                <span>{{ parseInt(item.value).toLocaleString() }} 次</span>
+              </div>
+              <div class="h-2 bg-secondary rounded-full overflow-hidden">
+                <div
+                  class="h-full bg-primary transition-all"
+                  :style="{ width: (parseInt(item.value) / maxCommandCalls) * 100 + '%' }"
+                />
+              </div>
             </div>
+            <p v-if="!cache.commandStats?.length" class="text-sm text-muted-foreground text-center py-4">
+              暂无命令统计数据
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -151,12 +218,24 @@ onMounted(() => {
                  <TableCell class="font-medium">使用内存</TableCell>
                  <TableCell>{{ cache.used_memory_human }}</TableCell>
                </TableRow>
-                <TableRow>
-                 <TableCell class="font-medium">AOF开启</TableCell>
-                 <TableCell>{{ cache.aof_enabled === '0' ? '否' : '是' }}</TableCell>
-                 <TableCell class="font-medium">RDB状态</TableCell>
-                 <TableCell>{{ cache.rdb_last_bgsave_status }}</TableCell>
-               </TableRow>
+               <TableRow>
+                <TableCell class="font-medium">内存峰值</TableCell>
+                <TableCell>{{ cache.used_memory_peak_human || '-' }}</TableCell>
+                <TableCell class="font-medium">最大内存</TableCell>
+                <TableCell>
+                  <span v-if="cache.maxmemory_human === '0B' || !cache.maxmemory_human">
+                    <span class="text-yellow-600">无限制</span>
+                    <span class="text-xs text-muted-foreground ml-1">(生产环境建议配置)</span>
+                  </span>
+                  <span v-else>{{ cache.maxmemory_human }}</span>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell class="font-medium">AOF 开启</TableCell>
+                <TableCell>{{ cache.aof_enabled === '0' ? '否' : '是' }}</TableCell>
+                <TableCell class="font-medium">RDB 状态</TableCell>
+                <TableCell>{{ cache.rdb_last_bgsave_status }}</TableCell>
+              </TableRow>
              </TableBody>
            </Table>
         </CardContent>

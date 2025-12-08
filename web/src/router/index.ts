@@ -118,9 +118,9 @@ const router = createRouter({
         },
         {
           path: 'monitor/druid',
-          name: 'Druid',
+          name: 'Database',
           component: () => import('@/views/monitor/druid/index.vue'),
-          meta: { title: '连接池监控', icon: 'activity', roles: ['admin'] }
+          meta: { title: '数据库监控', icon: 'database', roles: ['admin'] }
         },
         // Tool Module
         {

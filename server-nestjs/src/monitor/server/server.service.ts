@@ -316,9 +316,7 @@ export class ServerService {
   /**
    * 通用 df 命令获取磁盘信息
    */
-  private getDiskInfoByDf(
-    platform: string,
-  ): Array<{
+  private getDiskInfoByDf(platform: string): Array<{
     dirName: string;
     sysTypeName: string;
     typeName: string;
@@ -341,7 +339,8 @@ export class ServerService {
 
       return [
         {
-          dirName: platform === 'darwin' ? '系统盘 (Macintosh HD)' : '系统盘 (/)',
+          dirName:
+            platform === 'darwin' ? '系统盘 (Macintosh HD)' : '系统盘 (/)',
           sysTypeName: platform === 'darwin' ? 'APFS' : 'ext4',
           typeName: platform === 'darwin' ? 'APFS' : 'ext4',
           total: this.formatBytes(totalKb * 1024),

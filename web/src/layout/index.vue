@@ -371,7 +371,7 @@ const handleOpenEditDialog = (userId: string) => {
                         <Database class="h-4 w-4" /> 缓存监控
                       </router-link>
                       <router-link to="/monitor/druid" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/monitor/druid') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <Activity class="h-4 w-4" /> 连接池监控
+                        <Database class="h-4 w-4" /> 数据库监控
                       </router-link>
                       <router-link to="/monitor/operlog" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/monitor/operlog') ? 'bg-muted text-primary' : 'text-muted-foreground')">
                         <FileText class="h-4 w-4" /> 操作日志

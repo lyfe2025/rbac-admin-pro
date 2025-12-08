@@ -26,10 +26,10 @@ import { PrismaModule } from '../prisma/prisma.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET') || 'super-secret-key',
+        // 注意：实际签发 Token 时会在 AuthService 中动态设置 expiresIn
+        // 这里的配置仅作为默认值，实际使用数据库中的 sys.session.timeout 配置
         signOptions: {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          expiresIn: (configService.get<string>('JWT_EXPIRES_IN') ||
-            '24h') as any,
+          expiresIn: '30m', // 默认 30 分钟，实际由 SecurityConfigService 控制
         },
       }),
     }),

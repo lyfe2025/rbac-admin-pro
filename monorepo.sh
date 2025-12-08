@@ -254,6 +254,7 @@ start_web() {
   (cd "$WEB_DIR" && nohup npm run dev >"$PID_DIR/web-dev.log" 2>&1 & echo $! > "$PID_DIR/web-dev.pid")
   wait_for_port "$WEB_PORT" "前端"
   printf "${FG_CYAN}  ➜ 前端访问地址: ${BOLD}http://localhost:${WEB_PORT}${RESET}\n"
+  printf "${FG_CYAN}  ➜ 安全入口地址: ${BOLD}http://localhost:${WEB_PORT}/login${RESET}\n"
 }
 
 start_server() {
@@ -308,6 +309,7 @@ status_all() {
   if [ "$wstatus" = "运行中" ]; then
     printf "${FG_GREEN}前端状态：%s${RESET} (pid: %s, port: %s)\n" "$wstatus" "${wpid:-'-'}" "$WEB_PORT"
     printf "${FG_CYAN}  ➜ 访问地址: ${BOLD}http://localhost:${WEB_PORT}${RESET}\n"
+    printf "${FG_CYAN}  ➜ 安全入口: ${BOLD}http://localhost:${WEB_PORT}/login${RESET}\n"
   else
     printf "${FG_RED}前端状态：%s${RESET} (pid: %s, port: %s)\n" "$wstatus" "${wpid:-'-'}" "$WEB_PORT"
   fi
