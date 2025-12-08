@@ -124,12 +124,6 @@ const router = createRouter({
         },
         // Tool Module
         {
-          path: 'tool/gen',
-          name: 'Gen',
-          component: () => import('@/views/tool/gen/index.vue'),
-          meta: { title: '代码生成', icon: 'code', roles: ['admin'] }
-        },
-        {
           path: 'tool/build',
           name: 'Build',
           component: () => import('@/views/tool/build/index.vue'),

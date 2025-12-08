@@ -1,22 +1,36 @@
 # RBAC Admin Pro
 
-Enterprise full-stack admin system with role-based access control (RBAC).
+企业级全栈后台管理系统 (Enterprise Full-Stack Admin System)
 
-## Purpose
-A comprehensive backend management system for enterprise applications, providing user management, role/permission management, department hierarchy, menu configuration, and system monitoring.
+## 产品定位
+基于 RBAC (Role-Based Access Control) 的企业级后台管理系统，提供完整的用户、角色、权限、组织架构管理能力。
 
-## Core Features
-- User Management: CRUD, role assignment, department assignment, status control
-- Role Management: Role-based permissions with menu access control
-- Department Management: Hierarchical organization structure
-- Menu Management: Dynamic menu configuration with permission binding
-- System Configuration: Dictionary data, system parameters, notices
-- Monitoring: Operation logs, login history, online users, server status, scheduled jobs
+## 核心功能模块
 
-## Target Users
-- System administrators managing enterprise applications
-- Developers building admin dashboards on this foundation
+### 系统管理 (system/)
+- 用户管理：CRUD、角色分配、部门分配、状态控制、密码重置
+- 角色管理：角色权限配置、菜单权限绑定
+- 部门管理：树形组织架构、层级关系
+- 菜单管理：动态菜单配置、权限标识绑定
+- 岗位管理：职位定义与用户关联
+- 字典管理：系统字典类型与数据
+- 参数配置：系统级参数设置
+- 通知公告：系统公告发布
 
-## Language
-- UI and documentation are primarily in Chinese (简体中文)
-- Code comments use Chinese
+### 系统监控 (monitor/)
+- 操作日志：用户操作审计记录
+- 登录日志：登录历史与安全审计
+- 在线用户：实时在线用户管理
+- 服务监控：服务器状态监控
+- 缓存监控：Redis 缓存管理
+- 定时任务：计划任务管理
+
+## 目标用户
+- 企业系统管理员
+- 基于此框架进行二次开发的开发者
+
+## 语言规范
+- UI 界面：简体中文
+- 代码注释：中文
+- API 响应消息：中文
+- 文档：中文

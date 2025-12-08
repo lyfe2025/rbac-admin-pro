@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useMenuStore, type MenuItem } from '@/stores/modules/menu'
+import { useMenuStore } from '@/stores/modules/menu'
 import { cn } from '@/lib/utils'
 import {
   Accordion,
@@ -9,29 +9,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion'
-import {
-  Settings,
-  Monitor,
-  PenTool,
-  User,
-  Shield,
-  Menu,
-  Network,
-  Briefcase,
-  Book,
-  Bell,
-  FileText,
-  LogIn,
-  Users,
-  Server,
-  Database,
-  Activity,
-  Code,
-  Layout as LayoutIcon,
-  Link,
-  Clock,
-  Settings2,
-} from 'lucide-vue-next'
+import * as icons from 'lucide-vue-next'
 
 const route = useRoute()
 const menuStore = useMenuStore()
@@ -40,45 +18,20 @@ const menuList = computed(() => menuStore.menuList)
 
 const isActive = (path: string) => route.path === path
 
-// 图标映射
-const iconMap: Record<string, any> = {
-  settings: Settings,
-  monitor: Monitor,
-  tool: PenTool,
-  user: User,
-  users: Users,
-  shield: Shield,
-  menu: Menu,
-  network: Network,
-  briefcase: Briefcase,
-  'book-a': Book,
-  book: Book,
-  bell: Bell,
-  megaphone: Bell,
-  'file-text': FileText,
-  list: FileText,
-  'log-in': LogIn,
-  server: Server,
-  database: Database,
-  'database-backup': Database,
-  activity: Activity,
-  code: Code,
-  'code-xml': Code,
-  layout: LayoutIcon,
-  link: Link,
-  clock: Clock,
-  'alarm-clock': Clock,
-  'settings-2': Settings2,
-  'sliders-vertical': Settings2,
-  'user-check': Users,
-  'badge-check': Briefcase,
-  'building-2': Network,
-  factory: LayoutIcon,
+// 将 kebab-case 转换为 PascalCase
+function toPascalCase(str: string): string {
+  if (!str) return ''
+  return str
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join('')
 }
 
-// 获取图标组件
+// 动态获取图标组件
 function getIcon(iconName: string) {
-  return iconMap[iconName] || Settings
+  if (!iconName) return icons.Settings
+  const pascalName = toPascalCase(iconName)
+  return (icons as any)[pascalName] || icons.Settings
 }
 </script>
 

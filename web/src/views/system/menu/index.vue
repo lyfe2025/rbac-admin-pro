@@ -30,6 +30,18 @@ import { Badge } from '@/components/ui/badge'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useToast } from '@/components/ui/toast/use-toast'
 import { Plus, Edit, Trash2, ChevronDown, ChevronRight, RefreshCw, Search, Loader2, Maximize2, Minimize2, Menu as MenuIcon } from 'lucide-vue-next'
+import IconPicker from '@/components/common/IconPicker.vue'
+import * as icons from 'lucide-vue-next'
+
+// 获取图标组件 (将 kebab-case 转换为 PascalCase)
+function getIconComponent(name: string) {
+  if (!name) return null
+  const pascalName = name
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join('')
+  return (icons as any)[pascalName]
+}
 import {
   AlertDialog,
   AlertDialogAction,
@@ -367,7 +379,16 @@ onMounted(() => {
                 </Badge>
               </div>
             </TableCell>
-            <TableCell>{{ item.icon }}</TableCell>
+            <TableCell>
+              <div class="flex items-center gap-2">
+                <component
+                  v-if="item.icon && getIconComponent(item.icon)"
+                  :is="getIconComponent(item.icon)"
+                  class="h-4 w-4 text-muted-foreground"
+                />
+                <span class="text-xs text-muted-foreground">{{ item.icon }}</span>
+              </div>
+            </TableCell>
             <TableCell>{{ item.orderNum }}</TableCell>
             <TableCell><Badge variant="outline" v-if="item.perms">{{ item.perms }}</Badge></TableCell>
             <TableCell class="max-w-[200px] truncate">{{ item.component }}</TableCell>
@@ -454,7 +475,7 @@ onMounted(() => {
 
           <div class="grid gap-2" v-if="form.menuType !== 'F'">
             <Label for="icon">菜单图标</Label>
-            <Input id="icon" v-model="form.icon" placeholder="请输入图标名称" />
+            <IconPicker v-model="form.icon" />
           </div>
 
           <div class="grid grid-cols-2 gap-4" v-if="form.menuType !== 'F'">

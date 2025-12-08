@@ -397,22 +397,17 @@ ON CONFLICT DO NOTHING;
 
 -- 12.5 系统工具目录
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-VALUES ('系统工具', 'tool', 'Layout', 3, 'M', '0', '0', 'tool', 1, NULL, NULL)
+VALUES ('系统工具', 'tool', 'Layout', 3, 'M', '0', '0', 'wrench', 1, NULL, NULL)
 ON CONFLICT DO NOTHING;
 
 -- 12.6 系统工具子菜单
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '代码生成', 'gen', 'tool/gen/index', 1, 'C', '0', '0', 'code-xml', 1, menu_id, 'tool:gen:list'
+SELECT '接口文档', 'swagger', 'tool/swagger/index', 1, 'C', '0', '0', 'file-text', 1, menu_id, 'tool:swagger:view'
 FROM sys_menu WHERE path = 'tool' AND parent_id IS NULL
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '接口文档', 'swagger', 'tool/swagger/index', 2, 'C', '0', '0', 'file-text', 1, menu_id, 'tool:swagger:view'
-FROM sys_menu WHERE path = 'tool' AND parent_id IS NULL
-ON CONFLICT DO NOTHING;
-
-INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '表单构建', 'build', 'tool/build/index', 3, 'C', '0', '0', 'factory', 1, menu_id, 'tool:build:view'
+SELECT '表单构建', 'build', 'tool/build/index', 2, 'C', '0', '0', 'factory', 1, menu_id, 'tool:build:view'
 FROM sys_menu WHERE path = 'tool' AND parent_id IS NULL
 ON CONFLICT DO NOTHING;
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch, computed } from 'vue'
 import { getToken } from '@/utils/auth'
+import { useToast } from '@/components/ui/toast/use-toast'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -31,6 +32,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: Partial<SysUser>]
 }>()
 
+const { toast } = useToast()
 const avatarPreview = ref<string>('')
 
 // 获取完整的头像URL
@@ -105,12 +107,12 @@ async function handleAvatarUpload(event: Event) {
   if (file) {
     // 验证文件类型
     if (!file.type.startsWith('image/')) {
-      alert('请上传图片文件')
+      toast({ title: '上传失败', description: '请上传图片文件', variant: 'destructive' })
       return
     }
     // 验证文件大小 (2MB)
     if (file.size > 2 * 1024 * 1024) {
-      alert('图片大小不能超过2MB')
+      toast({ title: '上传失败', description: '图片大小不能超过2MB', variant: 'destructive' })
       return
     }
     
@@ -135,11 +137,11 @@ async function handleAvatarUpload(event: Event) {
         avatarPreview.value = fileUrl
         formData.value.avatar = result.data.url // 只存储路径
       } else {
-        alert(result.msg || '上传失败')
+        toast({ title: '上传失败', description: result.msg || '上传失败', variant: 'destructive' })
       }
     } catch (error) {
       console.error('上传失败:', error)
-      alert('上传失败,请重试')
+      toast({ title: '上传失败', description: '上传失败,请重试', variant: 'destructive' })
     }
   }
 }

@@ -8,6 +8,8 @@ export interface SysUserOnline {
   browser: string
   os: string
   loginTime: string
+  /** 在线时长（毫秒） */
+  onlineDuration: number
 }
 
 export function listOnline(query: any) {

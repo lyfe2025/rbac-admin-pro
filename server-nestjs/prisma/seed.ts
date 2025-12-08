@@ -608,22 +608,9 @@ async function main() {
     menuType: 'M',
     visible: '0',
     status: '0',
-    icon: 'tool',
+    icon: 'wrench',
     isFrame: 1,
     parentId: null,
-  });
-  await ensureMenu({
-    menuName: '代码生成',
-    parentId: toolDir.menuId,
-    path: 'gen',
-    component: 'tool/gen/index',
-    orderNum: 1,
-    menuType: 'C',
-    visible: '0',
-    status: '0',
-    perms: 'tool:gen:list',
-    icon: 'code-xml',
-    isFrame: 1,
   });
   await ensureMenu({
     menuName: '接口文档',

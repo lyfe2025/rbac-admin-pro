@@ -35,11 +35,6 @@ export class JobController {
     return this.service.create(dto);
   }
 
-  @Put(':jobId')
-  update(@Param('jobId') jobId: string, @Body() dto: UpdateJobDto) {
-    return this.service.update(jobId, dto);
-  }
-
   @Delete()
   remove(@Query('ids') ids: string) {
     const jobIds = ids ? ids.split(',') : [];
@@ -54,5 +49,11 @@ export class JobController {
   @Put('changeStatus')
   changeStatus(@Body() body: { jobId: string; status: string }) {
     return this.service.changeStatus(body.jobId, body.status);
+  }
+
+  // 参数路由放最后，避免拦截其他具体路由
+  @Put(':jobId')
+  update(@Param('jobId') jobId: string, @Body() dto: UpdateJobDto) {
+    return this.service.update(jobId, dto);
   }
 }

@@ -24,6 +24,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/toast/use-toast'
 import { Trash2, RefreshCw, Search, Eye } from 'lucide-vue-next'
@@ -49,6 +59,9 @@ const queryParams = reactive({
 
 const showDetail = ref(false)
 const currentLog = ref<SysOperLog | null>(null)
+const showCleanDialog = ref(false)
+const showDeleteDialog = ref(false)
+const deleteTarget = ref<SysOperLog | null>(null)
 
 // Fetch Data
 async function getList() {
@@ -76,20 +89,25 @@ function resetQuery() {
   handleQuery()
 }
 
-async function handleDelete(row: SysOperLog) {
-  if (confirm('确认要删除该条日志吗？')) {
-    await delOperLog([row.operId])
-    toast({ title: "删除成功", description: "日志已删除" })
-    getList()
-  }
+function confirmDelete(row: SysOperLog) {
+  deleteTarget.value = row
+  showDeleteDialog.value = true
+}
+
+async function handleDelete() {
+  if (!deleteTarget.value) return
+  await delOperLog([deleteTarget.value.operId])
+  toast({ title: "删除成功", description: "日志已删除" })
+  showDeleteDialog.value = false
+  deleteTarget.value = null
+  getList()
 }
 
 async function handleClean() {
-  if (confirm('确认要清空所有操作日志吗？')) {
-    await cleanOperLog()
-    toast({ title: "清空成功", description: "日志已清空" })
-    getList()
-  }
+  await cleanOperLog()
+  toast({ title: "清空成功", description: "日志已清空" })
+  showCleanDialog.value = false
+  getList()
 }
 
 function handleView(row: SysOperLog) {
@@ -123,10 +141,24 @@ onMounted(() => {
         </p>
       </div>
       <div class="flex items-center gap-2">
-        <Button variant="destructive" @click="handleClean">
-          <Trash2 class="mr-2 h-4 w-4" />
-          清空
-        </Button>
+        <AlertDialog v-model:open="showCleanDialog">
+          <Button variant="destructive" @click="showCleanDialog = true">
+            <Trash2 class="mr-2 h-4 w-4" />
+            清空
+          </Button>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>确认清空</AlertDialogTitle>
+              <AlertDialogDescription>
+                确认要清空所有操作日志吗？此操作不可撤销。
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>取消</AlertDialogCancel>
+              <AlertDialogAction @click="handleClean">确认</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
 

@@ -82,6 +82,26 @@ function formatTime(isoString: string) {
   })
 }
 
+// 格式化在线时长
+function formatDuration(ms: number) {
+  if (!ms || ms < 0) return '-'
+  const seconds = Math.floor(ms / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+
+  if (days > 0) {
+    return `${days}天${hours % 24}小时${minutes % 60}分`
+  }
+  if (hours > 0) {
+    return `${hours}小时${minutes % 60}分${seconds % 60}秒`
+  }
+  if (minutes > 0) {
+    return `${minutes}分${seconds % 60}秒`
+  }
+  return `${seconds}秒`
+}
+
 
 // 截断显示 tokenId（前6位...后6位）
 function truncateToken(token: string) {
@@ -283,13 +303,14 @@ onUnmounted(() => {
             <TableHead>浏览器</TableHead>
             <TableHead>操作系统</TableHead>
             <TableHead>登录时间</TableHead>
+            <TableHead>在线时长</TableHead>
             <TableHead class="text-right">操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <!-- Loading State -->
           <TableRow v-if="loading && onlineList.length === 0">
-            <TableCell colspan="9" class="text-center h-24">
+            <TableCell colspan="10" class="text-center h-24">
               <div class="flex items-center justify-center gap-2 text-muted-foreground">
                 <Loader2 class="w-5 h-5 animate-spin" />
                 加载中...
@@ -348,6 +369,9 @@ onUnmounted(() => {
             <TableCell>{{ item.browser || '-' }}</TableCell>
             <TableCell>{{ item.os || '-' }}</TableCell>
             <TableCell>{{ formatTime(item.loginTime) }}</TableCell>
+            <TableCell>
+              <span class="text-sm text-muted-foreground">{{ formatDuration(item.onlineDuration) }}</span>
+            </TableCell>
             <TableCell class="text-right">
               <Button
                 variant="ghost"
@@ -363,7 +387,7 @@ onUnmounted(() => {
           </TableRow>
           <!-- Empty State -->
           <TableRow v-if="!loading && onlineList.length === 0">
-            <TableCell colspan="9" class="text-center h-24 text-muted-foreground">
+            <TableCell colspan="10" class="text-center h-24 text-muted-foreground">
               暂无在线用户
             </TableCell>
           </TableRow>

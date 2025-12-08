@@ -393,9 +393,6 @@ const handleOpenEditDialog = (userId: string) => {
                       <router-link to="/tool/build" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/tool/build') ? 'bg-muted text-primary' : 'text-muted-foreground')">
                         <LayoutIcon class="h-4 w-4" /> 表单构建
                       </router-link>
-                      <router-link to="/tool/gen" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/tool/gen') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <Code class="h-4 w-4" /> 代码生成
-                      </router-link>
                       <router-link to="/tool/swagger" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/tool/swagger') ? 'bg-muted text-primary' : 'text-muted-foreground')">
                         <Link class="h-4 w-4" /> 系统接口
                       </router-link>

@@ -19,6 +19,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -37,7 +47,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { useToast } from '@/components/ui/toast/use-toast'
-import { Trash2, Plus, RefreshCw, Search, Edit, Play, Pause } from 'lucide-vue-next'
+import { Trash2, Plus, RefreshCw, Search, Edit, Play, MoreHorizontal } from 'lucide-vue-next'
 import TablePagination from '@/components/common/TablePagination.vue'
 import { listJob, getJob, delJob, addJob, updateJob, runJob, changeJobStatus } from '@/api/monitor/job'
 import type { SysJob } from '@/api/system/types'
@@ -70,6 +80,14 @@ const form = reactive<Partial<SysJob>>({
   concurrent: '1',
   status: '0',
   remark: ''
+})
+
+// 确认框状态
+const confirmDialog = reactive({
+  open: false,
+  title: '',
+  description: '',
+  action: null as (() => Promise<void>) | null
 })
 
 // Fetch Data
@@ -112,33 +130,58 @@ async function handleUpdate(row: SysJob) {
   showDialog.value = true
 }
 
-async function handleDelete(row: SysJob) {
-  if (confirm('确认要删除定时任务"' + row.jobName + '"吗？')) {
+function handleDelete(row: SysJob) {
+  confirmDialog.title = '删除任务'
+  confirmDialog.description = `确认要删除定时任务"${row.jobName}"吗？`
+  confirmDialog.action = async () => {
     await delJob([row.jobId])
     toast({ title: "删除成功", description: "任务已删除" })
     getList()
   }
+  confirmDialog.open = true
 }
 
-async function handleRun(row: SysJob) {
-  if (confirm('确认要立即执行一次任务"' + row.jobName + '"吗？')) {
+function handleRun(row: SysJob) {
+  confirmDialog.title = '执行任务'
+  confirmDialog.description = `确认要立即执行一次任务"${row.jobName}"吗？`
+  confirmDialog.action = async () => {
     await runJob(row.jobId, row.jobGroup)
     toast({ title: "执行成功", description: "任务已下发执行" })
   }
+  confirmDialog.open = true
 }
 
-async function handleStatusChange(row: SysJob) {
-  const text = row.status === '0' ? '暂停' : '恢复'
-  if (confirm('确认要' + text + '任务"' + row.jobName + '"吗？')) {
+function handleSwitchClick(row: SysJob) {
+  // 当前状态：'0' = 正常(运行中), '1' = 暂停
+  const isRunning = String(row.status) === '0'
+  // 点击后要切换到的状态
+  const text = isRunning ? '暂停' : '启用'
+  const newStatus = isRunning ? '1' : '0'
+  const jobId = row.jobId
+  confirmDialog.title = `${text}任务`
+  confirmDialog.description = `确认要${text}任务"${row.jobName}"吗？`
+  confirmDialog.action = async () => {
+    await changeJobStatus(jobId, newStatus)
+    // 更新列表中对应项的状态
+    const job = jobList.value.find(j => j.jobId === jobId)
+    if (job) job.status = newStatus
+    toast({ title: "操作成功", description: "任务状态已变更" })
+  }
+  confirmDialog.open = true
+}
+
+async function handleConfirm() {
+  if (confirmDialog.action) {
     try {
-      await changeJobStatus(row.jobId, row.status === '0' ? '1' : '0')
-      row.status = row.status === '0' ? '1' : '0'
-      toast({ title: "操作成功", description: "任务状态已变更" })
+      await confirmDialog.action()
     } catch {
-      // revert
+      // error handled by interceptor
     }
   }
+  confirmDialog.open = false
 }
+
+
 
 async function handleSubmit() {
   if (!form.jobName || !form.invokeTarget || !form.cronExpression) {
@@ -270,8 +313,8 @@ onMounted(() => {
             <TableCell><Badge variant="outline">{{ item.cronExpression }}</Badge></TableCell>
             <TableCell>
                <Switch 
-                 :model-value="item.status === '0'" 
-                 @update:model-value="handleStatusChange(item)"
+                 :checked="String(item.status) === '0'"
+                 @click.prevent="handleSwitchClick(item)"
                />
             </TableCell>
             <TableCell>{{ item.createTime }}</TableCell>
@@ -318,6 +361,20 @@ onMounted(() => {
       :total="total"
       @change="getList"
     />
+
+    <!-- Confirm Dialog -->
+    <AlertDialog :open="confirmDialog.open" @update:open="(v) => confirmDialog.open = v">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{{ confirmDialog.title }}</AlertDialogTitle>
+          <AlertDialogDescription>{{ confirmDialog.description }}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel @click="confirmDialog.open = false">取消</AlertDialogCancel>
+          <AlertDialogAction @click.prevent="handleConfirm">确定</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
 
     <!-- Add/Edit Dialog -->
     <Dialog v-model:open="showDialog">
@@ -392,10 +449,10 @@ onMounted(() => {
             <Label for="status">状态</Label>
             <div class="flex items-center space-x-2">
                <Switch 
-                 :model-value="form.status === '0'" 
-                 @update:model-value="(v: boolean) => form.status = v ? '0' : '1'"
+                 :checked="String(form.status) === '0'"
+                 @update:checked="(v: boolean) => form.status = v ? '0' : '1'"
                />
-               <span class="text-sm text-muted-foreground">{{ form.status === '0' ? '正常' : '暂停' }}</span>
+               <span class="text-sm text-muted-foreground">{{ String(form.status) === '0' ? '正常' : '暂停' }}</span>
             </div>
           </div>
         </div>

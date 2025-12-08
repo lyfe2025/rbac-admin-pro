@@ -135,21 +135,28 @@ export class OnlineService {
     const start = (pageNum - 1) * pageSize;
     const end = start + pageSize;
 
+    const now = Date.now();
     const pageRows = rows
       .sort((a, b) => +new Date(b.loginTime) - +new Date(a.loginTime))
       .slice(start, end)
-      .map((r) => ({
-        tokenId: r.token,
-        userName: r.userName,
-        ipaddr: r.ipaddr,
-        loginLocation: IpUtil.getLocation(r.ipaddr),
-        browser: r.browser ?? '',
-        os: r.os ?? '',
-        loginTime:
-          r.loginTime instanceof Date
-            ? r.loginTime.toISOString()
-            : String(r.loginTime),
-      }));
+      .map((r) => {
+        const loginTimeMs = new Date(r.loginTime).getTime();
+        const durationMs = now - loginTimeMs;
+        return {
+          tokenId: r.token,
+          userName: r.userName,
+          ipaddr: r.ipaddr,
+          loginLocation: IpUtil.getLocation(r.ipaddr),
+          browser: r.browser ?? '',
+          os: r.os ?? '',
+          loginTime:
+            r.loginTime instanceof Date
+              ? r.loginTime.toISOString()
+              : String(r.loginTime),
+          /** 在线时长（毫秒） */
+          onlineDuration: durationMs > 0 ? durationMs : 0,
+        };
+      });
 
     return { total, rows: pageRows };
   }
