@@ -22,6 +22,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
   Sheet,
   SheetContent,
   SheetTrigger,
@@ -90,7 +100,12 @@ const toggleSidebar = () => {
   isCollapsed.value = !isCollapsed.value
 }
 
-const handleLogout = async () => {
+// 退出登录确认对话框
+const showLogoutDialog = ref(false)
+const handleLogoutClick = () => {
+  showLogoutDialog.value = true
+}
+const confirmLogout = async () => {
   await userStore.logout()
   toast({
     title: "退出成功",
@@ -225,7 +240,7 @@ const handleOpenEditDialog = (userId: string) => {
               个人中心
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem class="text-destructive focus:text-destructive" @click="handleLogout">
+            <DropdownMenuItem class="text-destructive focus:text-destructive" @click="handleLogoutClick">
               <LogOut class="mr-2 h-4 w-4" />
               退出登录
             </DropdownMenuItem>
@@ -395,5 +410,21 @@ const handleOpenEditDialog = (userId: string) => {
 
     <!-- 设置对话框 -->
     <SettingsDialog v-model:open="showSettings" />
+
+    <!-- 退出登录确认对话框 -->
+    <AlertDialog :open="showLogoutDialog" @update:open="showLogoutDialog = $event">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>确认退出</AlertDialogTitle>
+          <AlertDialogDescription>
+            您确定要退出登录吗？退出后需要重新登录才能访问系统。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction @click="confirmLogout">确认退出</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>

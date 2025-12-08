@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { watch } from 'vue'
 import { useUserStore } from '@/stores/modules/user'
-import { getUser } from '@/api/system/user'
-import UserForm from '@/components/business/UserForm.vue'
 import {
   Dialog,
   DialogContent,
@@ -22,11 +20,22 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  'openSettings': []
-  'openEditDialog': [userId: string]
+  'open-settings': []
+  'open-edit-dialog': [userId: string]
 }>()
 
 const userStore = useUserStore()
+
+// 监听对话框打开，确保用户信息已加载
+watch(() => props.open, async (newVal) => {
+  if (newVal && !userStore.userId) {
+    try {
+      await userStore.getInfo()
+    } catch (error) {
+      console.error('获取用户信息失败:', error)
+    }
+  }
+})
 
 // 获取完整的头像URL
 function getAvatarUrl(avatar: string | undefined | null): string {
@@ -39,14 +48,18 @@ function getAvatarUrl(avatar: string | undefined | null): string {
 
 // 编辑资料 - 触发父组件打开编辑对话框
 const handleEdit = () => {
+  if (!userStore.userId) {
+    console.error('用户ID不存在，无法编辑资料')
+    return
+  }
   emit('update:open', false)
-  emit('openEditDialog', userStore.userId)
+  emit('open-edit-dialog', userStore.userId)
 }
 
 // 打开设置
 const handleSettings = () => {
   emit('update:open', false)
-  emit('openSettings')
+  emit('open-settings')
 }
 </script>
 

@@ -46,7 +46,17 @@ export class RoleService {
       }),
     ]);
 
-    return { total, rows };
+    // 为每个角色添加用户数统计
+    const rowsWithUserCount = await Promise.all(
+      rows.map(async (role) => {
+        const userCount = await this.prisma.sysUserRole.count({
+          where: { roleId: role.roleId },
+        });
+        return { ...role, userCount };
+      }),
+    );
+
+    return { total, rows: rowsWithUserCount };
   }
 
   /**

@@ -29,7 +29,17 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useToast } from '@/components/ui/toast/use-toast'
-import { Plus, Edit, Trash2, ChevronDown, ChevronRight, RefreshCw, Search, Loader2 } from 'lucide-vue-next'
+import { Plus, Edit, Trash2, ChevronDown, ChevronRight, RefreshCw, Search, Loader2, Maximize2, Minimize2, Menu as MenuIcon } from 'lucide-vue-next'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { listMenu, getMenu, delMenu, addMenu, updateMenu } from '@/api/system/menu'
 import type { SysMenu } from '@/api/system/types'
 
@@ -43,8 +53,11 @@ const queryParams = reactive({
   status: undefined
 })
 const isExpanded = ref<Record<string, boolean>>({})
+const expandedAll = ref(true) // 默认展开第一级
 
 const showDialog = ref(false)
+const showDeleteDialog = ref(false)
+const menuToDelete = ref<SysMenu | null>(null)
 const isEdit = ref(false)
 const submitLoading = ref(false)
 const menuOptions = ref<any[]>([])
@@ -72,10 +85,40 @@ async function getList() {
     const res = await listMenu(queryParams)
     menuList.value = toTreeMenu(res.data)
     // Default expand first level
-    menuList.value.forEach(m => isExpanded.value[m.menuId] = true)
+    if (expandedAll.value) {
+      menuList.value.forEach(m => isExpanded.value[m.menuId] = true)
+    }
   } finally {
     loading.value = false
   }
+}
+
+function expandAllMenus(menus: SysMenu[]) {
+  menus.forEach(menu => {
+    isExpanded.value[menu.menuId] = true
+    if (menu.children) {
+      expandAllMenus(menu.children)
+    }
+  })
+}
+
+function collapseAllMenus(menus: SysMenu[]) {
+  menus.forEach(menu => {
+    isExpanded.value[menu.menuId] = false
+    if (menu.children) {
+      collapseAllMenus(menu.children)
+    }
+  })
+}
+
+// 切换全部展开/收起
+function toggleExpandAll() {
+  if (expandedAll.value) {
+    collapseAllMenus(menuList.value)
+  } else {
+    expandAllMenus(menuList.value)
+  }
+  expandedAll.value = !expandedAll.value
 }
 
 async function getMenuTree() {
@@ -147,10 +190,19 @@ async function handleUpdate(row: SysMenu) {
 }
 
 async function handleDelete(row: SysMenu) {
-  if (confirm('确认要删除菜单"' + row.menuName + '"吗？')) {
-    await delMenu(row.menuId)
+  menuToDelete.value = row
+  showDeleteDialog.value = true
+}
+
+async function confirmDelete() {
+  if (!menuToDelete.value) return
+  try {
+    await delMenu(menuToDelete.value.menuId)
     toast({ title: "删除成功", description: "菜单已删除" })
     getList()
+    showDeleteDialog.value = false
+  } catch (error) {
+    console.error('删除失败:', error)
   }
 }
 
@@ -234,6 +286,11 @@ onMounted(() => {
         </p>
       </div>
       <div class="flex items-center gap-2">
+        <Button variant="outline" size="sm" @click="toggleExpandAll">
+          <Maximize2 v-if="!expandedAll" class="mr-2 h-4 w-4" />
+          <Minimize2 v-else class="mr-2 h-4 w-4" />
+          {{ expandedAll ? '收起全部' : '展开全部' }}
+        </Button>
         <Button @click="handleAdd()">
           <Plus class="mr-2 h-4 w-4" />
           新增菜单
@@ -453,5 +510,23 @@ onMounted(() => {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <AlertDialog v-model:open="showDeleteDialog">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>确认删除?</AlertDialogTitle>
+          <AlertDialogDescription>
+            您确定要删除菜单 "{{ menuToDelete?.menuName }}" 吗？此操作无法撤销。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction @click="confirmDelete" class="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            删除
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>

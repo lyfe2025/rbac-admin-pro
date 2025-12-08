@@ -28,7 +28,17 @@ import {
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/toast/use-toast'
-import { Plus, Edit, Trash2, ChevronDown, ChevronRight, RefreshCw, Search, Loader2 } from 'lucide-vue-next'
+import { Plus, Edit, Trash2, ChevronDown, ChevronRight, RefreshCw, Search, Loader2, Maximize2, Minimize2, Users } from 'lucide-vue-next'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { formatDate } from '@/utils/format'
 import { listDept, getDept, delDept, addDept, updateDept, listDeptTree } from '@/api/system/dept'
 import type { SysDept } from '@/api/system/types'
@@ -43,8 +53,11 @@ const queryParams = reactive({
   status: undefined
 })
 const isExpanded = ref<Record<string, boolean>>({})
+const expandedAll = ref(true) // 默认展开全部
 
 const showDialog = ref(false)
+const showDeleteDialog = ref(false)
+const deptToDelete = ref<SysDept | null>(null)
 const isEdit = ref(false)
 const submitLoading = ref(false)
 const deptOptions = ref<any[]>([])
@@ -80,6 +93,25 @@ function expandAll(depts: SysDept[]) {
       expandAll(dept.children)
     }
   })
+}
+
+function collapseAll(depts: SysDept[]) {
+  depts.forEach(dept => {
+    isExpanded.value[dept.deptId] = false
+    if (dept.children) {
+      collapseAll(dept.children)
+    }
+  })
+}
+
+// 切换全部展开/收起
+function toggleExpandAll() {
+  if (expandedAll.value) {
+    collapseAll(deptList.value)
+  } else {
+    expandAll(deptList.value)
+  }
+  expandedAll.value = !expandedAll.value
 }
 
 async function getDeptTree() {
@@ -152,10 +184,19 @@ async function handleUpdate(row: SysDept) {
 }
 
 async function handleDelete(row: SysDept) {
-  if (confirm('确认要删除部门"' + row.deptName + '"吗？')) {
-    await delDept(row.deptId)
+  deptToDelete.value = row
+  showDeleteDialog.value = true
+}
+
+async function confirmDelete() {
+  if (!deptToDelete.value) return
+  try {
+    await delDept(deptToDelete.value.deptId)
     toast({ title: "删除成功", description: "部门已删除" })
     getList()
+    showDeleteDialog.value = false
+  } catch (error) {
+    console.error('删除失败:', error)
   }
 }
 
@@ -234,6 +275,11 @@ onMounted(() => {
         </p>
       </div>
       <div class="flex items-center gap-2">
+        <Button variant="outline" size="sm" @click="toggleExpandAll">
+          <Maximize2 v-if="!expandedAll" class="mr-2 h-4 w-4" />
+          <Minimize2 v-else class="mr-2 h-4 w-4" />
+          {{ expandedAll ? '收起全部' : '展开全部' }}
+        </Button>
         <Button @click="handleAdd()">
           <Plus class="mr-2 h-4 w-4" />
           新增部门
@@ -410,5 +456,23 @@ onMounted(() => {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <AlertDialog v-model:open="showDeleteDialog">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>确认删除?</AlertDialogTitle>
+          <AlertDialogDescription>
+            您确定要删除部门 "{{ deptToDelete?.deptName }}" 吗？此操作无法撤销。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction @click="confirmDelete" class="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            删除
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>

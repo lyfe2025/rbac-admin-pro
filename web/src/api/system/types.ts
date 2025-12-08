@@ -63,13 +63,14 @@ export interface SysRole extends BaseEntity {
   roleName: string
   roleKey: string
   roleSort: number
-  dataScope: '1' | '2' | '3' | '4' // 1全部 2自定 3本部门 4本部门及以下
+  dataScope: '1' | '2' | '3' | '4' | '5' // 1全部 2自定 3本部门 4本部门及以下 5仅本人
   menuCheckStrictly: boolean
   deptCheckStrictly: boolean
   status: '0' | '1'
   delFlag: '0' | '2'
   menuIds?: string[] // 菜单权限ID列表，用于表单
   deptIds?: string[] // 部门权限ID列表，用于表单
+  userCount?: number // 用户数统计
 }
 
 // 5. 菜单表 sys_menu

@@ -40,7 +40,7 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/components/ui/toast/use-toast'
-import { Trash2, Plus, RefreshCw, Search, Edit, Loader2, ChevronRight, ChevronDown } from 'lucide-vue-next'
+import { Trash2, Plus, RefreshCw, Search, Edit, Loader2, ChevronRight, ChevronDown, Eye, Users, Shield } from 'lucide-vue-next'
 import TablePagination from '@/components/common/TablePagination.vue'
 import { formatDate } from '@/utils/format'
 import { listRole, getRole, delRole, addRole, updateRole, changeRoleStatus } from '@/api/system/role'
@@ -63,10 +63,14 @@ const queryParams = reactive({
 
 const showDialog = ref(false)
 const showDeleteDialog = ref(false)
+const showPreviewDialog = ref(false)
 const roleToDelete = ref<SysRole | null>(null)
+const roleToPreview = ref<SysRole | null>(null)
 const isEdit = ref(false)
 const submitLoading = ref(false)
 const menuList = ref<SysMenu[]>([])
+const allMenuIds = ref<string[]>([]) // 所有菜单ID
+const expandedAll = ref(false) // 是否展开全部
 
 const form = reactive<Partial<SysRole>>({
   roleId: undefined,
@@ -76,7 +80,8 @@ const form = reactive<Partial<SysRole>>({
   status: '0',
   menuIds: [],
   remark: '',
-  menuCheckStrictly: true
+  menuCheckStrictly: true,
+  dataScope: '1' // 数据权限范围: 1-全部 2-自定义 3-本部门 4-本部门及以下 5-仅本人
 })
 
 // Fetch Data
@@ -124,6 +129,24 @@ async function getMenuTree() {
   const res = await listMenu({})
   // 将扁平列表转换为树形结构
   menuList.value = buildMenuTree(res.data)
+  // 收集所有菜单ID
+  allMenuIds.value = res.data.map((menu: SysMenu) => menu.menuId)
+}
+
+// 全选菜单
+function selectAllMenus() {
+  form.menuIds = [...allMenuIds.value]
+}
+
+// 反选菜单
+function invertMenuSelection() {
+  const currentIds = new Set(form.menuIds)
+  form.menuIds = allMenuIds.value.filter(id => !currentIds.has(id))
+}
+
+// 展开/收起全部
+function toggleExpandAll() {
+  expandedAll.value = !expandedAll.value
 }
 
 // Search Operations
@@ -191,16 +214,51 @@ async function confirmDelete() {
 }
 
 async function handleStatusChange(row: SysRole) {
-  const text = row.status === '0' ? '停用' : '启用'
-  if (confirm('确认要' + text + '角色"' + row.roleName + '"吗？')) {
-    try {
-      await changeRoleStatus(row.roleId, row.status === '0' ? '1' : '0')
-      row.status = row.status === '0' ? '1' : '0'
-      toast({ title: "操作成功", description: "角色状态已变更" })
-    } catch {
-      // revert
-    }
+  const newStatus = row.status === '0' ? '1' : '0'
+  const oldStatus = row.status
+  
+  // 乐观更新
+  row.status = newStatus
+  
+  try {
+    await changeRoleStatus(row.roleId, newStatus)
+    toast({ 
+      title: "操作成功", 
+      description: `角色已${newStatus === '0' ? '启用' : '停用'}` 
+    })
+  } catch (error) {
+    // 失败时回滚
+    row.status = oldStatus
+    console.error('状态切换失败:', error)
   }
+}
+
+// 查看角色权限预览
+async function handlePreview(row: SysRole) {
+  try {
+    const roleData = await getRole(row.roleId)
+    roleToPreview.value = roleData
+    showPreviewDialog.value = true
+  } catch (error) {
+    console.error('获取角色详情失败:', error)
+    toast({ 
+      title: "获取失败", 
+      description: "无法获取角色详情",
+      variant: "destructive"
+    })
+  }
+}
+
+// 获取数据权限范围文本
+function getDataScopeText(dataScope?: string): string {
+  const scopeMap: Record<string, string> = {
+    '1': '全部数据',
+    '2': '自定义数据',
+    '3': '本部门数据',
+    '4': '本部门及以下数据',
+    '5': '仅本人数据'
+  }
+  return scopeMap[dataScope || '1'] || '全部数据'
 }
 
 async function handleSubmit() {
@@ -240,19 +298,24 @@ function resetForm() {
   form.menuIds = []
   form.remark = ''
   form.menuCheckStrictly = true
+  form.dataScope = '1'
+  expandedAll.value = false
 }
 
 // Simple recursive component for menu tree checklist
 // In real project, use a Tree component with checkbox support
 const MenuTreeItem: any = {
   name: 'MenuTreeItem',
-  props: ['menu', 'modelValue', 'checkStrictly', 'level'],
+  props: ['menu', 'modelValue', 'checkStrictly', 'level', 'expandAll'],
   emits: ['update:modelValue'],
   setup(props: any, { emit }: any) {
     const isChecked = computed(() => props.modelValue.includes(props.menu.menuId))
     const currentLevel = props.level || 0
     const isExpanded = ref(false) // 默认收起
     const hasChildren = computed(() => props.menu.children && props.menu.children.length > 0)
+    
+    // 监听expandAll变化
+    const shouldExpand = computed(() => props.expandAll || isExpanded.value)
     
     function toggleExpand() {
       isExpanded.value = !isExpanded.value
@@ -314,7 +377,7 @@ const MenuTreeItem: any = {
         h('span', { class: 'text-sm' }, props.menu.menuName)
       ]),
       // 子节点(仅在展开时显示)
-      hasChildren.value && isExpanded.value
+      hasChildren.value && shouldExpand.value
         ? h('div', {}, 
             props.menu.children.map((child: any) =>
               h(MenuTreeItem, {
@@ -323,6 +386,7 @@ const MenuTreeItem: any = {
                 modelValue: props.modelValue,
                 checkStrictly: props.checkStrictly,
                 level: currentLevel + 1,
+                expandAll: props.expandAll,
                 'onUpdate:modelValue': (val: any) => emit('update:modelValue', val)
               })
             )
@@ -407,6 +471,8 @@ onMounted(() => {
             <TableHead>角色编号</TableHead>
             <TableHead>角色名称</TableHead>
             <TableHead>权限字符</TableHead>
+            <TableHead>用户数</TableHead>
+            <TableHead>数据权限</TableHead>
             <TableHead>显示顺序</TableHead>
             <TableHead>状态</TableHead>
             <TableHead>创建时间</TableHead>
@@ -418,6 +484,18 @@ onMounted(() => {
             <TableCell>{{ item.roleId }}</TableCell>
             <TableCell>{{ item.roleName }}</TableCell>
             <TableCell><Badge variant="outline">{{ item.roleKey }}</Badge></TableCell>
+            <TableCell>
+              <Badge variant="outline" class="font-mono">
+                <Users class="w-3 h-3 mr-1" />
+                {{ item.userCount || 0 }}
+              </Badge>
+            </TableCell>
+            <TableCell>
+              <Badge variant="secondary">
+                <Shield class="w-3 h-3 mr-1" />
+                {{ getDataScopeText(item.dataScope) }}
+              </Badge>
+            </TableCell>
             <TableCell>{{ item.roleSort }}</TableCell>
             <TableCell>
                <Switch 
@@ -427,16 +505,19 @@ onMounted(() => {
             </TableCell>
             <TableCell>{{ formatDate(item.createTime) }}</TableCell>
             <TableCell class="text-right space-x-2">
-              <Button variant="ghost" size="icon" @click="handleUpdate(item)">
+              <Button variant="ghost" size="icon" @click="handlePreview(item)" title="查看权限">
+                <Eye class="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="icon" @click="handleUpdate(item)" title="修改">
                 <Edit class="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="icon" class="text-destructive" @click="handleDelete(item)">
+              <Button variant="ghost" size="icon" class="text-destructive" @click="handleDelete(item)" title="删除">
                 <Trash2 class="w-4 h-4" />
               </Button>
             </TableCell>
           </TableRow>
            <TableRow v-if="roleList.length === 0">
-            <TableCell colspan="7" class="text-center h-24 text-muted-foreground">
+            <TableCell colspan="9" class="text-center h-24 text-muted-foreground">
               暂无数据
             </TableCell>
           </TableRow>
@@ -494,7 +575,36 @@ onMounted(() => {
           </div>
 
           <div class="grid gap-2">
-            <Label>菜单权限</Label>
+            <Label for="dataScope">数据权限范围</Label>
+            <Select v-model="form.dataScope">
+              <SelectTrigger>
+                <SelectValue placeholder="选择数据权限范围" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">全部数据</SelectItem>
+                <SelectItem value="2">自定义数据</SelectItem>
+                <SelectItem value="3">本部门数据</SelectItem>
+                <SelectItem value="4">本部门及以下数据</SelectItem>
+                <SelectItem value="5">仅本人数据</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div class="grid gap-2">
+            <div class="flex items-center justify-between">
+              <Label>菜单权限</Label>
+              <div class="flex gap-2">
+                <Button type="button" variant="outline" size="sm" @click="selectAllMenus">
+                  全选
+                </Button>
+                <Button type="button" variant="outline" size="sm" @click="invertMenuSelection">
+                  反选
+                </Button>
+                <Button type="button" variant="outline" size="sm" @click="toggleExpandAll">
+                  {{ expandedAll ? '收起' : '展开' }}全部
+                </Button>
+              </div>
+            </div>
             <div class="flex items-center space-x-2 mb-2">
                <Checkbox id="checkStrictly" :model-value="form.menuCheckStrictly" @update:model-value="(val) => form.menuCheckStrictly = !!val" />
                <Label for="checkStrictly" class="text-sm text-muted-foreground">父子联动</Label>
@@ -507,6 +617,7 @@ onMounted(() => {
                 v-model="form.menuIds"
                 :checkStrictly="form.menuCheckStrictly"
                 :level="0"
+                :expandAll="expandedAll"
               />
             </div>
           </div>
@@ -544,5 +655,82 @@ onMounted(() => {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+
+    <!-- Preview Dialog -->
+    <Dialog v-model:open="showPreviewDialog">
+      <DialogContent class="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>角色权限预览</DialogTitle>
+          <DialogDescription>
+            查看角色 "{{ roleToPreview?.roleName }}" 的详细权限信息
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div class="grid gap-4 py-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <div class="text-sm font-medium text-muted-foreground mb-1">角色名称</div>
+              <div class="text-sm">{{ roleToPreview?.roleName }}</div>
+            </div>
+            <div>
+              <div class="text-sm font-medium text-muted-foreground mb-1">权限字符</div>
+              <div class="text-sm"><Badge variant="outline">{{ roleToPreview?.roleKey }}</Badge></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <div class="text-sm font-medium text-muted-foreground mb-1">数据权限</div>
+              <div class="text-sm">
+                <Badge variant="secondary">
+                  <Shield class="w-3 h-3 mr-1" />
+                  {{ getDataScopeText(roleToPreview?.dataScope) }}
+                </Badge>
+              </div>
+            </div>
+            <div>
+              <div class="text-sm font-medium text-muted-foreground mb-1">状态</div>
+              <div class="text-sm">
+                <Badge :variant="roleToPreview?.status === '0' ? 'default' : 'secondary'">
+                  {{ roleToPreview?.status === '0' ? '正常' : '停用' }}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="text-sm font-medium text-muted-foreground mb-2">菜单权限</div>
+            <div class="border rounded-md p-3 max-h-[200px] overflow-y-auto bg-muted/30">
+              <div v-if="roleToPreview?.menuIds && roleToPreview.menuIds.length > 0" class="text-sm space-y-1">
+                <Badge v-for="menuId in roleToPreview.menuIds" :key="menuId" variant="outline" class="mr-1 mb-1">
+                  菜单 {{ menuId }}
+                </Badge>
+              </div>
+              <div v-else class="text-sm text-muted-foreground">
+                暂无菜单权限
+              </div>
+            </div>
+          </div>
+
+          <div v-if="roleToPreview?.remark">
+            <div class="text-sm font-medium text-muted-foreground mb-1">备注</div>
+            <div class="text-sm text-muted-foreground">{{ roleToPreview.remark }}</div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 text-xs text-muted-foreground">
+            <div>
+              <span class="font-medium">创建时间:</span> {{ formatDate(roleToPreview?.createTime) }}
+            </div>
+            <div v-if="roleToPreview?.updateTime">
+              <span class="font-medium">更新时间:</span> {{ formatDate(roleToPreview.updateTime) }}
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" @click="showPreviewDialog = false">关闭</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
