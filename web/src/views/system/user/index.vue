@@ -41,6 +41,14 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/components/ui/toast/use-toast'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { 
   Plus, 
   Search, 
@@ -53,7 +61,8 @@ import {
   CheckSquare,
   XSquare,
   Filter,
-  Edit
+  Edit,
+  Settings2
 } from 'lucide-vue-next'
 import { listUser, getUser, delUser, addUser, updateUser, resetUserPwd, changeUserStatus } from '@/api/system/user'
 import { listDeptTree } from '@/api/system/dept'
@@ -85,8 +94,82 @@ const showAdvancedSearch = ref(false)
 const selectedRows = ref<string[]>([])
 const selectAll = ref(false)
 
+// 表格列配置
+interface ColumnConfig {
+  key: string
+  label: string
+  visible: boolean
+  fixed?: boolean // 固定列不可隐藏
+}
+
+const COLUMN_STORAGE_KEY = 'user-table-columns'
+
+// 默认列配置
+const defaultColumns: ColumnConfig[] = [
+  { key: 'userId', label: '用户编号', visible: true },
+  { key: 'userName', label: '用户名', visible: true, fixed: true },
+  { key: 'nickName', label: '用户昵称', visible: true },
+  { key: 'dept', label: '部门', visible: true },
+  { key: 'phonenumber', label: '手机号码', visible: true },
+  { key: 'email', label: '邮箱', visible: false },
+  { key: 'status', label: '状态', visible: true },
+  { key: 'createTime', label: '创建时间', visible: true },
+]
+
+// 从 localStorage 加载列配置
+function loadColumnConfig(): ColumnConfig[] {
+  try {
+    const saved = localStorage.getItem(COLUMN_STORAGE_KEY)
+    if (saved) {
+      const parsed = JSON.parse(saved) as ColumnConfig[]
+      // 合并保存的配置与默认配置，确保新增列也能显示
+      return defaultColumns.map((col) => {
+        const savedCol = parsed.find((c) => c.key === col.key)
+        return savedCol ? { ...col, visible: savedCol.visible } : col
+      })
+    }
+  } catch {
+    // ignore
+  }
+  return defaultColumns.map((c) => ({ ...c }))
+}
+
+// 保存列配置到 localStorage
+function saveColumnConfig() {
+  localStorage.setItem(COLUMN_STORAGE_KEY, JSON.stringify(columns.value))
+}
+
+const columns = ref<ColumnConfig[]>(loadColumnConfig())
+
+// 切换列显示
+function toggleColumn(key: string) {
+  const col = columns.value.find((c) => c.key === key)
+  if (col && !col.fixed) {
+    col.visible = !col.visible
+    saveColumnConfig()
+  }
+}
+
+// 重置列配置
+function resetColumns() {
+  columns.value = defaultColumns.map((c) => ({ ...c }))
+  saveColumnConfig()
+}
+
+// 判断列是否可见
+function isColumnVisible(key: string): boolean {
+  const col = columns.value.find((c) => c.key === key)
+  return col ? col.visible : true
+}
+
 // 计算属性:是否有选中的行
 const hasSelectedRows = computed(() => selectedRows.value.length > 0)
+
+// 计算属性:可见列数量(用于空数据colspan)
+const visibleColumnCount = computed(() => {
+  // 选择框列 + 可见数据列 + 操作列
+  return 1 + columns.value.filter((c) => c.visible).length + 1
+})
 
 const deptOptions = ref<any[]>([])
 const roleOptions = ref<SysRole[]>([])
@@ -319,7 +402,7 @@ function handleExport() {
     user.phonenumber,
     user.email,
     user.status === '0' ? '正常' : '停用',
-    user.createTime
+    formatDate(user.createTime)
   ])
   
   const csvContent = [
@@ -524,6 +607,30 @@ onMounted(async () => {
           <FileDown class="mr-2 h-4 w-4" />
           导出
         </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button variant="outline" size="icon">
+              <Settings2 class="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" class="w-48">
+            <DropdownMenuLabel>显示列</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuCheckboxItem
+              v-for="col in columns"
+              :key="col.key"
+              :checked="col.visible"
+              :disabled="col.fixed"
+              @select="(e: Event) => { e.preventDefault(); toggleColumn(col.key) }"
+            >
+              {{ col.label }}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuCheckboxItem @select="resetColumns">
+              重置默认
+            </DropdownMenuCheckboxItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button @click="handleAdd">
           <Plus class="mr-2 h-4 w-4" />
           新增用户
@@ -615,30 +722,29 @@ onMounted(async () => {
         <TableHeader>
           <TableRow>
             <TableHead class="w-[50px]">
-              <Checkbox 
-                v-model="selectAll"
-              />
+              <Checkbox v-model="selectAll" />
             </TableHead>
-            <TableHead class="w-[100px]">用户编号</TableHead>
-            <TableHead>用户名</TableHead>
-            <TableHead>用户昵称</TableHead>
-            <TableHead>部门</TableHead>
-            <TableHead>手机号码</TableHead>
-            <TableHead>状态</TableHead>
-            <TableHead>创建时间</TableHead>
+            <TableHead v-if="isColumnVisible('userId')" class="w-[100px]">用户编号</TableHead>
+            <TableHead v-if="isColumnVisible('userName')">用户名</TableHead>
+            <TableHead v-if="isColumnVisible('nickName')">用户昵称</TableHead>
+            <TableHead v-if="isColumnVisible('dept')">部门</TableHead>
+            <TableHead v-if="isColumnVisible('phonenumber')">手机号码</TableHead>
+            <TableHead v-if="isColumnVisible('email')">邮箱</TableHead>
+            <TableHead v-if="isColumnVisible('status')">状态</TableHead>
+            <TableHead v-if="isColumnVisible('createTime')">创建时间</TableHead>
             <TableHead class="text-right">操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow v-for="user in userList" :key="user.userId">
             <TableCell>
-              <Checkbox 
+              <Checkbox
                 :model-value="selectedRows.includes(user.userId)"
                 @update:model-value="() => toggleRowSelection(user.userId)"
               />
             </TableCell>
-            <TableCell>{{ user.userId }}</TableCell>
-            <TableCell class="font-medium">
+            <TableCell v-if="isColumnVisible('userId')">{{ user.userId }}</TableCell>
+            <TableCell v-if="isColumnVisible('userName')" class="font-medium">
               <div class="flex items-center gap-2">
                 <Avatar class="h-8 w-8">
                   <AvatarImage :src="getAvatarUrl(user.avatar)" />
@@ -647,17 +753,16 @@ onMounted(async () => {
                 {{ user.userName }}
               </div>
             </TableCell>
-            <TableCell>{{ user.nickName }}</TableCell>
-            <TableCell>{{ user.dept?.deptName }}</TableCell>
-            <TableCell>{{ user.phonenumber }}</TableCell>
-            <TableCell>
-               <div class="flex items-center space-x-2">
-                <Badge :variant="user.status === '0' ? 'default' : 'destructive'">
-                  {{ user.status === '0' ? '正常' : '停用' }}
-                </Badge>
-              </div>
+            <TableCell v-if="isColumnVisible('nickName')">{{ user.nickName }}</TableCell>
+            <TableCell v-if="isColumnVisible('dept')">{{ user.dept?.deptName }}</TableCell>
+            <TableCell v-if="isColumnVisible('phonenumber')">{{ user.phonenumber }}</TableCell>
+            <TableCell v-if="isColumnVisible('email')">{{ user.email }}</TableCell>
+            <TableCell v-if="isColumnVisible('status')">
+              <Badge :variant="user.status === '0' ? 'default' : 'destructive'">
+                {{ user.status === '0' ? '正常' : '停用' }}
+              </Badge>
             </TableCell>
-            <TableCell>{{ formatDate(user.createTime) }}</TableCell>
+            <TableCell v-if="isColumnVisible('createTime')">{{ formatDate(user.createTime) }}</TableCell>
             <TableCell class="text-right space-x-2">
               <Button variant="ghost" size="icon" @click="handleDetail(user)" title="查看详情">
                 <Eye class="w-4 h-4" />
@@ -674,7 +779,7 @@ onMounted(async () => {
             </TableCell>
           </TableRow>
           <TableRow v-if="userList.length === 0">
-            <TableCell colspan="9" class="text-center h-24 text-muted-foreground">
+            <TableCell :colspan="visibleColumnCount" class="text-center h-24 text-muted-foreground">
               暂无数据
             </TableCell>
           </TableRow>
