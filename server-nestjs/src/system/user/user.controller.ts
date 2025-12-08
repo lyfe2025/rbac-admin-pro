@@ -41,6 +41,25 @@ export class UserController {
     return this.userService.getUserInfo(userId);
   }
 
+  @Put('profile')
+  @ApiOperation({ summary: '更新个人信息' })
+  @ApiResponse({ status: 200, description: '更新成功' })
+  async updateProfile(
+    @Request() req: any,
+    @Body()
+    body: {
+      nickName?: string;
+      email?: string;
+      phonenumber?: string;
+      sex?: string;
+      avatar?: string;
+    },
+  ) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const userId = req.user.userId as string;
+    return this.userService.updateProfile(userId, body);
+  }
+
   @Post()
   @Log('用户管理', BusinessType.INSERT)
   @ApiOperation({ summary: '新增用户' })

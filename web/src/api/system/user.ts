@@ -58,3 +58,18 @@ export function resetUserPwd(userId: string, password: string) {
     data: { userId, password }
   }).then((res: any) => res)
 }
+
+// 更新个人信息
+export function updateProfile(data: {
+  nickName?: string
+  email?: string
+  phonenumber?: string
+  sex?: string
+  avatar?: string
+}) {
+  return request({
+    url: '/system/user/profile',
+    method: 'put',
+    data
+  })
+}

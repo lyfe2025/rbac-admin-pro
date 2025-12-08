@@ -1,13 +1,22 @@
-import { Body, Controller, Post, Req, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { Body, Controller, Post, Req, Get, UseGuards } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { VerifyTwoFactorDto, SetupTwoFactorDto } from './dto/two-factor.dto';
 import type { Request } from 'express';
 import { OnlineService } from '../monitor/online/online.service';
 import { TokenBlacklistService } from './token-blacklist.service';
 import { CaptchaService } from './captcha.service';
+import { TwoFactorService } from './two-factor.service';
 import { BusinessException } from '../common/exceptions';
 import { ErrorCode } from '../common/enums';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @ApiTags('认证')
 @Controller('auth')
@@ -17,6 +26,7 @@ export class AuthController {
     private onlineService: OnlineService,
     private tokenBlacklist: TokenBlacklistService,
     private captchaService: CaptchaService,
+    private twoFactorService: TwoFactorService,
   ) {}
 
   @Get('captchaImage')
@@ -64,19 +74,26 @@ export class AuthController {
     // 登录日志已在 AuthService 中记录,这里只处理在线用户
     const res = await this.authService.login(loginDto);
 
+    // 如果需要两步验证，直接返回
+    if (res.requireTwoFactor) {
+      return res;
+    }
+
     // 解析 User-Agent
     const userAgent = req.headers['user-agent'] || '';
     const { browser, os } = this.parseUserAgent(userAgent);
 
     // 注册在线用户
-    await this.onlineService.add({
-      token: res.token,
-      userName: loginDto.username,
-      ipaddr: req.ip || '',
-      loginTime: new Date(),
-      browser,
-      os,
-    });
+    if (res.token) {
+      await this.onlineService.add({
+        token: res.token,
+        userName: loginDto.username,
+        ipaddr: req.ip || '',
+        loginTime: new Date(),
+        browser,
+        os,
+      });
+    }
 
     return res;
   }
@@ -114,5 +131,109 @@ export class AuthController {
       void this.tokenBlacklist.add(token);
     }
     return this.authService.logout();
+  }
+
+  // ==================== 两步验证相关接口 ====================
+
+  @Get('twoFactor/status')
+  @ApiOperation({ summary: '获取两步验证状态' })
+  @ApiResponse({ status: 200, description: '获取成功' })
+  async getTwoFactorStatus() {
+    const globalEnabled = await this.twoFactorService.isTwoFactorEnabled();
+    return { globalEnabled };
+  }
+
+  @Post('twoFactor/verify')
+  @ApiOperation({ summary: '两步验证登录' })
+  @ApiBody({ type: VerifyTwoFactorDto })
+  @ApiResponse({ status: 200, description: '验证成功' })
+  async verifyTwoFactor(@Body() dto: VerifyTwoFactorDto, @Req() req: Request) {
+    const res = await this.authService.verifyTwoFactor(dto.tempToken, dto.code);
+
+    // 解析 User-Agent
+    const userAgent = req.headers['user-agent'] || '';
+    const { browser, os } = this.parseUserAgent(userAgent);
+
+    // 从临时 token 获取用户名（这里需要从 token 解析）
+    // 由于 verifyTwoFactor 已经验证成功，我们可以从返回的 token 解析用户名
+    const tokenPayload = JSON.parse(
+      Buffer.from(res.token.split('.')[1], 'base64').toString(),
+    ) as { username: string };
+
+    // 注册在线用户
+    await this.onlineService.add({
+      token: res.token,
+      userName: tokenPayload.username,
+      ipaddr: req.ip || '',
+      loginTime: new Date(),
+      browser,
+      os,
+    });
+
+    return res;
+  }
+
+  @Get('twoFactor/setup')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '获取两步验证设置信息' })
+  @ApiResponse({ status: 200, description: '获取成功' })
+  async getTwoFactorSetup(@Req() req: Request) {
+    const user = req.user as { userId: string; username: string };
+    const globalEnabled = await this.twoFactorService.isTwoFactorEnabled();
+
+    if (!globalEnabled) {
+      return {
+        globalEnabled: false,
+        userEnabled: false,
+      };
+    }
+
+    const { enabled } = await this.twoFactorService.getUserTwoFactorStatus(
+      user.userId,
+    );
+
+    // 生成新的密钥和二维码
+    const { secret, otpauthUrl } = this.twoFactorService.generateSecret(
+      user.username,
+    );
+    const qrCode = await this.twoFactorService.generateQRCode(otpauthUrl);
+
+    return {
+      globalEnabled: true,
+      userEnabled: enabled,
+      secret,
+      qrCode,
+    };
+  }
+
+  @Post('twoFactor/enable')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '启用两步验证' })
+  @ApiBody({ type: SetupTwoFactorDto })
+  @ApiResponse({ status: 200, description: '启用成功' })
+  async enableTwoFactor(@Body() dto: SetupTwoFactorDto, @Req() req: Request) {
+    const user = req.user as { userId: string };
+
+    // 验证码是否正确
+    const isValid = this.twoFactorService.verifyToken(dto.secret, dto.code);
+    if (!isValid) {
+      throw new BusinessException(ErrorCode.CAPTCHA_ERROR, '验证码错误');
+    }
+
+    await this.twoFactorService.enableTwoFactor(user.userId, dto.secret);
+    return { msg: '两步验证已启用' };
+  }
+
+  @Post('twoFactor/disable')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '禁用两步验证' })
+  @ApiResponse({ status: 200, description: '禁用成功' })
+  async disableTwoFactor(@Req() req: Request) {
+    const user = req.user as { userId: string };
+    await this.twoFactorService.disableTwoFactor(user.userId);
+    return { msg: '两步验证已禁用' };
   }
 }

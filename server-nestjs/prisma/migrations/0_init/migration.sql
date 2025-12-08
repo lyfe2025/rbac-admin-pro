@@ -37,6 +37,8 @@ CREATE TABLE "sys_user" (
     "del_flag" CHAR(1) DEFAULT '0',
     "login_ip" VARCHAR(128) DEFAULT '',
     "login_date" TIMESTAMP(6),
+    "two_factor_secret" VARCHAR(100),
+    "two_factor_enabled" BOOLEAN DEFAULT false,
     "create_by" VARCHAR(64) DEFAULT '',
     "create_time" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
     "update_by" VARCHAR(64) DEFAULT '',

@@ -10,6 +10,7 @@ import { LogininforService } from '../monitor/logininfor/logininfor.service';
 import { BusinessException } from '../common/exceptions';
 import { ErrorCode } from '../common/enums';
 import { IpUtil } from '../common/utils/ip.util';
+import { TwoFactorService } from './two-factor.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService {
@@ -18,6 +19,7 @@ export class AuthService {
     private jwtService: JwtService,
     private logger: LoggerService,
     private logininforService: LogininforService,
+    private twoFactorService: TwoFactorService,
     @Inject(REQUEST) private request: Request,
   ) {}
 
@@ -77,6 +79,29 @@ export class AuthService {
           ErrorCode.INVALID_CREDENTIALS,
           '账号或密码错误',
         );
+      }
+
+      // 检查是否需要两步验证
+      const globalTwoFactorEnabled =
+        await this.twoFactorService.isTwoFactorEnabled();
+      const userTwoFactorEnabled =
+        user.twoFactorEnabled && user.twoFactorSecret;
+
+      // 如果全局启用了两步验证，且用户也启用了两步验证
+      if (globalTwoFactorEnabled && userTwoFactorEnabled) {
+        // 生成临时 token，等待两步验证
+        const tempToken = this.twoFactorService.generateTempToken();
+        await this.twoFactorService.storeTempLogin(tempToken, {
+          userId: user.userId.toString(),
+          username: user.userName,
+        });
+
+        this.logger.log(`用户 ${username} 需要两步验证`, 'AuthService');
+
+        return {
+          requireTwoFactor: true,
+          tempToken,
+        };
       }
 
       // 签发 Token
@@ -176,6 +201,64 @@ export class AuthService {
     else if (userAgent.includes('iOS')) os = 'iOS';
 
     return { browser, os };
+  }
+
+  /**
+   * 两步验证登录
+   */
+  async verifyTwoFactor(tempToken: string, code: string) {
+    // 获取临时登录信息
+    const tempData = await this.twoFactorService.getTempLogin(tempToken);
+    if (!tempData) {
+      throw new BusinessException(
+        ErrorCode.INVALID_CREDENTIALS,
+        '验证已过期，请重新登录',
+      );
+    }
+
+    // 获取用户的 2FA 密钥
+    const { secret } = await this.twoFactorService.getUserTwoFactorStatus(
+      tempData.userId,
+    );
+    if (!secret) {
+      throw new BusinessException(
+        ErrorCode.INVALID_CREDENTIALS,
+        '两步验证未配置',
+      );
+    }
+
+    // 验证 TOTP 码
+    const isValid = this.twoFactorService.verifyToken(secret, code);
+    if (!isValid) {
+      throw new BusinessException(ErrorCode.INVALID_CREDENTIALS, '验证码错误');
+    }
+
+    // 获取请求信息用于记录日志
+    const ipaddr = this.getClientIp();
+    const userAgent = this.request.headers['user-agent'] || '';
+    const { browser, os } = this.parseUserAgent(userAgent);
+
+    // 签发 Token
+    const payload = {
+      sub: tempData.userId,
+      username: tempData.username,
+    };
+
+    this.logger.log(`用户 ${tempData.username} 两步验证成功`, 'AuthService');
+
+    // 记录登录成功
+    await this.recordLoginLog(
+      tempData.username,
+      ipaddr,
+      browser,
+      os,
+      '0',
+      '登录成功(两步验证)',
+    );
+
+    return {
+      token: this.jwtService.sign(payload),
+    };
   }
 
   logout() {

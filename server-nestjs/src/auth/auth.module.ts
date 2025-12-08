@@ -11,6 +11,7 @@ import { TokenBlacklistService } from './token-blacklist.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RedisModule } from '../redis/redis.module';
 import { CaptchaService } from './captcha.service';
+import { TwoFactorService } from './two-factor.service';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
@@ -39,6 +40,7 @@ import { PrismaModule } from '../prisma/prisma.module';
     TokenBlacklistService,
     JwtAuthGuard,
     CaptchaService,
+    TwoFactorService,
   ],
   exports: [AuthService, JwtAuthGuard],
 })

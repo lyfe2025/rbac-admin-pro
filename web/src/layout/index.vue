@@ -114,10 +114,10 @@ const confirmLogout = async () => {
   router.push('/login')
 }
 
-// 个人中心 - 打开个人资料对话框
+// 个人中心 - 跳转到个人中心页面
 const showProfile = ref(false)
-const handleProfile = async () => {
-  showProfile.value = true
+const handleProfile = () => {
+  router.push('/user/profile')
 }
 
 // 打开设置

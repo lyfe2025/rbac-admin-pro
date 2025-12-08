@@ -399,4 +399,41 @@ export class UserService {
     );
     return result;
   }
+
+  /**
+   * 更新个人信息
+   */
+  async updateProfile(
+    userId: string,
+    data: {
+      nickName?: string;
+      email?: string;
+      phonenumber?: string;
+      sex?: string;
+      avatar?: string;
+    },
+  ) {
+    this.logger.log(`更新个人信息: ${userId}`, 'UserService');
+
+    const result = await this.prisma.sysUser.update({
+      where: { userId: BigInt(userId) },
+      data: {
+        ...(data.nickName !== undefined && { nickName: data.nickName }),
+        ...(data.email !== undefined && { email: data.email }),
+        ...(data.phonenumber !== undefined && { phonenumber: data.phonenumber }),
+        ...(data.sex !== undefined && { sex: data.sex }),
+        ...(data.avatar !== undefined && { avatar: data.avatar }),
+        updateTime: new Date(),
+      },
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...userInfo } = result;
+
+    this.logger.log(
+      `个人信息更新成功: ${result.userName} (ID: ${userId})`,
+      'UserService',
+    );
+    return userInfo;
+  }
 }

@@ -51,6 +51,8 @@ CREATE TABLE sys_user (
   del_flag CHAR(1) DEFAULT '0',
   login_ip VARCHAR(128) DEFAULT '',
   login_date TIMESTAMP,
+  two_factor_secret VARCHAR(100),
+  two_factor_enabled BOOLEAN DEFAULT FALSE,
   create_by VARCHAR(64) DEFAULT '',
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   update_by VARCHAR(64) DEFAULT '',
@@ -72,6 +74,8 @@ COMMENT ON COLUMN sys_user.status IS '帐号状态（0正常 1停用）';
 COMMENT ON COLUMN sys_user.del_flag IS '删除标志（0代表存在 2代表删除）';
 COMMENT ON COLUMN sys_user.login_ip IS '最后登录IP';
 COMMENT ON COLUMN sys_user.login_date IS '最后登录时间';
+COMMENT ON COLUMN sys_user.two_factor_secret IS '两步验证密钥';
+COMMENT ON COLUMN sys_user.two_factor_enabled IS '两步验证是否启用';
 COMMENT ON COLUMN sys_user.create_by IS '创建者';
 COMMENT ON COLUMN sys_user.create_time IS '创建时间';
 COMMENT ON COLUMN sys_user.update_by IS '更新者';

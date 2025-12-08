@@ -33,6 +33,8 @@ COMMENT ON COLUMN public.sys_user.status IS '帐号状态（0正常 1停用）';
 COMMENT ON COLUMN public.sys_user.del_flag IS '删除标志（0代表存在 2代表删除）';
 COMMENT ON COLUMN public.sys_user.login_ip IS '最后登录IP';
 COMMENT ON COLUMN public.sys_user.login_date IS '最后登录时间';
+COMMENT ON COLUMN public.sys_user.two_factor_secret IS '两步验证密钥';
+COMMENT ON COLUMN public.sys_user.two_factor_enabled IS '两步验证是否启用';
 COMMENT ON COLUMN public.sys_user.create_by IS '创建者';
 COMMENT ON COLUMN public.sys_user.create_time IS '创建时间';
 COMMENT ON COLUMN public.sys_user.update_by IS '更新者';

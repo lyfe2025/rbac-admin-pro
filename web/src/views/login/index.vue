@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/ui/toast/use-toast'
-import { Loader2, Shield, Users, Settings, BarChart3, RefreshCw } from 'lucide-vue-next'
+import { Loader2, Shield, Users, Settings, BarChart3, RefreshCw, KeyRound } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/modules/user'
-import { getCaptchaImage, type CaptchaResult } from '@/api/login'
+import { getCaptchaImage, verifyTwoFactor, type CaptchaResult, type LoginResult } from '@/api/login'
+import { setToken } from '@/utils/auth'
 
 const router = useRouter()
 const { toast } = useToast()
@@ -21,6 +22,11 @@ const captchaImg = ref('')
 const captchaEnabled = ref(false)
 const isLoading = ref(false)
 const captchaLoading = ref(false)
+
+// 两步验证相关
+const showTwoFactor = ref(false)
+const twoFactorCode = ref('')
+const tempToken = ref('')
 
 const features = [
   { icon: Shield, title: '权限管理', desc: '细粒度的菜单和按钮级权限控制' },
@@ -41,7 +47,6 @@ const loadCaptcha = async () => {
       captchaImg.value = res.img
     }
   } catch {
-    // 获取验证码失败时不阻塞登录
     captchaEnabled.value = false
   } finally {
     captchaLoading.value = false
@@ -73,19 +78,70 @@ const handleLogin = async () => {
       loginData.code = code.value
       loginData.uuid = uuid.value
     }
-    await userStore.login(loginData)
-    toast({ title: '登录成功', description: '欢迎回来，' + username.value })
-    router.push('/')
+
+    const response = (await userStore.loginWithoutToken(loginData)) as unknown as { data: LoginResult }
+    const result = response.data
+
+    // 检查是否需要两步验证
+    if (result.requireTwoFactor && result.tempToken) {
+      tempToken.value = result.tempToken
+      showTwoFactor.value = true
+      twoFactorCode.value = ''
+      toast({ title: '需要两步验证', description: '请输入您的验证器应用中的验证码' })
+    } else if (result.token) {
+      // 直接登录成功
+      setToken(result.token)
+      await userStore.getInfo()
+      toast({ title: '登录成功', description: '欢迎回来，' + username.value })
+      router.push('/')
+    }
   } catch (error) {
     const message = error instanceof Error && error.message ? error.message : '用户名或密码错误'
     toast({ title: '登录失败', description: message, variant: 'destructive' })
-    // 登录失败后刷新验证码
     if (captchaEnabled.value) {
       code.value = ''
       loadCaptcha()
     }
   } finally {
     isLoading.value = false
+  }
+}
+
+// 两步验证
+const handleTwoFactorVerify = async () => {
+  if (!twoFactorCode.value || twoFactorCode.value.length !== 6) {
+    toast({ title: '验证失败', description: '请输入6位验证码', variant: 'destructive' })
+    return
+  }
+
+  isLoading.value = true
+  try {
+    const response = (await verifyTwoFactor({
+      tempToken: tempToken.value,
+      code: twoFactorCode.value,
+    })) as unknown as { data: { token: string } }
+
+    setToken(response.data.token)
+    await userStore.getInfo()
+    toast({ title: '登录成功', description: '欢迎回来，' + username.value })
+    router.push('/')
+  } catch (error) {
+    const message = error instanceof Error && error.message ? error.message : '验证码错误'
+    toast({ title: '验证失败', description: message, variant: 'destructive' })
+    twoFactorCode.value = ''
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 返回登录
+const backToLogin = () => {
+  showTwoFactor.value = false
+  tempToken.value = ''
+  twoFactorCode.value = ''
+  if (captchaEnabled.value) {
+    code.value = ''
+    loadCaptcha()
   }
 }
 </script>
@@ -141,56 +197,91 @@ const handleLogin = async () => {
           </div>
         </div>
 
-        <div class="text-center lg:text-left">
-          <h1 class="text-2xl font-bold tracking-tight">欢迎回来</h1>
-          <p class="text-muted-foreground mt-2">请输入您的账号密码登录系统</p>
-        </div>
+        <!-- 两步验证表单 -->
+        <template v-if="showTwoFactor">
+          <div class="text-center lg:text-left">
+            <h1 class="text-2xl font-bold tracking-tight">两步验证</h1>
+            <p class="text-muted-foreground mt-2">请输入您验证器应用中的6位验证码</p>
+          </div>
 
-        <div class="space-y-4">
-          <div class="space-y-2">
-            <Label for="username">用户名</Label>
-            <Input id="username" v-model="username" placeholder="请输入用户名" class="h-11" />
-          </div>
-          <div class="space-y-2">
-            <Label for="password">密码</Label>
-            <Input
-              id="password"
-              type="password"
-              v-model="password"
-              placeholder="请输入密码"
-              class="h-11"
-              @keyup.enter="handleLogin"
-            />
-          </div>
-          <div v-if="captchaEnabled" class="space-y-2">
-            <Label for="code">验证码</Label>
-            <div class="flex gap-2">
-              <Input
-                id="code"
-                v-model="code"
-                placeholder="请输入验证码"
-                class="h-11 flex-1"
-                @keyup.enter="handleLogin"
-              />
-              <div
-                class="h-11 w-[120px] rounded-md border cursor-pointer flex items-center justify-center overflow-hidden bg-muted"
-                @click="loadCaptcha"
-              >
-                <RefreshCw v-if="captchaLoading" class="h-5 w-5 animate-spin text-muted-foreground" />
-                <img v-else-if="captchaImg" :src="captchaImg" alt="验证码" class="h-full w-full object-contain" />
-                <span v-else class="text-sm text-muted-foreground">点击获取</span>
+          <div class="space-y-4">
+            <div class="space-y-2">
+              <Label for="twoFactorCode">验证码</Label>
+              <div class="relative">
+                <KeyRound class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="twoFactorCode"
+                  v-model="twoFactorCode"
+                  placeholder="请输入6位验证码"
+                  class="h-11 pl-10 text-center text-lg tracking-widest"
+                  maxlength="6"
+                  @keyup.enter="handleTwoFactorVerify"
+                />
               </div>
             </div>
+            <Button class="w-full h-11" @click="handleTwoFactorVerify" :disabled="isLoading">
+              <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
+              {{ isLoading ? '验证中...' : '验证' }}
+            </Button>
+            <Button variant="outline" class="w-full h-11" @click="backToLogin">
+              返回登录
+            </Button>
           </div>
-          <Button class="w-full h-11" @click="handleLogin" :disabled="isLoading">
-            <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
-            {{ isLoading ? '登录中...' : '登录' }}
-          </Button>
-        </div>
+        </template>
 
-        <p class="text-center text-sm text-muted-foreground">
-          默认账号：admin / 123456
-        </p>
+        <!-- 登录表单 -->
+        <template v-else>
+          <div class="text-center lg:text-left">
+            <h1 class="text-2xl font-bold tracking-tight">欢迎回来</h1>
+            <p class="text-muted-foreground mt-2">请输入您的账号密码登录系统</p>
+          </div>
+
+          <div class="space-y-4">
+            <div class="space-y-2">
+              <Label for="username">用户名</Label>
+              <Input id="username" v-model="username" placeholder="请输入用户名" class="h-11" />
+            </div>
+            <div class="space-y-2">
+              <Label for="password">密码</Label>
+              <Input
+                id="password"
+                type="password"
+                v-model="password"
+                placeholder="请输入密码"
+                class="h-11"
+                @keyup.enter="handleLogin"
+              />
+            </div>
+            <div v-if="captchaEnabled" class="space-y-2">
+              <Label for="code">验证码</Label>
+              <div class="flex gap-2">
+                <Input
+                  id="code"
+                  v-model="code"
+                  placeholder="请输入验证码"
+                  class="h-11 flex-1"
+                  @keyup.enter="handleLogin"
+                />
+                <div
+                  class="h-11 w-[120px] rounded-md border cursor-pointer flex items-center justify-center overflow-hidden bg-muted"
+                  @click="loadCaptcha"
+                >
+                  <RefreshCw v-if="captchaLoading" class="h-5 w-5 animate-spin text-muted-foreground" />
+                  <img v-else-if="captchaImg" :src="captchaImg" alt="验证码" class="h-full w-full object-contain" />
+                  <span v-else class="text-sm text-muted-foreground">点击获取</span>
+                </div>
+              </div>
+            </div>
+            <Button class="w-full h-11" @click="handleLogin" :disabled="isLoading">
+              <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
+              {{ isLoading ? '登录中...' : '登录' }}
+            </Button>
+          </div>
+
+          <p class="text-center text-sm text-muted-foreground">
+            默认账号：admin / 123456
+          </p>
+        </template>
       </div>
     </div>
   </div>

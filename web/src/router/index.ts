@@ -21,6 +21,12 @@ const router = createRouter({
           component: () => import('@/views/dashboard/index.vue'),
           meta: { title: '首页', icon: 'dashboard' }
         },
+        {
+          path: 'user/profile',
+          name: 'Profile',
+          component: () => import('@/views/system/user/profile.vue'),
+          meta: { title: '个人中心', icon: 'user' }
+        },
         // System Module
         {
           path: 'system/user',
