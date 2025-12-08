@@ -36,32 +36,43 @@ export class DictService {
   }
 
   async getType(dictId: string) {
-    return this.prisma.sysDictType.findUnique({ where: { dictId: BigInt(dictId) } });
+    return this.prisma.sysDictType.findUnique({
+      where: { dictId: BigInt(dictId) },
+    });
   }
 
   async createType(dto: CreateDictTypeDto) {
-    this.logger.log(`创建字典类型: ${dto.dictName} (${dto.dictType})`, 'DictService');
-    
+    this.logger.log(
+      `创建字典类型: ${dto.dictName} (${dto.dictType})`,
+      'DictService',
+    );
+
     // 唯一约束：dictType 不重复
     const exist = await this.prisma.sysDictType.findFirst({
       where: { dictType: dto.dictType },
     });
     if (exist) {
-      this.logger.warn(`创建字典失败,类型已存在: ${dto.dictType}`, 'DictService');
+      this.logger.warn(
+        `创建字典失败,类型已存在: ${dto.dictType}`,
+        'DictService',
+      );
       throw new BadRequestException('字典类型已存在');
     }
 
     const result = await this.prisma.sysDictType.create({
       data: { ...dto, status: dto.status ?? '0', createTime: new Date() },
     });
-    
-    this.logger.log(`字典类型创建成功: ${result.dictName} (ID: ${result.dictId})`, 'DictService');
+
+    this.logger.log(
+      `字典类型创建成功: ${result.dictName} (ID: ${result.dictId})`,
+      'DictService',
+    );
     return result;
   }
 
   async updateType(dictId: string, dto: UpdateDictTypeDto) {
     this.logger.log(`更新字典类型: ${dictId}`, 'DictService');
-    
+
     const type = await this.getType(dictId);
     if (!type) {
       this.logger.warn(`更新字典失败,类型不存在: ${dictId}`, 'DictService');
@@ -72,23 +83,26 @@ export class DictService {
       where: { dictId: BigInt(dictId) },
       data: { ...dto, updateTime: new Date() },
     });
-    
-    this.logger.log(`字典类型更新成功: ${result.dictName} (ID: ${dictId})`, 'DictService');
+
+    this.logger.log(
+      `字典类型更新成功: ${result.dictName} (ID: ${dictId})`,
+      'DictService',
+    );
     return result;
   }
 
   async removeTypes(dictIds: string[]) {
     this.logger.log(`删除字典类型: ${dictIds.length} 个`, 'DictService');
-    
+
     if (!dictIds || dictIds.length === 0) {
       this.logger.warn('删除字典失败,参数为空', 'DictService');
       throw new BadRequestException('参数为空');
     }
-    
+
     await this.prisma.sysDictType.deleteMany({
-      where: { dictId: { in: dictIds.map(id => BigInt(id)) } },
+      where: { dictId: { in: dictIds.map((id) => BigInt(id)) } },
     });
-    
+
     this.logger.log(`字典类型删除成功: ${dictIds.length} 个`, 'DictService');
     return {};
   }

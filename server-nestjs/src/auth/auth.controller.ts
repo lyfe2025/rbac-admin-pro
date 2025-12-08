@@ -16,14 +16,17 @@ export class AuthController {
   ) {}
 
   @Post('login')
-  @ApiOperation({ summary: '用户登录', description: '用户名密码登录获取 JWT Token' })
+  @ApiOperation({
+    summary: '用户登录',
+    description: '用户名密码登录获取 JWT Token',
+  })
   @ApiBody({ type: LoginDto })
   @ApiResponse({ status: 200, description: '登录成功' })
   @ApiResponse({ status: 401, description: '用户名或密码错误' })
   async login(@Body() loginDto: LoginDto, @Req() req: Request) {
     // 登录日志已在 AuthService 中记录,这里只处理在线用户
     const res = await this.authService.login(loginDto);
-    
+
     // 注册在线用户
     this.onlineService.add({
       token: res.token,
@@ -31,7 +34,7 @@ export class AuthController {
       ipaddr: req.ip || '',
       loginTime: new Date(),
     });
-    
+
     return res;
   }
 

@@ -32,46 +32,57 @@ export class NoticeService {
   }
 
   async findOne(noticeId: string) {
-    return this.prisma.sysNotice.findUnique({ where: { noticeId: BigInt(noticeId) } });
+    return this.prisma.sysNotice.findUnique({
+      where: { noticeId: BigInt(noticeId) },
+    });
   }
 
   async create(dto: CreateNoticeDto) {
     this.logger.log(`发布通知公告: ${dto.noticeTitle}`, 'NoticeService');
-    
+
     const result = await this.prisma.sysNotice.create({
       data: { ...dto, createTime: new Date() },
     });
-    
-    this.logger.log(`通知公告发布成功: ${result.noticeTitle} (ID: ${result.noticeId})`, 'NoticeService');
+
+    this.logger.log(
+      `通知公告发布成功: ${result.noticeTitle} (ID: ${result.noticeId})`,
+      'NoticeService',
+    );
     return result;
   }
 
   async update(noticeId: string, dto: UpdateNoticeDto) {
     this.logger.log(`更新通知公告: ${noticeId}`, 'NoticeService');
-    
+
     const notice = await this.findOne(noticeId);
     if (!notice) {
       this.logger.warn(`更新公告失败,公告不存在: ${noticeId}`, 'NoticeService');
       throw new BadRequestException('公告不存在');
     }
-    
+
     const result = await this.prisma.sysNotice.update({
       where: { noticeId: BigInt(noticeId) },
       data: { ...dto, updateTime: new Date() },
     });
-    
-    this.logger.log(`通知公告更新成功: ${result.noticeTitle} (ID: ${noticeId})`, 'NoticeService');
+
+    this.logger.log(
+      `通知公告更新成功: ${result.noticeTitle} (ID: ${noticeId})`,
+      'NoticeService',
+    );
     return result;
   }
 
   async remove(noticeIds: string[]) {
     this.logger.log(`删除通知公告: ${noticeIds.length} 个`, 'NoticeService');
-    
+
     await this.prisma.sysNotice.deleteMany({
-      where: { noticeId: { in: noticeIds.map(id => BigInt(id)) } },
+      where: { noticeId: { in: noticeIds.map((id) => BigInt(id)) } },
     });
-    
-    this.logger.log(`通知公告删除成功: ${noticeIds.length} 个`, 'NoticeService');
+
+    this.logger.log(
+      `通知公告删除成功: ${noticeIds.length} 个`,
+      'NoticeService',
+    );
     return {};
   }
 }

@@ -49,7 +49,9 @@ export class JobService {
   }
 
   async remove(jobIds: string[]) {
-    await this.prisma.sysJob.deleteMany({ where: { jobId: { in: jobIds.map(id => BigInt(id)) } } });
+    await this.prisma.sysJob.deleteMany({
+      where: { jobId: { in: jobIds.map((id) => BigInt(id)) } },
+    });
     return {};
   }
 

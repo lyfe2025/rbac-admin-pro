@@ -9,9 +9,7 @@ import { winstonConfig } from './logger.config';
  */
 @Global()
 @Module({
-  imports: [
-    WinstonModule.forRoot(winstonConfig),
-  ],
+  imports: [WinstonModule.forRoot(winstonConfig)],
   providers: [LoggerService],
   exports: [LoggerService],
 })

@@ -12,9 +12,10 @@ export class IpUtil {
     // 优先从 x-forwarded-for 获取(代理/负载均衡场景)
     const forwarded = request.headers['x-forwarded-for'];
     if (forwarded) {
-      const ip = typeof forwarded === 'string' 
-        ? forwarded.split(',')[0].trim()
-        : forwarded[0];
+      const ip =
+        typeof forwarded === 'string'
+          ? forwarded.split(',')[0].trim()
+          : forwarded[0];
       return ip;
     }
 
@@ -26,7 +27,7 @@ export class IpUtil {
 
     // 从 socket 获取
     const socketIp = request.socket.remoteAddress || '';
-    
+
     // 处理 IPv6 的 IPv4 映射地址
     if (socketIp.startsWith('::ffff:')) {
       return socketIp.substring(7);
@@ -52,22 +53,22 @@ export class IpUtil {
 
       // 中国城市映射
       const cityMap: Record<string, string> = {
-        'Beijing': '北京',
-        'Shanghai': '上海',
-        'Guangzhou': '广州',
-        'Shenzhen': '深圳',
-        'Hangzhou': '杭州',
-        'Chengdu': '成都',
-        'Wuhan': '武汉',
-        'Nanjing': '南京',
-        'Chongqing': '重庆',
-        'Tianjin': '天津',
-        'Xi\'an': '西安',
-        'Suzhou': '苏州',
+        Beijing: '北京',
+        Shanghai: '上海',
+        Guangzhou: '广州',
+        Shenzhen: '深圳',
+        Hangzhou: '杭州',
+        Chengdu: '成都',
+        Wuhan: '武汉',
+        Nanjing: '南京',
+        Chongqing: '重庆',
+        Tianjin: '天津',
+        "Xi'an": '西安',
+        Suzhou: '苏州',
       };
 
       const country = geo.country === 'CN' ? '中国' : geo.country;
-      const city = geo.city ? (cityMap[geo.city] || geo.city) : '';
+      const city = geo.city ? cityMap[geo.city] || geo.city : '';
       const region = geo.region || '';
 
       if (country === '中国') {
@@ -85,7 +86,7 @@ export class IpUtil {
    */
   private static isLocalIp(ip: string): boolean {
     if (!ip || ip === '未知') return true;
-    
+
     return (
       ip === 'localhost' ||
       ip === '127.0.0.1' ||

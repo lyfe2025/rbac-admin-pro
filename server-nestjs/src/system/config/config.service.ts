@@ -33,54 +33,71 @@ export class ConfigService {
   }
 
   async findOne(configId: string) {
-    return this.prisma.sysConfig.findUnique({ where: { configId: BigInt(configId) } });
+    return this.prisma.sysConfig.findUnique({
+      where: { configId: BigInt(configId) },
+    });
   }
 
   async create(dto: CreateConfigDto) {
-    this.logger.log(`创建系统参数: ${dto.configName} (${dto.configKey})`, 'ConfigService');
-    
+    this.logger.log(
+      `创建系统参数: ${dto.configName} (${dto.configKey})`,
+      'ConfigService',
+    );
+
     const exist = await this.prisma.sysConfig.findFirst({
       where: { configKey: dto.configKey },
     });
     if (exist) {
-      this.logger.warn(`创建参数失败,键已存在: ${dto.configKey}`, 'ConfigService');
+      this.logger.warn(
+        `创建参数失败,键已存在: ${dto.configKey}`,
+        'ConfigService',
+      );
       throw new BadRequestException('参数键已存在');
     }
-    
+
     const result = await this.prisma.sysConfig.create({
       data: { ...dto, createTime: new Date() },
     });
-    
-    this.logger.log(`系统参数创建成功: ${result.configName} (ID: ${result.configId})`, 'ConfigService');
+
+    this.logger.log(
+      `系统参数创建成功: ${result.configName} (ID: ${result.configId})`,
+      'ConfigService',
+    );
     return result;
   }
 
   async update(configId: string, dto: UpdateConfigDto) {
     this.logger.log(`更新系统参数: ${configId}`, 'ConfigService');
-    
+
     const config = await this.findOne(configId);
     if (!config) {
       this.logger.warn(`更新参数失败,参数不存在: ${configId}`, 'ConfigService');
       throw new BadRequestException('参数不存在');
     }
-    
+
     const result = await this.prisma.sysConfig.update({
       where: { configId: BigInt(configId) },
       data: { ...dto, updateTime: new Date() },
     });
-    
-    this.logger.log(`系统参数更新成功: ${result.configName} (${result.configKey}=${result.configValue})`, 'ConfigService');
+
+    this.logger.log(
+      `系统参数更新成功: ${result.configName} (${result.configKey}=${result.configValue})`,
+      'ConfigService',
+    );
     return result;
   }
 
   async remove(configIds: string[]) {
     this.logger.log(`删除系统参数: ${configIds.length} 个`, 'ConfigService');
-    
+
     await this.prisma.sysConfig.deleteMany({
-      where: { configId: { in: configIds.map(id => BigInt(id)) } },
+      where: { configId: { in: configIds.map((id) => BigInt(id)) } },
     });
-    
-    this.logger.log(`系统参数删除成功: ${configIds.length} 个`, 'ConfigService');
+
+    this.logger.log(
+      `系统参数删除成功: ${configIds.length} 个`,
+      'ConfigService',
+    );
     return {};
   }
 

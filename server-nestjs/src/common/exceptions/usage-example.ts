@@ -1,6 +1,6 @@
 /**
  * BusinessException 使用示例
- * 
+ *
  * 本文件仅作为示例,不会被实际使用
  */
 
@@ -15,13 +15,13 @@ export class ExampleService {
    */
   async example1(userId: string) {
     const user = await this.findUser(userId);
-    
+
     if (!user) {
       // 方式1: 直接使用错误码
       throw new BusinessException(ErrorCode.USER_NOT_FOUND);
       // 返回: { code: 30001, msg: '用户不存在', data: null }
     }
-    
+
     return user;
   }
 
@@ -30,7 +30,7 @@ export class ExampleService {
    */
   async example2(userId: string) {
     const user = await this.findUser(userId);
-    
+
     if (!user) {
       // 方式2: 自定义消息
       throw new BusinessException(
@@ -39,7 +39,7 @@ export class ExampleService {
       );
       // 返回: { code: 30001, msg: '用户 123 不存在', data: null }
     }
-    
+
     return user;
   }
 
@@ -48,21 +48,20 @@ export class ExampleService {
    */
   async example3(username: string) {
     const existingUser = await this.findByUsername(username);
-    
+
     if (existingUser) {
       // 方式3: 携带额外数据
-      throw new BusinessException(
-        ErrorCode.USERNAME_EXISTS,
-        '用户名已存在',
-        { username, suggestion: '请尝试其他用户名' },
-      );
-      // 返回: { 
-      //   code: 30002, 
-      //   msg: '用户名已存在', 
+      throw new BusinessException(ErrorCode.USERNAME_EXISTS, '用户名已存在', {
+        username,
+        suggestion: '请尝试其他用户名',
+      });
+      // 返回: {
+      //   code: 30002,
+      //   msg: '用户名已存在',
       //   data: { username: 'admin', suggestion: '请尝试其他用户名' }
       // }
     }
-    
+
     return true;
   }
 
@@ -71,16 +70,16 @@ export class ExampleService {
    */
   async example4(userId: string) {
     const user = await this.findUser(userId);
-    
+
     if (!user) {
       // 方式4: 使用静态工厂方法 (更简洁)
       throw BusinessException.notFound('用户不存在');
     }
-    
+
     if (user.status === '1') {
       throw BusinessException.denied('用户已被停用');
     }
-    
+
     return user;
   }
 
@@ -89,18 +88,18 @@ export class ExampleService {
    */
   async example5(userId: string, resourceId: string) {
     const user = await this.findUser(userId);
-    
+
     if (!user) {
       // 未登录
       throw BusinessException.unauthorized();
     }
-    
+
     const hasPermission = await this.checkPermission(userId, resourceId);
     if (!hasPermission) {
       // 无权限
       throw BusinessException.forbidden('您没有权限访问该资源');
     }
-    
+
     return true;
   }
 
@@ -111,11 +110,11 @@ export class ExampleService {
     if (!data.username || data.username.length < 2) {
       throw BusinessException.invalidParams('用户名长度不能少于2个字符');
     }
-    
+
     if (!data.password || data.password.length < 6) {
       throw BusinessException.invalidParams('密码长度不能少于6个字符');
     }
-    
+
     return true;
   }
 
@@ -124,11 +123,11 @@ export class ExampleService {
    */
   async example7(userId: string, deptId: string) {
     const dept = await this.findDept(deptId);
-    
+
     if (!dept) {
       throw new BusinessException(ErrorCode.DEPT_NOT_FOUND);
     }
-    
+
     // 检查部门是否有子部门
     const hasChildren = await this.deptHasChildren(deptId);
     if (hasChildren) {
@@ -137,7 +136,7 @@ export class ExampleService {
         '该部门存在子部门,不能删除',
       );
     }
-    
+
     // 检查部门是否有用户
     const hasUsers = await this.deptHasUsers(deptId);
     if (hasUsers) {
@@ -146,7 +145,7 @@ export class ExampleService {
         '该部门已分配用户,不能删除',
       );
     }
-    
+
     return true;
   }
 
@@ -180,17 +179,17 @@ export class ExampleService {
     if (userId === currentUserId) {
       throw new BusinessException(ErrorCode.CANNOT_DELETE_SELF);
     }
-    
+
     const user = await this.findUser(userId);
     if (!user) {
       throw new BusinessException(ErrorCode.USER_NOT_FOUND);
     }
-    
+
     // 不能删除超级管理员
     if (user.userId === BigInt(1)) {
       throw new BusinessException(ErrorCode.CANNOT_DELETE_ADMIN);
     }
-    
+
     // 检查用户是否有角色
     const hasRoles = await this.userHasRoles(userId);
     if (hasRoles) {
@@ -199,13 +198,13 @@ export class ExampleService {
         '该用户已分配角色,请先解除角色关联',
       );
     }
-    
+
     // 执行删除
     await this.prisma.sysUser.update({
       where: { userId: BigInt(userId) },
       data: { delFlag: '2' },
     });
-    
+
     return true;
   }
 
@@ -218,30 +217,30 @@ export class ExampleService {
     throw BusinessException.notFound('数据不存在');
     throw BusinessException.alreadyExists('数据已存在');
     throw BusinessException.denied('操作被拒绝');
-    
+
     // 认证授权错误
     throw BusinessException.unauthorized('未登录');
     throw BusinessException.forbidden('无权限');
     throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
     throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
     throw new BusinessException(ErrorCode.ACCOUNT_DISABLED);
-    
+
     // 用户管理错误
     throw new BusinessException(ErrorCode.USER_NOT_FOUND);
     throw new BusinessException(ErrorCode.USERNAME_EXISTS);
     throw new BusinessException(ErrorCode.PHONE_EXISTS);
     throw new BusinessException(ErrorCode.EMAIL_EXISTS);
-    
+
     // 角色管理错误
     throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
     throw new BusinessException(ErrorCode.ROLE_NAME_EXISTS);
     throw new BusinessException(ErrorCode.ROLE_HAS_USERS);
-    
+
     // 部门管理错误
     throw new BusinessException(ErrorCode.DEPT_NOT_FOUND);
     throw new BusinessException(ErrorCode.DEPT_HAS_CHILDREN);
     throw new BusinessException(ErrorCode.DEPT_HAS_USERS);
-    
+
     // 菜单管理错误
     throw new BusinessException(ErrorCode.MENU_NOT_FOUND);
     throw new BusinessException(ErrorCode.MENU_HAS_CHILDREN);
@@ -249,34 +248,37 @@ export class ExampleService {
   }
 
   // ==================== 辅助方法 (仅用于示例) ====================
-  
+
   private async findUser(userId: string): Promise<any> {
     return null;
   }
-  
+
   private async findByUsername(username: string): Promise<any> {
     return null;
   }
-  
+
   private async findDept(deptId: string): Promise<any> {
     return null;
   }
-  
-  private async checkPermission(userId: string, resourceId: string): Promise<boolean> {
+
+  private async checkPermission(
+    userId: string,
+    resourceId: string,
+  ): Promise<boolean> {
     return false;
   }
-  
+
   private async deptHasChildren(deptId: string): Promise<boolean> {
     return false;
   }
-  
+
   private async deptHasUsers(deptId: string): Promise<boolean> {
     return false;
   }
-  
+
   private async userHasRoles(userId: string): Promise<boolean> {
     return false;
   }
-  
+
   private prisma: any;
 }

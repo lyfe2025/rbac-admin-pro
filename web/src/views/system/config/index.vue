@@ -29,7 +29,17 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast/use-toast'
-import { Plus, Edit, Trash2, RefreshCw, Search, Loader2 } from 'lucide-vue-next'
+import { Plus, Edit, Trash2, RefreshCw, Search, Loader2, RotateCw } from 'lucide-vue-next'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import TablePagination from '@/components/common/TablePagination.vue'
 import { formatDate } from '@/utils/format'
 import { listConfig, getConfig, delConfig, addConfig, updateConfig, refreshCache, type SysConfig } from '@/api/system/config'
@@ -49,6 +59,8 @@ const queryParams = reactive({
 })
 
 const showDialog = ref(false)
+const showDeleteDialog = ref(false)
+const configToDelete = ref<SysConfig | null>(null)
 const isEdit = ref(false)
 const submitLoading = ref(false)
 
@@ -101,11 +113,19 @@ async function handleUpdate(row: SysConfig) {
   showDialog.value = true
 }
 
-async function handleDelete(row: SysConfig) {
-  if (confirm('确认要删除参数"' + row.configName + '"吗？')) {
-    await delConfig([row.configId])
+function handleDelete(row: SysConfig) {
+  configToDelete.value = row
+  showDeleteDialog.value = true
+}
+
+async function confirmDelete() {
+  if (!configToDelete.value) return
+  try {
+    await delConfig([configToDelete.value.configId])
     toast({ title: "删除成功", description: "参数已删除" })
     getList()
+  } finally {
+    showDeleteDialog.value = false
   }
 }
 
@@ -321,5 +341,23 @@ onMounted(() => {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <AlertDialog v-model:open="showDeleteDialog">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>确认删除?</AlertDialogTitle>
+          <AlertDialogDescription>
+            您确定要删除参数 "{{ configToDelete?.configName }}" 吗？此操作无法撤销。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction @click="confirmDelete" class="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            删除
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>

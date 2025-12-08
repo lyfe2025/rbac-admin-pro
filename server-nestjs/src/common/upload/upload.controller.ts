@@ -10,7 +10,13 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
-import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiConsumes,
+  ApiBody,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 
 @ApiTags('文件上传')
@@ -48,7 +54,8 @@ export class UploadController {
         },
         filename: (req, file, cb) => {
           // 生成唯一文件名: 时间戳-随机数.扩展名
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
           const ext = extname(file.originalname);
           cb(null, `avatar-${uniqueSuffix}${ext}`);
         },
@@ -56,7 +63,12 @@ export class UploadController {
       fileFilter: (req, file, cb) => {
         // 只允许图片
         if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-          cb(new BadRequestException('只支持图片格式 (jpg, jpeg, png, gif, webp)'), false);
+          cb(
+            new BadRequestException(
+              '只支持图片格式 (jpg, jpeg, png, gif, webp)',
+            ),
+            false,
+          );
         } else {
           cb(null, true);
         }
@@ -73,7 +85,7 @@ export class UploadController {
 
     // 返回文件访问路径
     const fileUrl = `/uploads/avatars/${file.filename}`;
-    
+
     return {
       url: fileUrl,
       filename: file.filename,

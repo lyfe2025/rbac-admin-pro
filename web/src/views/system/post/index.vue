@@ -29,6 +29,16 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/toast/use-toast'
 import { Plus, Edit, Trash2, RefreshCw, Search, Loader2 } from 'lucide-vue-next'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import TablePagination from '@/components/common/TablePagination.vue'
 import { formatDate } from '@/utils/format'
 import { listPost, getPost, delPost, addPost, updatePost } from '@/api/system/post'
@@ -49,6 +59,8 @@ const queryParams = reactive({
 })
 
 const showDialog = ref(false)
+const showDeleteDialog = ref(false)
+const postToDelete = ref<SysPost | null>(null)
 const isEdit = ref(false)
 const submitLoading = ref(false)
 
@@ -101,11 +113,19 @@ async function handleUpdate(row: SysPost) {
   showDialog.value = true
 }
 
-async function handleDelete(row: SysPost) {
-  if (confirm('确认要删除岗位"' + row.postName + '"吗？')) {
-    await delPost([row.postId])
+function handleDelete(row: SysPost) {
+  postToDelete.value = row
+  showDeleteDialog.value = true
+}
+
+async function confirmDelete() {
+  if (!postToDelete.value) return
+  try {
+    await delPost([postToDelete.value.postId])
     toast({ title: "删除成功", description: "岗位已删除" })
     getList()
+  } finally {
+    showDeleteDialog.value = false
   }
 }
 
@@ -317,5 +337,23 @@ onMounted(() => {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <AlertDialog v-model:open="showDeleteDialog">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>确认删除?</AlertDialogTitle>
+          <AlertDialogDescription>
+            您确定要删除岗位 "{{ postToDelete?.postName }}" 吗？此操作无法撤销。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction @click="confirmDelete" class="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            删除
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>

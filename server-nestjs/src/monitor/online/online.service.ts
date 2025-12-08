@@ -18,12 +18,15 @@ export interface OnlineUser {
 @Injectable()
 export class OnlineService {
   private store = new Map<string, OnlineUser>();
-  
+
   constructor(private logger: LoggerService) {}
 
   async add(user: OnlineUser) {
     this.store.set(user.token, user);
-    this.logger.debug(`用户上线: ${user.userName} (IP: ${user.ipaddr})`, 'OnlineService');
+    this.logger.debug(
+      `用户上线: ${user.userName} (IP: ${user.ipaddr})`,
+      'OnlineService',
+    );
     await Promise.resolve();
   }
 

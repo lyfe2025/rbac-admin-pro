@@ -70,7 +70,7 @@ export class MenuService {
    */
   async create(createMenuDto: CreateMenuDto) {
     this.logger.log(`创建菜单: ${createMenuDto.menuName}`, 'MenuService');
-    
+
     const { parentId, ...rest } = createMenuDto;
     const result = await this.prisma.sysMenu.create({
       data: {
@@ -79,8 +79,11 @@ export class MenuService {
         createTime: new Date(),
       },
     });
-    
-    this.logger.log(`菜单创建成功: ${result.menuName} (ID: ${result.menuId})`, 'MenuService');
+
+    this.logger.log(
+      `菜单创建成功: ${result.menuName} (ID: ${result.menuId})`,
+      'MenuService',
+    );
     return result;
   }
 
@@ -89,7 +92,7 @@ export class MenuService {
    */
   async update(menuId: string, updateMenuDto: UpdateMenuDto) {
     this.logger.log(`更新菜单: ${menuId}`, 'MenuService');
-    
+
     const menu = await this.findOne(menuId);
     if (!menu) {
       this.logger.warn(`更新菜单失败,菜单不存在: ${menuId}`, 'MenuService');
@@ -97,7 +100,10 @@ export class MenuService {
     }
 
     if (updateMenuDto.parentId && updateMenuDto.parentId === menuId) {
-      this.logger.warn(`更新菜单失败,上级菜单不能选择自己: ${menuId}`, 'MenuService');
+      this.logger.warn(
+        `更新菜单失败,上级菜单不能选择自己: ${menuId}`,
+        'MenuService',
+      );
       throw new BadRequestException('上级菜单不能选择自己');
     }
 
@@ -106,12 +112,17 @@ export class MenuService {
       where: { menuId: BigInt(menuId) },
       data: {
         ...rest,
-        ...(parentId !== undefined ? { parentId: parentId ? BigInt(parentId) : null } : {}),
+        ...(parentId !== undefined
+          ? { parentId: parentId ? BigInt(parentId) : null }
+          : {}),
         updateTime: new Date(),
       },
     });
-    
-    this.logger.log(`菜单更新成功: ${result.menuName} (ID: ${menuId})`, 'MenuService');
+
+    this.logger.log(
+      `菜单更新成功: ${result.menuName} (ID: ${menuId})`,
+      'MenuService',
+    );
     return result;
   }
 

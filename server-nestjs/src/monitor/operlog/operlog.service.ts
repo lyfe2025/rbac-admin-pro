@@ -31,7 +31,7 @@ export class OperlogService {
 
   async remove(operIds: string[]) {
     await this.prisma.sysOperLog.deleteMany({
-      where: { operId: { in: operIds.map(id => BigInt(id)) } },
+      where: { operId: { in: operIds.map((id) => BigInt(id)) } },
     });
     return {};
   }

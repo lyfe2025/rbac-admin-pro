@@ -53,21 +53,24 @@ export class DeptService {
    */
   async create(createDeptDto: CreateDeptDto) {
     this.logger.log(`创建部门: ${createDeptDto.deptName}`, 'DeptService');
-    
+
     // 如果 parentId 为空，说明是顶级部门 (实际上若依前端通常传 0 或 null)
     // 我们需要处理 ancestors 字段 (祖级列表)
 
     const { parentId, ...rest } = createDeptDto;
     let ancestors = '0';
     let parentIdBigInt: bigint | null = null;
-    
+
     if (parentId && parentId !== '0') {
       const parentDept = await this.findOne(parentId);
       if (!parentDept) {
         throw new BusinessException(ErrorCode.PARENT_DEPT_NOT_FOUND);
       }
       if (parentDept.status === '1') {
-        throw new BusinessException(ErrorCode.DEPT_STATUS_ERROR, '部门停用，不允许新增');
+        throw new BusinessException(
+          ErrorCode.DEPT_STATUS_ERROR,
+          '部门停用，不允许新增',
+        );
       }
       parentIdBigInt = BigInt(parentId);
       ancestors = `${parentDept.ancestors || '0'},${parentId}`;
@@ -81,8 +84,11 @@ export class DeptService {
         createTime: new Date(),
       },
     });
-    
-    this.logger.log(`部门创建成功: ${result.deptName} (ID: ${result.deptId})`, 'DeptService');
+
+    this.logger.log(
+      `部门创建成功: ${result.deptName} (ID: ${result.deptId})`,
+      'DeptService',
+    );
     return result;
   }
 
@@ -98,11 +104,7 @@ export class DeptService {
     const { parentId, ...rest } = updateDeptDto;
     const deptIdBigInt = BigInt(deptId);
 
-    if (
-      parentId &&
-      parentId !== '0' &&
-      BigInt(parentId) !== dept.parentId
-    ) {
+    if (parentId && parentId !== '0' && BigInt(parentId) !== dept.parentId) {
       // 如果修改了父级，需要更新 ancestors
       const parentDept = await this.findOne(parentId);
       if (!parentDept) {
@@ -119,7 +121,11 @@ export class DeptService {
       const newAncestors = `${parentDept.ancestors || '0'},${parentId}`;
 
       // 更新自己和所有子部门的 ancestors
-      await this.updateChildrenAncestors(deptId, newAncestors, dept.ancestors || '0');
+      await this.updateChildrenAncestors(
+        deptId,
+        newAncestors,
+        dept.ancestors || '0',
+      );
 
       return this.prisma.sysDept.update({
         where: { deptId: deptIdBigInt },
@@ -136,7 +142,9 @@ export class DeptService {
       where: { deptId: deptIdBigInt },
       data: {
         ...rest,
-        ...(parentId !== undefined ? { parentId: parentId ? BigInt(parentId) : null } : {}),
+        ...(parentId !== undefined
+          ? { parentId: parentId ? BigInt(parentId) : null }
+          : {}),
         updateTime: new Date(),
       },
     });
@@ -183,7 +191,8 @@ export class DeptService {
 
     // 这里先简单返回所有，前端通常也会处理
     return depts.filter(
-      (d) => d.deptId !== deptIdBigInt && !d.ancestors?.split(',').includes(deptId),
+      (d) =>
+        d.deptId !== deptIdBigInt && !d.ancestors?.split(',').includes(deptId),
     );
   }
 

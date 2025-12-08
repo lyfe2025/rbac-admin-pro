@@ -67,7 +67,7 @@ export class RoleService {
    */
   async findOne(roleId: string) {
     this.logger.log(`查询角色详情: ${roleId}`, 'RoleService');
-    
+
     const role = await this.prisma.sysRole.findUnique({
       where: { roleId: BigInt(roleId), delFlag: '0' },
       include: {
@@ -93,14 +93,20 @@ export class RoleService {
    * 新增角色
    */
   async create(createRoleDto: CreateRoleDto) {
-    this.logger.log(`创建角色: ${createRoleDto.roleName} (${createRoleDto.roleKey})`, 'RoleService');
-    
+    this.logger.log(
+      `创建角色: ${createRoleDto.roleName} (${createRoleDto.roleKey})`,
+      'RoleService',
+    );
+
     // 检查 roleKey 唯一性
     const exist = await this.prisma.sysRole.findFirst({
       where: { roleKey: createRoleDto.roleKey, delFlag: '0' },
     });
     if (exist) {
-      this.logger.warn(`创建角色失败,权限字符已存在: ${createRoleDto.roleKey}`, 'RoleService');
+      this.logger.warn(
+        `创建角色失败,权限字符已存在: ${createRoleDto.roleKey}`,
+        'RoleService',
+      );
       throw new BusinessException(ErrorCode.ROLE_KEY_EXISTS);
     }
 
@@ -127,7 +133,10 @@ export class RoleService {
         });
       }
 
-      this.logger.log(`角色创建成功: ${role.roleName} (ID: ${role.roleId})`, 'RoleService');
+      this.logger.log(
+        `角色创建成功: ${role.roleName} (ID: ${role.roleId})`,
+        'RoleService',
+      );
       return role;
     });
   }
@@ -137,8 +146,10 @@ export class RoleService {
    */
   async update(roleId: string, updateRoleDto: UpdateRoleDto) {
     this.logger.log(`更新角色: ${roleId}`, 'RoleService');
-    
-    const role = await this.prisma.sysRole.findUnique({ where: { roleId: BigInt(roleId) } });
+
+    const role = await this.prisma.sysRole.findUnique({
+      where: { roleId: BigInt(roleId) },
+    });
     if (!role) {
       this.logger.warn(`更新角色失败,角色不存在: ${roleId}`, 'RoleService');
       throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
@@ -183,7 +194,10 @@ export class RoleService {
         }
       }
 
-      this.logger.log(`角色更新成功: ${updatedRole.roleName} (ID: ${roleId})`, 'RoleService');
+      this.logger.log(
+        `角色更新成功: ${updatedRole.roleName} (ID: ${roleId})`,
+        'RoleService',
+      );
       return updatedRole;
     });
   }
@@ -193,7 +207,7 @@ export class RoleService {
    */
   async remove(roleId: string) {
     this.logger.log(`删除角色: ${roleId}`, 'RoleService');
-    
+
     // 1. 检查是否分配给用户（只检查未删除的用户）
     const userCount = await this.prisma.sysUserRole.count({
       where: {
@@ -202,7 +216,10 @@ export class RoleService {
       },
     });
     if (userCount > 0) {
-      this.logger.warn(`删除角色失败,角色已分配给 ${userCount} 个用户: ${roleId}`, 'RoleService');
+      this.logger.warn(
+        `删除角色失败,角色已分配给 ${userCount} 个用户: ${roleId}`,
+        'RoleService',
+      );
       throw new BusinessException(ErrorCode.ROLE_HAS_USERS);
     }
 
@@ -211,8 +228,11 @@ export class RoleService {
       where: { roleId: BigInt(roleId) },
       data: { delFlag: '2' },
     });
-    
-    this.logger.log(`角色删除成功: ${result.roleName} (ID: ${roleId})`, 'RoleService');
+
+    this.logger.log(
+      `角色删除成功: ${result.roleName} (ID: ${roleId})`,
+      'RoleService',
+    );
     return result;
   }
 
@@ -221,13 +241,16 @@ export class RoleService {
    */
   async changeStatus(roleId: string, status: string) {
     this.logger.log(`修改角色状态: ${roleId} -> ${status}`, 'RoleService');
-    
+
     const result = await this.prisma.sysRole.update({
       where: { roleId: BigInt(roleId) },
       data: { status, updateTime: new Date() },
     });
-    
-    this.logger.log(`角色状态修改成功: ${result.roleName} (ID: ${roleId}, 状态: ${status})`, 'RoleService');
+
+    this.logger.log(
+      `角色状态修改成功: ${result.roleName} (ID: ${roleId}, 状态: ${status})`,
+      'RoleService',
+    );
     return result;
   }
 }

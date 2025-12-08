@@ -210,17 +210,19 @@ export class UserService {
    */
   async create(createUserDto: CreateUserDto) {
     this.logger.log(`创建用户: ${createUserDto.userName}`, 'UserService');
-    
+
     // 检查用户名唯一性
     const exist = await this.prisma.sysUser.findFirst({
       where: { userName: createUserDto.userName, delFlag: '0' },
     });
     if (exist) {
-      this.logger.warn(`创建用户失败,用户名已存在: ${createUserDto.userName}`, 'UserService');
+      this.logger.warn(
+        `创建用户失败,用户名已存在: ${createUserDto.userName}`,
+        'UserService',
+      );
       throw new BadRequestException('用户账号已存在');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { roleIds, postIds, password, deptId, ...userData } = createUserDto;
 
     // 密码加密
@@ -260,7 +262,10 @@ export class UserService {
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password: p, ...result } = user;
-      this.logger.log(`用户创建成功: ${createUserDto.userName} (ID: ${user.userId})`, 'UserService');
+      this.logger.log(
+        `用户创建成功: ${createUserDto.userName} (ID: ${user.userId})`,
+        'UserService',
+      );
       return result;
     });
   }
@@ -270,8 +275,10 @@ export class UserService {
    */
   async update(userId: string, updateUserDto: UpdateUserDto) {
     this.logger.log(`更新用户: ${userId}`, 'UserService');
-    
-    const user = await this.prisma.sysUser.findUnique({ where: { userId: BigInt(userId) } });
+
+    const user = await this.prisma.sysUser.findUnique({
+      where: { userId: BigInt(userId) },
+    });
     if (!user) {
       this.logger.warn(`更新用户失败,用户不存在: ${userId}`, 'UserService');
       throw new BadRequestException('用户不存在');
@@ -287,7 +294,9 @@ export class UserService {
         where: { userId: BigInt(userId) },
         data: {
           ...userData,
-          ...(deptId !== undefined ? { deptId: deptId ? BigInt(deptId) : null } : {}),
+          ...(deptId !== undefined
+            ? { deptId: deptId ? BigInt(deptId) : null }
+            : {}),
           updateTime: new Date(),
         },
       });
@@ -320,7 +329,10 @@ export class UserService {
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password: p, ...result } = updatedUser;
-      this.logger.log(`用户更新成功: ${updatedUser.userName} (ID: ${userId})`, 'UserService');
+      this.logger.log(
+        `用户更新成功: ${updatedUser.userName} (ID: ${userId})`,
+        'UserService',
+      );
       return result;
     });
   }
@@ -330,7 +342,7 @@ export class UserService {
    */
   async remove(userId: string) {
     this.logger.log(`删除用户: ${userId}`, 'UserService');
-    
+
     if (userId === '1') {
       // 假设1是超级管理员或者通过其他方式判断
       // throw new BadRequestException('不允许删除超级管理员');
@@ -341,8 +353,11 @@ export class UserService {
       where: { userId: BigInt(userId) },
       data: { delFlag: '2' },
     });
-    
-    this.logger.log(`用户删除成功: ${result.userName} (ID: ${userId})`, 'UserService');
+
+    this.logger.log(
+      `用户删除成功: ${result.userName} (ID: ${userId})`,
+      'UserService',
+    );
     return result;
   }
 
@@ -351,7 +366,7 @@ export class UserService {
    */
   async resetPassword(userId: string, password: string) {
     this.logger.warn(`重置用户密码: ${userId}`, 'UserService');
-    
+
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -359,8 +374,11 @@ export class UserService {
       where: { userId: BigInt(userId) },
       data: { password: hashedPassword },
     });
-    
-    this.logger.warn(`密码重置成功: ${result.userName} (ID: ${userId})`, 'UserService');
+
+    this.logger.warn(
+      `密码重置成功: ${result.userName} (ID: ${userId})`,
+      'UserService',
+    );
     return result;
   }
 
@@ -369,13 +387,16 @@ export class UserService {
    */
   async changeStatus(userId: string, status: string) {
     this.logger.log(`修改用户状态: ${userId} -> ${status}`, 'UserService');
-    
+
     const result = await this.prisma.sysUser.update({
       where: { userId: BigInt(userId) },
       data: { status, updateTime: new Date() },
     });
-    
-    this.logger.log(`用户状态修改成功: ${result.userName} (ID: ${userId}, 状态: ${status})`, 'UserService');
+
+    this.logger.log(
+      `用户状态修改成功: ${result.userName} (ID: ${userId}, 状态: ${status})`,
+      'UserService',
+    );
     return result;
   }
 }

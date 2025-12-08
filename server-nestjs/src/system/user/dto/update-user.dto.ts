@@ -24,11 +24,18 @@ export class UpdateUserDto {
   @IsString()
   deptId?: string;
 
-  @ValidateIf((o) => o.phonenumber !== '' && o.phonenumber !== null && o.phonenumber !== undefined)
+  @ValidateIf(
+    (o) =>
+      o.phonenumber !== '' &&
+      o.phonenumber !== null &&
+      o.phonenumber !== undefined,
+  )
   @Matches(/^1[3-9]\d{9}$/, { message: '手机号格式不正确' })
   phonenumber?: string;
 
-  @ValidateIf((o) => o.email !== '' && o.email !== null && o.email !== undefined)
+  @ValidateIf(
+    (o) => o.email !== '' && o.email !== null && o.email !== undefined,
+  )
   @IsEmail({}, { message: '邮箱格式不正确' })
   email?: string;
 

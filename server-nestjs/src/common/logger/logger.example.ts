@@ -78,13 +78,16 @@ export class ExampleService {
     try {
       // 步骤 1
       this.logger.debug(`Validating order: ${orderId}`, 'ExampleService');
-      
+
       // 步骤 2
       this.logger.debug(`Calculating total: ${orderId}`, 'ExampleService');
-      
+
       // 步骤 3
-      this.logger.log(`Order processed successfully: ${orderId}`, 'ExampleService');
-      
+      this.logger.log(
+        `Order processed successfully: ${orderId}`,
+        'ExampleService',
+      );
+
       return { success: true };
     } catch (error) {
       this.logger.error(
@@ -101,12 +104,12 @@ export class ExampleService {
    */
   async performanceTracking() {
     const startTime = Date.now();
-    
+
     // 执行业务逻辑
     await this.someExpensiveOperation();
-    
+
     const duration = Date.now() - startTime;
-    
+
     if (duration > 1000) {
       this.logger.warn(
         `Slow operation detected: ${duration}ms`,
@@ -122,6 +125,6 @@ export class ExampleService {
 
   private async someExpensiveOperation() {
     // 模拟耗时操作
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
 }

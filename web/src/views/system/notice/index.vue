@@ -29,7 +29,17 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast/use-toast'
-import { Plus, Edit, Trash2, RefreshCw, Search, Loader2 } from 'lucide-vue-next'
+import { Plus, Edit, Trash2, RefreshCw, Search, Loader2, Eye } from 'lucide-vue-next'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import TablePagination from '@/components/common/TablePagination.vue'
 import { formatDate } from '@/utils/format'
 import { listNotice, getNotice, delNotice, addNotice, updateNotice, type SysNotice } from '@/api/system/notice'
@@ -49,6 +59,10 @@ const queryParams = reactive({
 })
 
 const showDialog = ref(false)
+const showDeleteDialog = ref(false)
+const showPreviewDialog = ref(false)
+const noticeToDelete = ref<SysNotice | null>(null)
+const previewNotice = ref<SysNotice | null>(null)
 const isEdit = ref(false)
 const submitLoading = ref(false)
 
@@ -100,12 +114,26 @@ async function handleUpdate(row: SysNotice) {
   showDialog.value = true
 }
 
-async function handleDelete(row: SysNotice) {
-  if (confirm('确认要删除公告"' + row.noticeTitle + '"吗？')) {
-    await delNotice([row.noticeId])
+function handleDelete(row: SysNotice) {
+  noticeToDelete.value = row
+  showDeleteDialog.value = true
+}
+
+async function confirmDelete() {
+  if (!noticeToDelete.value) return
+  try {
+    await delNotice([noticeToDelete.value.noticeId])
     toast({ title: "删除成功", description: "公告已删除" })
     getList()
+  } finally {
+    showDeleteDialog.value = false
   }
+}
+
+// 预览公告
+function handlePreview(row: SysNotice) {
+  previewNotice.value = row
+  showPreviewDialog.value = true
 }
 
 async function handleSubmit() {
@@ -244,10 +272,13 @@ onMounted(() => {
             <TableCell>{{ item.createBy }}</TableCell>
             <TableCell>{{ formatDate(item.createTime) }}</TableCell>
             <TableCell class="text-right space-x-2">
-              <Button variant="ghost" size="icon" @click="handleUpdate(item)">
+              <Button variant="ghost" size="icon" @click="handlePreview(item)" title="预览">
+                <Eye class="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="icon" @click="handleUpdate(item)" title="编辑">
                 <Edit class="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="icon" class="text-destructive" @click="handleDelete(item)">
+              <Button variant="ghost" size="icon" class="text-destructive" @click="handleDelete(item)" title="删除">
                 <Trash2 class="w-4 h-4" />
               </Button>
             </TableCell>
@@ -323,6 +354,43 @@ onMounted(() => {
           <Button @click="handleSubmit" :disabled="submitLoading">
             确定
           </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <AlertDialog v-model:open="showDeleteDialog">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>确认删除?</AlertDialogTitle>
+          <AlertDialogDescription>
+            您确定要删除公告 "{{ noticeToDelete?.noticeTitle }}" 吗？此操作无法撤销。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction @click="confirmDelete" class="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            删除
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <!-- Preview Dialog -->
+    <Dialog v-model:open="showPreviewDialog">
+      <DialogContent class="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>{{ previewNotice?.noticeTitle }}</DialogTitle>
+          <DialogDescription>
+            <Badge variant="outline" class="mr-2">{{ getNoticeTypeLabel(previewNotice?.noticeType || '1') }}</Badge>
+            <span class="text-muted-foreground">{{ previewNotice?.createBy }} 发布于 {{ formatDate(previewNotice?.createTime) }}</span>
+          </DialogDescription>
+        </DialogHeader>
+        <div class="py-4 whitespace-pre-wrap">
+          {{ previewNotice?.noticeContent }}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="showPreviewDialog = false">关闭</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

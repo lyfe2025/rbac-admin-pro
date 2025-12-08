@@ -3,7 +3,7 @@ import { ErrorCode, ErrorCodeMessage } from '../enums/error-code.enum';
 
 /**
  * 业务异常类
- * 
+ *
  * 用于抛出业务逻辑错误,会被全局异常过滤器捕获并返回统一格式
  */
 export class BusinessException extends HttpException {
@@ -30,7 +30,7 @@ export class BusinessException extends HttpException {
   ) {
     // 使用错误码对应的默认消息,如果提供了自定义消息则使用自定义消息
     const errorMessage = message || ErrorCodeMessage[errorCode] || '操作失败';
-    
+
     super(
       {
         code: errorCode,

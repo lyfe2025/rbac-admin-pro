@@ -24,20 +24,33 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const { username, password } = loginDto;
     this.logger.debug(`Login attempt for user: ${username}`, 'AuthService');
-    
+
     // 获取请求信息
     const ipaddr = this.getClientIp();
     const userAgent = this.request.headers['user-agent'] || '';
     const { browser, os } = this.parseUserAgent(userAgent);
-    
+
     try {
       const user = await this.userService.findByUsername(username);
 
       if (!user) {
-        this.logger.warn(`Login failed: User not found - ${username}`, 'AuthService');
+        this.logger.warn(
+          `Login failed: User not found - ${username}`,
+          'AuthService',
+        );
         // 记录登录失败
-        await this.recordLoginLog(username, ipaddr, browser, os, '1', '用户不存在');
-        throw new BusinessException(ErrorCode.INVALID_CREDENTIALS, '账号或密码错误');
+        await this.recordLoginLog(
+          username,
+          ipaddr,
+          browser,
+          os,
+          '1',
+          '用户不存在',
+        );
+        throw new BusinessException(
+          ErrorCode.INVALID_CREDENTIALS,
+          '账号或密码错误',
+        );
       }
 
       // 验证密码
@@ -47,24 +60,40 @@ export class AuthService {
       }
 
       if (!isMatch) {
-        this.logger.warn(`Login failed: Invalid password - ${username}`, 'AuthService');
+        this.logger.warn(
+          `Login failed: Invalid password - ${username}`,
+          'AuthService',
+        );
         // 记录登录失败
-        await this.recordLoginLog(username, ipaddr, browser, os, '1', '密码错误');
-        throw new BusinessException(ErrorCode.INVALID_CREDENTIALS, '账号或密码错误');
+        await this.recordLoginLog(
+          username,
+          ipaddr,
+          browser,
+          os,
+          '1',
+          '密码错误',
+        );
+        throw new BusinessException(
+          ErrorCode.INVALID_CREDENTIALS,
+          '账号或密码错误',
+        );
       }
 
       // 签发 Token
       // 注意：BigInt 无法被 JSON.stringify，需要转换为 string
-      const payload = { 
-        sub: user.userId.toString(), 
-        username: user.userName 
+      const payload = {
+        sub: user.userId.toString(),
+        username: user.userName,
       };
-      
-      this.logger.log(`User logged in successfully: ${username} (ID: ${user.userId})`, 'AuthService');
-      
+
+      this.logger.log(
+        `User logged in successfully: ${username} (ID: ${user.userId})`,
+        'AuthService',
+      );
+
       // 记录登录成功
       await this.recordLoginLog(username, ipaddr, browser, os, '0', '登录成功');
-      
+
       return {
         token: this.jwtService.sign(payload),
       };
@@ -74,7 +103,11 @@ export class AuthService {
         throw error;
       }
       // 其他异常记录日志
-      this.logger.error(`Login error: ${error.message}`, error.stack, 'AuthService');
+      this.logger.error(
+        `Login error: ${error.message}`,
+        error.stack,
+        'AuthService',
+      );
       await this.recordLoginLog(username, ipaddr, browser, os, '1', '系统错误');
       throw error;
     }
@@ -94,7 +127,7 @@ export class AuthService {
     try {
       // 通过IP获取地理位置
       const loginLocation = IpUtil.getLocation(ipaddr);
-      
+
       await this.logininforService.create({
         userName,
         ipaddr,
@@ -106,7 +139,11 @@ export class AuthService {
       });
     } catch (error) {
       // 记录日志失败不应该影响登录流程
-      this.logger.error(`Failed to record login log: ${error.message}`, error.stack, 'AuthService');
+      this.logger.error(
+        `Failed to record login log: ${error.message}`,
+        error.stack,
+        'AuthService',
+      );
     }
   }
 

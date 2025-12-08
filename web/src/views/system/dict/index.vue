@@ -1,6 +1,17 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { Search, Plus, Edit, Trash2, RefreshCw } from 'lucide-vue-next'
+import { Search, Plus, Edit, Trash2, RefreshCw, BookOpen } from 'lucide-vue-next'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import TablePagination from '@/components/common/TablePagination.vue'
 import { formatDate } from '@/utils/format'
 import {
   Table,
@@ -46,6 +57,8 @@ const loading = ref(true)
 const total = ref(0)
 const typeList = ref<DictType[]>([])
 const showDialog = ref(false)
+const showDeleteDialog = ref(false)
+const dictToDelete = ref<DictType | null>(null)
 const dialogTitle = ref('')
 const form = reactive<Partial<DictType>>({
   dictId: undefined,
@@ -99,18 +112,22 @@ async function handleUpdate(row: DictType) {
   }
 }
 
-async function handleDelete(row: DictType) {
-  if (confirm('确认要删除"' + row.dictName + '"字典类型吗？')) {
-    try {
-      await delType([row.dictId])
-      toast({
-        title: "删除成功",
-        description: "字典类型已删除",
-      })
-      getList()
-    } catch (error) {
-      console.error('删除失败:', error)
-    }
+function handleDelete(row: DictType) {
+  dictToDelete.value = row
+  showDeleteDialog.value = true
+}
+
+async function confirmDelete() {
+  if (!dictToDelete.value) return
+  try {
+    await delType([dictToDelete.value.dictId])
+    toast({
+      title: "删除成功",
+      description: "字典类型已删除",
+    })
+    getList()
+  } finally {
+    showDeleteDialog.value = false
   }
 }
 
@@ -266,6 +283,14 @@ onMounted(() => {
       </Table>
     </div>
 
+    <!-- Pagination -->
+    <TablePagination
+      v-model:page-num="queryParams.pageNum"
+      v-model:page-size="queryParams.pageSize"
+      :total="total"
+      @change="getList"
+    />
+
     <!-- Add/Edit Dialog -->
     <Dialog v-model:open="showDialog">
       <DialogContent class="sm:max-w-[425px]">
@@ -307,5 +332,23 @@ onMounted(() => {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <AlertDialog v-model:open="showDeleteDialog">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>确认删除?</AlertDialogTitle>
+          <AlertDialogDescription>
+            您确定要删除字典类型 "{{ dictToDelete?.dictName }}" 吗？此操作无法撤销。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction @click="confirmDelete" class="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            删除
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>

@@ -10,7 +10,10 @@ import { tap, catchError } from 'rxjs/operators';
 import type { Request } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
 import { LoggerService } from '../logger/logger.service';
-import { LOG_METADATA_KEY, type LogMetadata } from '../decorators/log.decorator';
+import {
+  LOG_METADATA_KEY,
+  type LogMetadata,
+} from '../decorators/log.decorator';
 import { IpUtil } from '../utils/ip.util';
 
 @Injectable()
@@ -20,7 +23,10 @@ export class OperationLogInterceptor implements NestInterceptor {
     private readonly prisma: PrismaService,
     private readonly logger: LoggerService,
   ) {
-    this.logger.log('OperationLogInterceptor initialized', 'OperationLogInterceptor');
+    this.logger.log(
+      'OperationLogInterceptor initialized',
+      'OperationLogInterceptor',
+    );
   }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
