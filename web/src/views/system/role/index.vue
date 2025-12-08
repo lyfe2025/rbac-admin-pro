@@ -498,10 +498,11 @@ onMounted(() => {
             </TableCell>
             <TableCell>{{ item.roleSort }}</TableCell>
             <TableCell>
-               <Switch 
-                 :checked="item.status === '0'" 
-                 @update:checked="handleStatusChange(item)"
-               />
+              <div class="flex items-center space-x-2">
+                <Badge :variant="item.status === '0' ? 'default' : 'destructive'">
+                  {{ item.status === '0' ? '正常' : '停用' }}
+                </Badge>
+              </div>
             </TableCell>
             <TableCell>{{ formatDate(item.createTime) }}</TableCell>
             <TableCell class="text-right space-x-2">
