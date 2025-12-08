@@ -3,6 +3,12 @@
  *
  * 本文件仅作为示例,不会被实际使用
  */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/require-await */
 
 import { Injectable } from '@nestjs/common';
 import { BusinessException } from './business.exception';
@@ -210,41 +216,60 @@ export class ExampleService {
 
   /**
    * 示例10: 错误码分类使用
+   * 注意: 以下代码仅展示各种异常的使用方式,实际使用时只会抛出一个异常
    */
-  async exampleByCategory() {
+  exampleByCategory(type: string) {
     // 通用错误
-    throw BusinessException.invalidParams('参数错误');
-    throw BusinessException.notFound('数据不存在');
-    throw BusinessException.alreadyExists('数据已存在');
-    throw BusinessException.denied('操作被拒绝');
+    if (type === 'invalidParams')
+      throw BusinessException.invalidParams('参数错误');
+    if (type === 'notFound') throw BusinessException.notFound('数据不存在');
+    if (type === 'alreadyExists')
+      throw BusinessException.alreadyExists('数据已存在');
+    if (type === 'denied') throw BusinessException.denied('操作被拒绝');
 
     // 认证授权错误
-    throw BusinessException.unauthorized('未登录');
-    throw BusinessException.forbidden('无权限');
-    throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
-    throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
-    throw new BusinessException(ErrorCode.ACCOUNT_DISABLED);
+    if (type === 'unauthorized') throw BusinessException.unauthorized('未登录');
+    if (type === 'forbidden') throw BusinessException.forbidden('无权限');
+    if (type === 'invalidCredentials')
+      throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
+    if (type === 'tokenExpired')
+      throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
+    if (type === 'accountDisabled')
+      throw new BusinessException(ErrorCode.ACCOUNT_DISABLED);
 
     // 用户管理错误
-    throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-    throw new BusinessException(ErrorCode.USERNAME_EXISTS);
-    throw new BusinessException(ErrorCode.PHONE_EXISTS);
-    throw new BusinessException(ErrorCode.EMAIL_EXISTS);
+    if (type === 'userNotFound')
+      throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+    if (type === 'usernameExists')
+      throw new BusinessException(ErrorCode.USERNAME_EXISTS);
+    if (type === 'phoneExists')
+      throw new BusinessException(ErrorCode.PHONE_EXISTS);
+    if (type === 'emailExists')
+      throw new BusinessException(ErrorCode.EMAIL_EXISTS);
 
     // 角色管理错误
-    throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
-    throw new BusinessException(ErrorCode.ROLE_NAME_EXISTS);
-    throw new BusinessException(ErrorCode.ROLE_HAS_USERS);
+    if (type === 'roleNotFound')
+      throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
+    if (type === 'roleNameExists')
+      throw new BusinessException(ErrorCode.ROLE_NAME_EXISTS);
+    if (type === 'roleHasUsers')
+      throw new BusinessException(ErrorCode.ROLE_HAS_USERS);
 
     // 部门管理错误
-    throw new BusinessException(ErrorCode.DEPT_NOT_FOUND);
-    throw new BusinessException(ErrorCode.DEPT_HAS_CHILDREN);
-    throw new BusinessException(ErrorCode.DEPT_HAS_USERS);
+    if (type === 'deptNotFound')
+      throw new BusinessException(ErrorCode.DEPT_NOT_FOUND);
+    if (type === 'deptHasChildren')
+      throw new BusinessException(ErrorCode.DEPT_HAS_CHILDREN);
+    if (type === 'deptHasUsers')
+      throw new BusinessException(ErrorCode.DEPT_HAS_USERS);
 
     // 菜单管理错误
-    throw new BusinessException(ErrorCode.MENU_NOT_FOUND);
-    throw new BusinessException(ErrorCode.MENU_HAS_CHILDREN);
-    throw new BusinessException(ErrorCode.MENU_HAS_ROLES);
+    if (type === 'menuNotFound')
+      throw new BusinessException(ErrorCode.MENU_NOT_FOUND);
+    if (type === 'menuHasChildren')
+      throw new BusinessException(ErrorCode.MENU_HAS_CHILDREN);
+    if (type === 'menuHasRoles')
+      throw new BusinessException(ErrorCode.MENU_HAS_ROLES);
   }
 
   // ==================== 辅助方法 (仅用于示例) ====================

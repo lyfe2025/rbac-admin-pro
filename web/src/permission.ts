@@ -1,21 +1,44 @@
-import router from './router'
+import router, { getLoginPath } from './router'
 import { useUserStore } from './stores/modules/user'
 import { useMenuStore } from './stores/modules/menu'
+import { useAppStore } from './stores/modules/app'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 
 NProgress.configure({ showSpinner: false })
 
-const whiteList = ['/login']
+// 无需登录即可访问的页面（错误页面）
+const publicPages = ['/404', '/403']
 
 router.beforeEach(async (to, _from, next) => {
   NProgress.start()
   
+  // 错误页面直接放行
+  if (publicPages.includes(to.path)) {
+    next()
+    return
+  }
+  
   const userStore = useUserStore()
+  const appStore = useAppStore()
+  
+  // 确保网站配置已加载（包括登录路径）
+  if (!appStore.siteConfigLoaded) {
+    await appStore.loadSiteConfig()
+    // 配置加载后，登录路由已添加，如果当前访问的是登录路径，需要重新导航
+    const loginPath = getLoginPath()
+    if (to.path === loginPath && to.name === 'CatchAll') {
+      next({ path: loginPath, replace: true })
+      return
+    }
+  }
+  
   const hasToken = userStore.token
+  // 从路由获取实际配置的登录路径
+  const loginPath = getLoginPath()
 
   if (hasToken) {
-    if (to.path === '/login') {
+    if (to.path === loginPath) {
       next({ path: '/' })
       NProgress.done()
     } else {
@@ -60,16 +83,18 @@ router.beforeEach(async (to, _from, next) => {
           next({ ...to, replace: true })
         } catch (error) {
           await userStore.logout()
-          next(`/login?redirect=${to.path}`)
+          next(`${loginPath}?redirect=${to.path}`)
           NProgress.done()
         }
       }
     }
   } else {
-    if (whiteList.indexOf(to.path) !== -1) {
+    // 只有配置的登录路径才允许访问
+    if (to.path === loginPath) {
       next()
     } else {
-      next(`/login?redirect=${to.path}`)
+      // 未登录且访问非登录页，显示 404（不暴露真实登录入口）
+      next({ name: 'NotFound', replace: true })
       NProgress.done()
     }
   }

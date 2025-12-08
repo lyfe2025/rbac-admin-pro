@@ -2,6 +2,7 @@
  * 日志系统使用示例
  * 此文件仅供参考,不会被编译到生产代码中
  */
+/* eslint-disable @typescript-eslint/require-await */
 
 import { Injectable } from '@nestjs/common';
 import { LoggerService } from './logger.service';
@@ -24,10 +25,11 @@ export class ExampleService {
   logError() {
     try {
       throw new Error('Database connection failed');
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as { stack?: string };
       this.logger.error(
         'Failed to connect to database',
-        error.stack,
+        err.stack,
         'ExampleService',
       );
     }
@@ -89,10 +91,11 @@ export class ExampleService {
       );
 
       return { success: true };
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as { stack?: string };
       this.logger.error(
         `Order processing failed: ${orderId}`,
-        error.stack,
+        err.stack,
         'ExampleService',
       );
       throw error;

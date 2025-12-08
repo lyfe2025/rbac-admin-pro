@@ -1364,6 +1364,13 @@ async function main() {
       configType: 'Y',
     },
 
+    // 安全入口
+    {
+      configName: '安全登录路径',
+      configKey: 'sys.security.loginPath',
+      configValue: '/login',
+      configType: 'Y',
+    },
     // 登录限制
     {
       configName: '登录失败次数',

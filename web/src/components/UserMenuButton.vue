@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/components/ui/toast/use-toast'
 import { useUserStore } from '@/stores/modules/user'
+import { useAppStore } from '@/stores/modules/app'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,9 +37,11 @@ const handleLogoutClick = () => {
 }
 
 const confirmLogout = async () => {
+  const appStore = useAppStore()
+  const loginPath = appStore.siteConfig.loginPath || '/login'
   await userStore.logout()
   toast({ title: '退出成功', description: '您已安全退出系统' })
-  router.push('/login')
+  router.push(loginPath)
 }
 </script>
 

@@ -176,8 +176,12 @@ export class MenuService {
 
     if (!user) return [];
 
-    const roles = user.roles.map((ur: any) => ur.role);
-    const isAdmin = roles.some((r: any) => r.roleKey === 'admin');
+    const roles = user.roles.map(
+      (ur: { role: { roleId: bigint; roleKey: string } }) => ur.role,
+    );
+    const isAdmin = roles.some(
+      (r: { roleId: bigint; roleKey: string }) => r.roleKey === 'admin',
+    );
 
     let menus: SysMenu[] = [];
 
@@ -194,7 +198,9 @@ export class MenuService {
       });
     } else {
       // 普通用户查询关联菜单
-      const roleIds = roles.map((r: any) => r.roleId);
+      const roleIds = roles.map(
+        (r: { roleId: bigint; roleKey: string }) => r.roleId,
+      );
       menus = await this.prisma.sysMenu.findMany({
         where: {
           menuType: { in: ['M', 'C'] },

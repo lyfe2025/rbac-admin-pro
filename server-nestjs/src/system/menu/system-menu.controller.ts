@@ -56,6 +56,7 @@ export class SystemMenuController {
   @ApiOperation({ summary: '查询角色菜单下拉树' })
   @ApiParam({ name: 'roleId', description: '角色ID' })
   @ApiResponse({ status: 200, description: '查询成功' })
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async roleMenuTreeselect(@Param('roleId') roleId: string) {
     const menus = await this.menuService.listTree({});
     return { menus };

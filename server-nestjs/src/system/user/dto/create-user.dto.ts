@@ -34,7 +34,7 @@ export class CreateUserDto {
 
   /** 手机号码 */
   @ValidateIf(
-    (o) =>
+    (o: CreateUserDto) =>
       o.phonenumber !== '' &&
       o.phonenumber !== null &&
       o.phonenumber !== undefined,
@@ -44,7 +44,8 @@ export class CreateUserDto {
 
   /** 邮箱地址 */
   @ValidateIf(
-    (o) => o.email !== '' && o.email !== null && o.email !== undefined,
+    (o: CreateUserDto) =>
+      o.email !== '' && o.email !== null && o.email !== undefined,
   )
   @IsEmail({}, { message: '邮箱格式不正确' })
   email?: string;

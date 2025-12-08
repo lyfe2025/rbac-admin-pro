@@ -26,13 +26,15 @@ export class CreateDeptDto {
   leader?: string;
 
   @ValidateIf(
-    (o) => o.phone !== '' && o.phone !== null && o.phone !== undefined,
+    (o: CreateDeptDto) =>
+      o.phone !== '' && o.phone !== null && o.phone !== undefined,
   )
   @Matches(/^1[3-9]\d{9}$/, { message: '手机号格式不正确' })
   phone?: string;
 
   @ValidateIf(
-    (o) => o.email !== '' && o.email !== null && o.email !== undefined,
+    (o: CreateDeptDto) =>
+      o.email !== '' && o.email !== null && o.email !== undefined,
   )
   @IsEmail({}, { message: '邮箱格式不正确' })
   email?: string;

@@ -25,7 +25,7 @@ export class UpdateUserDto {
   deptId?: string;
 
   @ValidateIf(
-    (o) =>
+    (o: UpdateUserDto) =>
       o.phonenumber !== '' &&
       o.phonenumber !== null &&
       o.phonenumber !== undefined,
@@ -34,7 +34,8 @@ export class UpdateUserDto {
   phonenumber?: string;
 
   @ValidateIf(
-    (o) => o.email !== '' && o.email !== null && o.email !== undefined,
+    (o: UpdateUserDto) =>
+      o.email !== '' && o.email !== null && o.email !== undefined,
   )
   @IsEmail({}, { message: '邮箱格式不正确' })
   email?: string;

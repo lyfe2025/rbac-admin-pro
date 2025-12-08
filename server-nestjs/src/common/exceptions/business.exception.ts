@@ -20,25 +20,23 @@ export class BusinessException extends HttpException {
   /**
    * 额外数据
    */
-  private readonly data?: any;
+  private readonly data?: unknown;
 
   constructor(
     errorCode: ErrorCode,
     message?: string,
-    data?: any,
+    data?: unknown,
     httpStatus: HttpStatus = HttpStatus.OK,
   ) {
     // 使用错误码对应的默认消息,如果提供了自定义消息则使用自定义消息
     const errorMessage = message || ErrorCodeMessage[errorCode] || '操作失败';
 
-    super(
-      {
-        code: errorCode,
-        msg: errorMessage,
-        data: data || null,
-      },
-      httpStatus,
-    );
+    const responseBody: { code: ErrorCode; msg: string; data: unknown } = {
+      code: errorCode,
+      msg: errorMessage,
+      data: data ?? null,
+    };
+    super(responseBody, httpStatus);
 
     this.errorCode = errorCode;
     this.errorMessage = errorMessage;
@@ -62,42 +60,42 @@ export class BusinessException extends HttpException {
   /**
    * 获取额外数据
    */
-  getData(): any {
+  getData(): unknown {
     return this.data;
   }
 
   /**
    * 静态工厂方法 - 参数错误
    */
-  static invalidParams(message?: string, data?: any): BusinessException {
+  static invalidParams(message?: string, data?: unknown): BusinessException {
     return new BusinessException(ErrorCode.INVALID_PARAMS, message, data);
   }
 
   /**
    * 静态工厂方法 - 数据不存在
    */
-  static notFound(message?: string, data?: any): BusinessException {
+  static notFound(message?: string, data?: unknown): BusinessException {
     return new BusinessException(ErrorCode.DATA_NOT_FOUND, message, data);
   }
 
   /**
    * 静态工厂方法 - 数据已存在
    */
-  static alreadyExists(message?: string, data?: any): BusinessException {
+  static alreadyExists(message?: string, data?: unknown): BusinessException {
     return new BusinessException(ErrorCode.DATA_ALREADY_EXISTS, message, data);
   }
 
   /**
    * 静态工厂方法 - 操作被拒绝
    */
-  static denied(message?: string, data?: any): BusinessException {
+  static denied(message?: string, data?: unknown): BusinessException {
     return new BusinessException(ErrorCode.OPERATION_DENIED, message, data);
   }
 
   /**
    * 静态工厂方法 - 未授权
    */
-  static unauthorized(message?: string, data?: any): BusinessException {
+  static unauthorized(message?: string, data?: unknown): BusinessException {
     return new BusinessException(
       ErrorCode.UNAUTHORIZED,
       message,
@@ -109,7 +107,7 @@ export class BusinessException extends HttpException {
   /**
    * 静态工厂方法 - 无权限
    */
-  static forbidden(message?: string, data?: any): BusinessException {
+  static forbidden(message?: string, data?: unknown): BusinessException {
     return new BusinessException(
       ErrorCode.FORBIDDEN,
       message,
@@ -121,7 +119,7 @@ export class BusinessException extends HttpException {
   /**
    * 静态工厂方法 - 内部错误
    */
-  static internal(message?: string, data?: any): BusinessException {
+  static internal(message?: string, data?: unknown): BusinessException {
     return new BusinessException(
       ErrorCode.INTERNAL_ERROR,
       message,

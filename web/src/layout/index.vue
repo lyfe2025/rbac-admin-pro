@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import ThemeCustomizer from '@/components/ThemeCustomizer.vue'
 import ProfileDialog from '@/components/ProfileDialog.vue'
 import SettingsDialog from '@/components/SettingsDialog.vue'
 import { useUserStore } from '@/stores/modules/user'
+import { useAppStore } from '@/stores/modules/app'
 import { useToast } from '@/components/ui/toast/use-toast'
 import {
   Accordion,
@@ -80,8 +81,26 @@ import DynamicMenu from '@/components/DynamicMenu.vue'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const appStore = useAppStore()
 const { toast } = useToast()
 const isCollapsed = ref(false)
+
+// 网站配置
+const siteName = computed(() => appStore.siteConfig.name || 'RBAC Admin')
+const siteLogo = computed(() => {
+  const logo = appStore.siteConfig.logo
+  if (!logo) return ''
+  // 相对路径加上 API 前缀
+  if (logo.startsWith('/')) {
+    return import.meta.env.VITE_API_URL + logo
+  }
+  return logo
+})
+
+// 加载网站配置
+onMounted(() => {
+  appStore.loadSiteConfig()
+})
 
 // 获取完整的头像URL
 function getAvatarUrl(avatar: string | undefined | null): string {
@@ -106,12 +125,13 @@ const handleLogoutClick = () => {
   showLogoutDialog.value = true
 }
 const confirmLogout = async () => {
+  const loginPath = appStore.siteConfig.loginPath || '/login'
   await userStore.logout()
   toast({
     title: "退出成功",
     description: "您已安全退出系统",
   })
-  router.push('/login')
+  router.push(loginPath)
 }
 
 // 个人中心 - 跳转到个人中心页面
@@ -139,14 +159,17 @@ const handleOpenEditDialog = (userId: string) => {
     <aside :class="cn('fixed inset-y-0 left-0 z-10 hidden flex-col border-r bg-background sm:flex transition-all duration-300', isCollapsed ? 'w-14' : 'w-64')">
       <nav class="flex flex-col gap-4 px-2 sm:py-5">
         <div :class="cn('flex items-center px-2', isCollapsed ? 'justify-center' : 'gap-2')">
-           <router-link
-            to="/"
-            class="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
-          >
-            <Package2 class="h-4 w-4 transition-all group-hover:scale-110" />
-            <span class="sr-only">RBAC Admin</span>
+          <router-link to="/" class="flex items-center gap-2">
+            <template v-if="siteLogo">
+              <img :src="siteLogo" :alt="siteName" class="h-8 max-w-[160px] object-contain" />
+            </template>
+            <template v-else>
+              <div class="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base">
+                <Package2 class="h-4 w-4 transition-all group-hover:scale-110" />
+              </div>
+            </template>
+            <span v-if="!isCollapsed" class="font-semibold text-lg">{{ siteName }}</span>
           </router-link>
-          <span v-if="!isCollapsed" class="font-semibold text-lg">RBAC Admin</span>
         </div>
 
         <TooltipProvider>
@@ -263,14 +286,17 @@ const handleOpenEditDialog = (userId: string) => {
             <SheetContent side="left" class="w-64">
                <nav class="flex flex-col gap-4 px-2 mt-5">
                 <div class="flex items-center gap-2 px-2 mb-2">
-                   <router-link
-                    to="/"
-                    class="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground"
-                  >
-                    <Package2 class="h-4 w-4 transition-all group-hover:scale-110" />
-                    <span class="sr-only">RBAC Admin</span>
+                  <router-link to="/" class="flex items-center gap-2">
+                    <template v-if="siteLogo">
+                      <img :src="siteLogo" :alt="siteName" class="h-8 max-w-[160px] object-contain" />
+                    </template>
+                    <template v-else>
+                      <div class="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground">
+                        <Package2 class="h-4 w-4 transition-all group-hover:scale-110" />
+                      </div>
+                    </template>
+                    <span class="font-semibold text-lg">{{ siteName }}</span>
                   </router-link>
-                  <span class="font-semibold text-lg">RBAC Admin</span>
                 </div>
 
                 <div class="space-y-1">

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -7,12 +7,29 @@ import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/ui/toast/use-toast'
 import { Loader2, Shield, Users, Settings, BarChart3, RefreshCw, KeyRound } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/modules/user'
+import { useAppStore } from '@/stores/modules/app'
 import { getCaptchaImage, verifyTwoFactor, type CaptchaResult, type LoginResult } from '@/api/login'
 import { setToken } from '@/utils/auth'
 
 const router = useRouter()
 const { toast } = useToast()
 const userStore = useUserStore()
+const appStore = useAppStore()
+
+// 网站配置
+const siteName = computed(() => appStore.siteConfig.name || 'RBAC Admin Pro')
+const siteDescription = computed(() => appStore.siteConfig.description || '企业级权限管理系统')
+const siteCopyright = computed(() => appStore.siteConfig.copyright || '© 2025 RBAC Admin Pro. All rights reserved.')
+const siteIcp = computed(() => appStore.siteConfig.icp || '')
+const siteLogo = computed(() => {
+  const logo = appStore.siteConfig.logo
+  if (!logo) return ''
+  // 相对路径加上 API 前缀
+  if (logo.startsWith('/')) {
+    return import.meta.env.VITE_API_URL + logo
+  }
+  return logo
+})
 
 const username = ref('admin')
 const password = ref('123456')
@@ -54,6 +71,7 @@ const loadCaptcha = async () => {
 }
 
 onMounted(() => {
+  appStore.loadSiteConfig()
   loadCaptcha()
 })
 
@@ -154,12 +172,17 @@ const backToLogin = () => {
     <div class="hidden lg:flex lg:w-1/2 bg-primary text-primary-foreground flex-col justify-between p-12">
       <div>
         <div class="flex items-center gap-3 mb-2">
-          <div class="w-10 h-10 rounded-lg bg-primary-foreground/20 flex items-center justify-center">
-            <Shield class="w-6 h-6" />
-          </div>
-          <span class="text-2xl font-bold">RBAC Admin Pro</span>
+          <template v-if="siteLogo">
+            <img :src="siteLogo" :alt="siteName" class="h-10 max-w-[200px] object-contain" />
+          </template>
+          <template v-else>
+            <div class="w-10 h-10 rounded-lg bg-primary-foreground/20 flex items-center justify-center">
+              <Shield class="w-6 h-6" />
+            </div>
+          </template>
+          <span class="text-2xl font-bold">{{ siteName }}</span>
         </div>
-        <p class="text-primary-foreground/70">企业级全栈权限管理系统</p>
+        <p class="text-primary-foreground/70">{{ siteDescription }}</p>
       </div>
 
       <div class="space-y-8">
@@ -183,7 +206,14 @@ const backToLogin = () => {
         </div>
       </div>
 
-      <p class="text-sm text-primary-foreground/50">© 2025 RBAC Admin Pro. All rights reserved.</p>
+      <div class="text-sm text-primary-foreground/50 space-y-1">
+        <p>{{ siteCopyright }}</p>
+        <p v-if="siteIcp">
+          <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" class="hover:text-primary-foreground/70">
+            {{ siteIcp }}
+          </a>
+        </p>
+      </div>
     </div>
 
     <!-- 右侧登录区 -->
@@ -192,10 +222,15 @@ const backToLogin = () => {
         <!-- 移动端 Logo -->
         <div class="lg:hidden text-center mb-8">
           <div class="inline-flex items-center gap-2 mb-2">
-            <div class="w-10 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
-              <Shield class="w-6 h-6" />
-            </div>
-            <span class="text-2xl font-bold">RBAC Admin Pro</span>
+            <template v-if="siteLogo">
+              <img :src="siteLogo" :alt="siteName" class="h-10 max-w-[200px] object-contain" />
+            </template>
+            <template v-else>
+              <div class="w-10 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+                <Shield class="w-6 h-6" />
+              </div>
+            </template>
+            <span class="text-2xl font-bold">{{ siteName }}</span>
           </div>
         </div>
 

@@ -19,6 +19,7 @@ import ImageUpload from '@/components/common/ImageUpload.vue'
 import { listConfig, updateConfig, addConfig, type SysConfig } from '@/api/system/config'
 import { testMail } from '@/api/system/mail'
 import { getLockedAccounts, unlockAccount, type LockedAccount } from '@/api/system/locked'
+import { useAppStore } from '@/stores/modules/app'
 import {
   Save,
   RefreshCw,
@@ -34,6 +35,7 @@ import {
 } from 'lucide-vue-next'
 
 const { toast } = useToast()
+const appStore = useAppStore()
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -55,6 +57,8 @@ const form = reactive({
   'sys.account.captchaEnabled': 'false',
   'sys.account.twoFactorEnabled': 'false',
 
+  // 安全入口
+  'sys.security.loginPath': '/login',
   // 登录限制
   'sys.login.maxRetry': '5',
   'sys.login.lockTime': '10',
@@ -85,6 +89,7 @@ async function getData() {
     const prefixes = [
       'sys.app.',
       'sys.account.',
+      'sys.security.',
       'sys.login.',
       'sys.session.',
       'sys.mail.',
@@ -152,6 +157,8 @@ async function handleSubmit() {
       })
     } else {
       toast({ title: '保存成功', description: '系统设置已更新' })
+      // 刷新网站配置使其立即生效
+      await appStore.refreshSiteConfig()
     }
     await getData()
   } catch (error) {
@@ -193,7 +200,7 @@ function getConfigName(key: string): string {
     'sys.app.favicon': '网站图标',
     'sys.account.captchaEnabled': '验证码开关',
     'sys.account.twoFactorEnabled': '两步验证开关',
-
+    'sys.security.loginPath': '安全登录路径',
     'sys.login.maxRetry': '登录失败次数',
     'sys.login.lockTime': '账户锁定时长',
     'sys.session.timeout': '会话超时时间',
@@ -216,6 +223,7 @@ function getConfigName(key: string): string {
 
 function getConfigRemark(key: string): string {
   const remarks: Record<string, string> = {
+    'sys.security.loginPath': '自定义管理后台登录页路径，增强安全性',
     'sys.login.maxRetry': '连续登录失败次数达到后锁定账户',
     'sys.login.lockTime': '账户锁定时长（分钟）',
     'sys.session.timeout': 'Token有效期（分钟）',
@@ -335,12 +343,12 @@ onMounted(() => {
               <div class="grid gap-2">
                 <Label>网站 Logo</Label>
                 <ImageUpload v-model="form['sys.app.logo']" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml" />
-                <p class="text-xs text-muted-foreground">建议尺寸：200x50px，支持 PNG/JPG/SVG</p>
+                <p class="text-xs text-muted-foreground">建议高度 32-40px，正方形或横向均可，支持 PNG/JPG/SVG</p>
               </div>
               <div class="grid gap-2">
                 <Label>网站 Favicon</Label>
                 <ImageUpload v-model="form['sys.app.favicon']" accept=".ico,.png,image/png,image/x-icon" />
-                <p class="text-xs text-muted-foreground">建议尺寸：32x32px，支持 ICO/PNG</p>
+                <p class="text-xs text-muted-foreground">建议尺寸 32x32px 或 16x16px，支持 ICO/PNG</p>
               </div>
             </div>
           </CardContent>
@@ -368,6 +376,22 @@ onMounted(() => {
 
       <!-- 安全设置 -->
       <TabsContent value="security" class="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle class="flex items-center gap-2"><KeyRound class="h-5 w-5" />安全入口</CardTitle>
+            <CardDescription>配置管理后台的登录页访问路径，隐藏默认入口增强安全性</CardDescription>
+          </CardHeader>
+          <CardContent class="space-y-4">
+            <div class="grid gap-2">
+              <Label>登录页路径</Label>
+              <Input v-model="form['sys.security.loginPath']" placeholder="/login" />
+              <p class="text-xs text-muted-foreground">
+                自定义登录页访问路径，例如：/admin-login、/secure-entry 等。修改后需要使用新路径访问登录页。
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>登录安全</CardTitle>

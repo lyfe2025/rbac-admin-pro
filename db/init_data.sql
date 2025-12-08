@@ -278,6 +278,8 @@ VALUES
   ('网站Logo', 'sys.app.logo', '', 'Y', NOW()),
   ('网站图标', 'sys.app.favicon', '', 'Y', NOW()),
 
+  -- 安全入口
+  ('安全登录路径', 'sys.security.loginPath', '/login', 'Y', NOW()),
   -- 登录限制
   ('登录失败次数', 'sys.login.maxRetry', '5', 'Y', NOW()),
   ('账户锁定时长', 'sys.login.lockTime', '10', 'Y', NOW()),

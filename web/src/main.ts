@@ -4,7 +4,7 @@ import App from './App.vue'
 import router from './router'
 import directive from './directive' // directive
 import './style.css'
-import './permission' // permission control
+import './permission' // 路由守卫（内部会等待配置加载）
 
 const app = createApp(App)
 

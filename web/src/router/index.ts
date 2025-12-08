@@ -1,15 +1,12 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import Layout from '@/layout/index.vue'
+
+// 登录页组件
+const LoginComponent = () => import('@/views/login/index.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    {
-      path: '/login',
-      name: 'Login',
-      component: () => import('@/views/login/index.vue'),
-      meta: { title: '登录' }
-    },
     {
       path: '/',
       component: Layout,
@@ -153,12 +150,48 @@ const router = createRouter({
       meta: { title: '无权限' }
     },
     {
-      path: '/:pathMatch(.*)*',
+      path: '/404',
       name: 'NotFound',
+      component: () => import('@/views/error/404.vue'),
+      meta: { title: '未找到' }
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'CatchAll',
       component: () => import('@/views/error/404.vue'),
       meta: { title: '未找到' }
     }
   ]
 })
+
+/**
+ * 设置登录路由
+ * @param loginPath 登录路径
+ */
+export function setupLoginRoute(loginPath: string) {
+  const path = loginPath || '/login'
+  
+  // 移除已存在的登录路由
+  if (router.hasRoute('Login')) {
+    router.removeRoute('Login')
+  }
+  
+  // 添加登录路由
+  const loginRoute: RouteRecordRaw = {
+    path,
+    name: 'Login',
+    component: LoginComponent,
+    meta: { title: '登录' }
+  }
+  router.addRoute(loginRoute)
+}
+
+/**
+ * 获取当前配置的登录路径
+ */
+export function getLoginPath(): string {
+  const loginRoute = router.getRoutes().find(r => r.name === 'Login')
+  return loginRoute?.path || '/login'
+}
 
 export default router

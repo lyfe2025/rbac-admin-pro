@@ -25,7 +25,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     // 处理 BusinessException
     if (exception instanceof BusinessException) {
-      const exceptionResponse = exception.getResponse() as any;
+      const exceptionResponse = exception.getResponse() as {
+        code: number;
+        msg: string;
+        data: unknown;
+      };
       const status = exception.getStatus();
 
       // 记录业务异常日志

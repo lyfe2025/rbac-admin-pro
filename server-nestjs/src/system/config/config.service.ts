@@ -107,4 +107,52 @@ export class ConfigService {
     this.logger.log('系统参数缓存刷新成功', 'ConfigService');
     return {};
   }
+
+  /**
+   * 获取网站公开配置（无需登录）
+   */
+  async getSiteConfig(): Promise<{
+    name: string;
+    description: string;
+    logo: string;
+    favicon: string;
+    copyright: string;
+    icp: string;
+    loginPath: string;
+  }> {
+    const configs = await this.prisma.sysConfig.findMany({
+      where: {
+        configKey: {
+          in: [
+            'sys.app.name',
+            'sys.app.description',
+            'sys.app.logo',
+            'sys.app.favicon',
+            'sys.app.copyright',
+            'sys.app.icp',
+            'sys.security.loginPath',
+          ],
+        },
+      },
+    });
+
+    const configMap: Record<string, string> = {};
+    configs.forEach((c) => {
+      if (c.configKey) {
+        configMap[c.configKey] = c.configValue ?? '';
+      }
+    });
+
+    return {
+      name: configMap['sys.app.name'] || 'RBAC Admin Pro',
+      description: configMap['sys.app.description'] || '企业级权限管理系统',
+      logo: configMap['sys.app.logo'] || '',
+      favicon: configMap['sys.app.favicon'] || '',
+      copyright:
+        configMap['sys.app.copyright'] ||
+        '© 2025 RBAC Admin Pro. All rights reserved.',
+      icp: configMap['sys.app.icp'] || '',
+      loginPath: configMap['sys.security.loginPath'] || '/login',
+    };
+  }
 }

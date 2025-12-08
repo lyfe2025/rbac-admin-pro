@@ -2,6 +2,7 @@ import axios, { type InternalAxiosRequestConfig, type AxiosResponse } from 'axio
 import { useToast } from '@/components/ui/toast/use-toast'
 import { getToken, setToken } from '@/utils/auth'
 import { useUserStore } from '@/stores/modules/user'
+import { useAppStore } from '@/stores/modules/app'
 import { ErrorCode, shouldRedirectToLogin, getErrorMessage } from '@/types/error-code'
 
 const { toast } = useToast()
@@ -57,8 +58,10 @@ service.interceptors.response.use(
     // 判断是否需要跳转登录页 (使用业务错误码)
     if (shouldRedirectToLogin(code)) {
       const userStore = useUserStore()
+      const appStore = useAppStore()
+      const loginPath = appStore.siteConfig.loginPath || '/login'
       userStore.logout().then(() => {
-        location.href = '/login'
+        location.href = loginPath
       })
       return Promise.reject(new Error(msg || '无效的会话，或者会话已过期，请重新登录。'))
     }
@@ -106,8 +109,10 @@ service.interceptors.response.use(
         message = errorMessage || "无效的会话，或者会话已过期，请重新登录"
         // 跳转登录页
         const userStore = useUserStore()
+        const appStore = useAppStore()
+        const loginPath = appStore.siteConfig.loginPath || '/login'
         userStore.logout().then(() => {
-          location.href = '/login'
+          location.href = loginPath
         })
       } else if (httpStatus === 403) {
         title = "权限不足"

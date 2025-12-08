@@ -50,7 +50,8 @@ export class OperationLogInterceptor implements NestInterceptor {
     const startTime = Date.now();
 
     // 获取请求信息
-    const operName = (request.user as any)?.username || 'anonymous';
+    const user = request.user as { username?: string } | undefined;
+    const operName = user?.username ?? 'anonymous';
     const operUrl = request.url;
     const operIp = IpUtil.getClientIp(request);
     const operLocation = IpUtil.getLocation(operIp);
@@ -58,7 +59,7 @@ export class OperationLogInterceptor implements NestInterceptor {
     const operParam = this.getOperParam(request);
 
     return next.handle().pipe(
-      tap((response) => {
+      tap((response: unknown) => {
         // 操作成功
         const costTime = Date.now() - startTime;
         const logData = {
@@ -76,12 +77,13 @@ export class OperationLogInterceptor implements NestInterceptor {
           errorMsg: '',
           costTime,
         };
-        this.saveOperLog(logData);
+        void this.saveOperLog(logData);
       }),
-      catchError((error) => {
+      catchError((error: unknown) => {
         // 操作失败
         const costTime = Date.now() - startTime;
-        this.saveOperLog({
+        const err = error as { message?: string };
+        void this.saveOperLog({
           title: logMetadata.title,
           businessType: logMetadata.businessType,
           method: `${context.getClass().name}.${context.getHandler().name}`,
@@ -93,7 +95,7 @@ export class OperationLogInterceptor implements NestInterceptor {
           operParam,
           jsonResult: '',
           status: 1,
-          errorMsg: error.message?.substring(0, 2000) || '',
+          errorMsg: err.message?.substring(0, 2000) ?? '',
           costTime,
         });
         return throwError(() => error);
@@ -139,11 +141,12 @@ export class OperationLogInterceptor implements NestInterceptor {
           operTime: new Date(),
         },
       });
-    } catch (error) {
+    } catch (error: unknown) {
       // 记录日志失败不应该影响业务流程
+      const err = error as { message?: string; stack?: string };
       this.logger.error(
-        `Failed to save operation log: ${error.message}`,
-        error.stack,
+        `Failed to save operation log: ${err.message ?? 'Unknown error'}`,
+        err.stack,
         'OperationLogInterceptor',
       );
     }
@@ -153,7 +156,7 @@ export class OperationLogInterceptor implements NestInterceptor {
    * 获取请求参数
    */
   private getOperParam(request: Request): string {
-    const params = {
+    const params: { query: unknown; body: unknown; params: unknown } = {
       query: request.query,
       body: request.body,
       params: request.params,
