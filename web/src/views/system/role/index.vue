@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Switch } from '@/components/ui/switch'
+
 import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/components/ui/toast/use-toast'
 import { Trash2, Plus, RefreshCw, Search, Edit, Loader2, ChevronRight, ChevronDown, Eye, Users, Shield } from 'lucide-vue-next'
@@ -64,13 +64,38 @@ const queryParams = reactive({
 const showDialog = ref(false)
 const showDeleteDialog = ref(false)
 const showPreviewDialog = ref(false)
+const previewExpandAll = ref(false)
 const roleToDelete = ref<SysRole | null>(null)
 const roleToPreview = ref<SysRole | null>(null)
 const isEdit = ref(false)
 const submitLoading = ref(false)
 const menuList = ref<SysMenu[]>([])
+const flatMenuList = ref<SysMenu[]>([]) // 扁平菜单列表，用于ID到名称的映射
 const allMenuIds = ref<string[]>([]) // 所有菜单ID
 const expandedAll = ref(false) // 是否展开全部
+
+// 菜单ID到菜单信息的映射
+const menuMap = computed(() => {
+  const map = new Map<string, SysMenu>()
+  flatMenuList.value.forEach(menu => {
+    map.set(String(menu.menuId), menu)
+  })
+  return map
+})
+
+// 根据菜单ID获取菜单名称
+function getMenuName(menuId: string): string {
+  const menu = menuMap.value.get(String(menuId))
+  return menu?.menuName || `菜单 ${menuId}`
+}
+
+// 预览用的已选中菜单ID集合
+const previewSelectedIds = computed(() => {
+  if (!roleToPreview.value?.menuIds) {
+    return new Set<string>()
+  }
+  return new Set(roleToPreview.value.menuIds.map(id => String(id)))
+})
 
 const form = reactive<Partial<SysRole>>({
   roleId: undefined,
@@ -127,6 +152,8 @@ function buildMenuTree(flatList: SysMenu[]): SysMenu[] {
 async function getMenuTree() {
   if (menuList.value.length > 0) return
   const res = await listMenu({})
+  // 保存扁平列表用于ID到名称的映射
+  flatMenuList.value = res.data
   // 将扁平列表转换为树形结构
   menuList.value = buildMenuTree(res.data)
   // 收集所有菜单ID
@@ -236,8 +263,11 @@ async function handleStatusChange(row: SysRole) {
 // 查看角色权限预览
 async function handlePreview(row: SysRole) {
   try {
+    // 先加载菜单树
+    await getMenuTree()
     const roleData = await getRole(row.roleId)
     roleToPreview.value = roleData
+    previewExpandAll.value = false
     showPreviewDialog.value = true
   } catch (error) {
     console.error('获取角色详情失败:', error)
@@ -300,6 +330,63 @@ function resetForm() {
   form.menuCheckStrictly = true
   form.dataScope = '1'
   expandedAll.value = false
+}
+
+// 预览用的菜单树组件（只读展示，风格与编辑一致）
+const PreviewMenuTreeItem: any = {
+  name: 'PreviewMenuTreeItem',
+  props: ['menu', 'level', 'selectedIds', 'expandAll'],
+  setup(props: any) {
+    const currentLevel = props.level || 0
+    const isExpanded = ref(false)
+    const hasChildren = computed(() => props.menu.children && props.menu.children.length > 0)
+    const shouldExpand = computed(() => props.expandAll || isExpanded.value)
+    const isChecked = computed(() => props.selectedIds?.has(String(props.menu.menuId)))
+
+    function toggleExpand() {
+      isExpanded.value = !isExpanded.value
+    }
+
+    return () => h('div', { class: 'py-1' }, [
+      h('div', {
+        class: 'flex items-center gap-1',
+        style: { 'padding-left': `${currentLevel * 24}px` }
+      }, [
+        // 展开/收起图标
+        hasChildren.value
+          ? h('button', {
+              class: 'w-4 h-4 flex items-center justify-center hover:bg-accent rounded transition-colors',
+              onClick: (e: Event) => {
+                e.stopPropagation()
+                toggleExpand()
+              }
+            }, [
+              h(isExpanded.value ? ChevronDown : ChevronRight, { class: 'w-3 h-3' })
+            ])
+          : h('span', { class: 'w-4' }),
+        // 禁用的 Checkbox
+        h(Checkbox, {
+          modelValue: isChecked.value,
+          disabled: true
+        }),
+        h('span', { class: 'text-sm' }, props.menu.menuName)
+      ]),
+      // 子节点(仅在展开时显示)
+      hasChildren.value && shouldExpand.value
+        ? h('div', {},
+            props.menu.children.map((child: any) =>
+              h(PreviewMenuTreeItem, {
+                key: child.menuId,
+                menu: child,
+                level: currentLevel + 1,
+                selectedIds: props.selectedIds,
+                expandAll: props.expandAll
+              })
+            )
+          )
+        : null
+    ])
+  }
 }
 
 // Simple recursive component for menu tree checklist
@@ -700,15 +787,25 @@ onMounted(() => {
           </div>
 
           <div>
-            <div class="text-sm font-medium text-muted-foreground mb-2">菜单权限</div>
-            <div class="border rounded-md p-3 max-h-[200px] overflow-y-auto bg-muted/30">
-              <div v-if="roleToPreview?.menuIds && roleToPreview.menuIds.length > 0" class="text-sm space-y-1">
-                <Badge v-for="menuId in roleToPreview.menuIds" :key="menuId" variant="outline" class="mr-1 mb-1">
-                  菜单 {{ menuId }}
-                </Badge>
-              </div>
-              <div v-else class="text-sm text-muted-foreground">
-                暂无菜单权限
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-sm font-medium text-muted-foreground">菜单权限</div>
+              <Button type="button" variant="outline" size="sm" @click="previewExpandAll = !previewExpandAll">
+                {{ previewExpandAll ? '收起' : '展开' }}全部
+              </Button>
+            </div>
+            <div class="border rounded-md p-2 h-[200px] overflow-y-auto">
+              <template v-if="menuList.length > 0">
+                <PreviewMenuTreeItem
+                  v-for="menu in menuList"
+                  :key="menu.menuId"
+                  :menu="menu"
+                  :level="0"
+                  :selected-ids="previewSelectedIds"
+                  :expand-all="previewExpandAll"
+                />
+              </template>
+              <div v-else class="text-sm text-muted-foreground text-center py-4">
+                暂无菜单数据
               </div>
             </div>
           </div>

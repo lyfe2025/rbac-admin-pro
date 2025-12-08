@@ -46,11 +46,14 @@ export class RoleService {
       }),
     ]);
 
-    // 为每个角色添加用户数统计
+    // 为每个角色添加用户数统计（只统计未删除的用户）
     const rowsWithUserCount = await Promise.all(
       rows.map(async (role) => {
         const userCount = await this.prisma.sysUserRole.count({
-          where: { roleId: role.roleId },
+          where: {
+            roleId: role.roleId,
+            user: { delFlag: '0' }, // 只统计未删除的用户
+          },
         });
         return { ...role, userCount };
       }),
@@ -191,9 +194,12 @@ export class RoleService {
   async remove(roleId: string) {
     this.logger.log(`删除角色: ${roleId}`, 'RoleService');
     
-    // 1. 检查是否分配给用户
+    // 1. 检查是否分配给用户（只检查未删除的用户）
     const userCount = await this.prisma.sysUserRole.count({
-      where: { roleId: BigInt(roleId) },
+      where: {
+        roleId: BigInt(roleId),
+        user: { delFlag: '0' },
+      },
     });
     if (userCount > 0) {
       this.logger.warn(`删除角色失败,角色已分配给 ${userCount} 个用户: ${roleId}`, 'RoleService');
