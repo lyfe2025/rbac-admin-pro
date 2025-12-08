@@ -54,7 +54,7 @@ service.interceptors.response.use(
       userStore.logout().then(() => {
         location.href = '/login'
       })
-      return Promise.reject('无效的会话，或者会话已过期，请重新登录。')
+      return Promise.reject(new Error(msg || '无效的会话，或者会话已过期，请重新登录。'))
     }
     
     // 判断系统内部错误
@@ -74,7 +74,7 @@ service.interceptors.response.use(
         description: msg,
         variant: "destructive",
       })
-      return Promise.reject('error')
+      return Promise.reject(new Error(msg))
     }
     
     // 成功,返回数据
