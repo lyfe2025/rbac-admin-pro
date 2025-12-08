@@ -18,6 +18,7 @@ import { useToast } from '@/components/ui/toast/use-toast'
 import ImageUpload from '@/components/common/ImageUpload.vue'
 import { listConfig, updateConfig, addConfig, type SysConfig } from '@/api/system/config'
 import { testMail } from '@/api/system/mail'
+import { getLockedAccounts, unlockAccount, type LockedAccount } from '@/api/system/locked'
 import {
   Save,
   RefreshCw,
@@ -30,6 +31,8 @@ import {
   Clock,
   Send,
   Database,
+  Lock,
+  Unlock,
 } from 'lucide-vue-next'
 
 const { toast } = useToast()
@@ -38,6 +41,8 @@ const loading = ref(false)
 const submitLoading = ref(false)
 const testMailLoading = ref(false)
 const configList = ref<SysConfig[]>([])
+const lockedAccounts = ref<LockedAccount[]>([])
+const lockedLoading = ref(false)
 
 const form = reactive({
   // 网站设置
@@ -283,8 +288,33 @@ const backupEnabled = computed({
   }
 })
 
+// 加载被锁定的账户列表
+async function loadLockedAccounts() {
+  lockedLoading.value = true
+  try {
+    const res = await getLockedAccounts() as unknown as { data: { rows: LockedAccount[]; total: number } }
+    lockedAccounts.value = res.data?.rows || []
+  } catch (error) {
+    console.error('获取锁定账户失败:', error)
+  } finally {
+    lockedLoading.value = false
+  }
+}
+
+// 解锁账户
+async function handleUnlock(username: string) {
+  try {
+    await unlockAccount(username)
+    toast({ title: '解锁成功', description: `账户 ${username} 已解锁` })
+    await loadLockedAccounts()
+  } catch (error) {
+    toast({ title: '解锁失败', description: '请稍后重试', variant: 'destructive' })
+  }
+}
+
 onMounted(() => {
   getData()
+  loadLockedAccounts()
 })
 </script>
 
@@ -416,7 +446,47 @@ onMounted(() => {
               <div class="grid gap-2">
                 <Label>会话超时（分钟）</Label>
                 <Input v-model="form['sys.session.timeout']" type="number" min="5" />
-                <p class="text-xs text-muted-foreground">Token 有效期</p>
+                <p class="text-xs text-muted-foreground">无操作超过此时间后自动退出</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle class="flex items-center gap-2">
+              <Lock class="h-5 w-5" />锁定账户管理
+              <Button variant="ghost" size="icon" class="h-6 w-6 ml-auto" @click="loadLockedAccounts" :disabled="lockedLoading">
+                <RefreshCw class="h-4 w-4" :class="{ 'animate-spin': lockedLoading }" />
+              </Button>
+            </CardTitle>
+            <CardDescription>查看和解锁因登录失败被锁定的账户</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div v-if="lockedLoading" class="text-center py-4 text-muted-foreground">
+              加载中...
+            </div>
+            <div v-else-if="lockedAccounts.length === 0" class="text-center py-4 text-muted-foreground">
+              暂无被锁定的账户
+            </div>
+            <div v-else class="space-y-2">
+              <div
+                v-for="account in lockedAccounts"
+                :key="account.username"
+                class="flex items-center justify-between p-3 rounded-lg border bg-muted/50"
+              >
+                <div class="flex items-center gap-3">
+                  <Lock class="h-4 w-4 text-destructive" />
+                  <div>
+                    <p class="font-medium">{{ account.username }}</p>
+                    <p class="text-xs text-muted-foreground">
+                      剩余锁定时间：{{ Math.ceil(account.remainingSeconds / 60) }} 分钟
+                    </p>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" @click="handleUnlock(account.username)">
+                  <Unlock class="h-4 w-4 mr-1" />解锁
+                </Button>
               </div>
             </div>
           </CardContent>

@@ -1,4 +1,13 @@
-import { Body, Controller, Post, Req, Get, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Req,
+  Get,
+  UseGuards,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -17,6 +26,7 @@ import { TwoFactorService } from './two-factor.service';
 import { BusinessException } from '../common/exceptions';
 import { ErrorCode } from '../common/enums';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { SecurityConfigService } from './security-config.service';
 
 @ApiTags('认证')
 @Controller('auth')
@@ -27,6 +37,7 @@ export class AuthController {
     private tokenBlacklist: TokenBlacklistService,
     private captchaService: CaptchaService,
     private twoFactorService: TwoFactorService,
+    private securityConfigService: SecurityConfigService,
   ) {}
 
   @Get('captchaImage')
@@ -235,5 +246,34 @@ export class AuthController {
     const user = req.user as { userId: string };
     await this.twoFactorService.disableTwoFactor(user.userId);
     return { msg: '两步验证已禁用' };
+  }
+
+  // ==================== 账户锁定管理 ====================
+
+  @Get('locked')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '获取被锁定的账户列表' })
+  @ApiResponse({ status: 200, description: '获取成功' })
+  async getLockedAccounts(): Promise<{
+    rows: Array<{
+      username: string;
+      lockUntil: number;
+      remainingSeconds: number;
+    }>;
+    total: number;
+  }> {
+    const accounts = await this.securityConfigService.getLockedAccounts();
+    return { rows: accounts, total: accounts.length };
+  }
+
+  @Delete('locked/:username')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '解锁账户' })
+  @ApiResponse({ status: 200, description: '解锁成功' })
+  unlockAccount(@Param('username') username: string): { msg: string } {
+    this.securityConfigService.unlockAccount(username);
+    return { msg: `账户 ${username} 已解锁` };
   }
 }

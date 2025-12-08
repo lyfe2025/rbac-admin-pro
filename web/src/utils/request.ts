@@ -1,6 +1,6 @@
 import axios, { type InternalAxiosRequestConfig, type AxiosResponse } from 'axios'
 import { useToast } from '@/components/ui/toast/use-toast'
-import { getToken } from '@/utils/auth'
+import { getToken, setToken } from '@/utils/auth'
 import { useUserStore } from '@/stores/modules/user'
 import { ErrorCode, shouldRedirectToLogin, getErrorMessage } from '@/types/error-code'
 
@@ -38,6 +38,12 @@ service.interceptors.request.use(
 // response 拦截器
 service.interceptors.response.use(
   (response: AxiosResponse) => {
+    // 滑动过期：检查响应头中是否有新 Token
+    const newToken = response.headers['x-new-token']
+    if (newToken) {
+      setToken(newToken)
+    }
+    
     // 未设置状态码则默认成功状态
     const code = response.data.code || ErrorCode.SUCCESS
     // 获取错误信息 (优先使用后端返回的 msg,如果没有则使用前端错误码映射)

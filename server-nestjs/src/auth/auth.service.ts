@@ -11,6 +11,7 @@ import { BusinessException } from '../common/exceptions';
 import { ErrorCode } from '../common/enums';
 import { IpUtil } from '../common/utils/ip.util';
 import { TwoFactorService } from './two-factor.service';
+import { SecurityConfigService } from './security-config.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService {
@@ -20,6 +21,7 @@ export class AuthService {
     private logger: LoggerService,
     private logininforService: LogininforService,
     private twoFactorService: TwoFactorService,
+    private securityConfigService: SecurityConfigService,
     @Inject(REQUEST) private request: Request,
   ) {}
 
@@ -32,6 +34,29 @@ export class AuthService {
     const userAgent = this.request.headers['user-agent'] || '';
     const { browser, os } = this.parseUserAgent(userAgent);
 
+    // 检查账户是否被锁定
+    const isLocked = await this.securityConfigService.isAccountLocked(username);
+    if (isLocked) {
+      const ttl = await this.securityConfigService.getAccountLockTTL(username);
+      const minutes = Math.ceil(ttl / 60);
+      this.logger.warn(
+        `账户 ${username} 已被锁定，剩余 ${minutes} 分钟`,
+        'AuthService',
+      );
+      await this.recordLoginLog(
+        username,
+        ipaddr,
+        browser,
+        os,
+        '1',
+        '账户已锁定',
+      );
+      throw new BusinessException(
+        ErrorCode.ACCOUNT_LOCKED,
+        `账户已被锁定，请 ${minutes} 分钟后再试`,
+      );
+    }
+
     try {
       const user = await this.userService.findByUsername(username);
 
@@ -40,15 +65,25 @@ export class AuthService {
           `Login failed: User not found - ${username}`,
           'AuthService',
         );
-        // 记录登录失败
+        // 记录登录失败并检查是否需要锁定
+        const { locked, failCount, lockMinutes } =
+          await this.securityConfigService.recordLoginFailure(username);
         await this.recordLoginLog(
           username,
           ipaddr,
           browser,
           os,
           '1',
-          '用户不存在',
+          locked
+            ? `登录失败${failCount}次，账户已锁定${lockMinutes}分钟`
+            : '用户不存在',
         );
+        if (locked) {
+          throw new BusinessException(
+            ErrorCode.ACCOUNT_LOCKED,
+            `登录失败次数过多，账户已锁定 ${lockMinutes} 分钟`,
+          );
+        }
         throw new BusinessException(
           ErrorCode.INVALID_CREDENTIALS,
           '账号或密码错误',
@@ -66,15 +101,25 @@ export class AuthService {
           `Login failed: Invalid password - ${username}`,
           'AuthService',
         );
-        // 记录登录失败
+        // 记录登录失败并检查是否需要锁定
+        const { locked, failCount, lockMinutes } =
+          await this.securityConfigService.recordLoginFailure(username);
         await this.recordLoginLog(
           username,
           ipaddr,
           browser,
           os,
           '1',
-          '密码错误',
+          locked
+            ? `登录失败${failCount}次，账户已锁定${lockMinutes}分钟`
+            : '密码错误',
         );
+        if (locked) {
+          throw new BusinessException(
+            ErrorCode.ACCOUNT_LOCKED,
+            `登录失败次数过多，账户已锁定 ${lockMinutes} 分钟`,
+          );
+        }
         throw new BusinessException(
           ErrorCode.INVALID_CREDENTIALS,
           '账号或密码错误',
@@ -84,8 +129,8 @@ export class AuthService {
       // 检查是否需要两步验证
       const globalTwoFactorEnabled =
         await this.twoFactorService.isTwoFactorEnabled();
-      const userTwoFactorEnabled =
-        user.twoFactorEnabled && user.twoFactorSecret;
+      const userTwoFactorEnabled: boolean =
+        Boolean(user.twoFactorEnabled) && Boolean(user.twoFactorSecret);
 
       // 如果全局启用了两步验证，且用户也启用了两步验证
       if (globalTwoFactorEnabled && userTwoFactorEnabled) {
@@ -104,6 +149,13 @@ export class AuthService {
         };
       }
 
+      // 登录成功，清除失败记录
+      this.securityConfigService.clearLoginFailure(username);
+
+      // 获取会话超时配置
+      const sessionTimeout =
+        await this.securityConfigService.getSessionTimeoutSeconds();
+
       // 签发 Token
       // 注意：BigInt 无法被 JSON.stringify，需要转换为 string
       const payload = {
@@ -120,17 +172,18 @@ export class AuthService {
       await this.recordLoginLog(username, ipaddr, browser, os, '0', '登录成功');
 
       return {
-        token: this.jwtService.sign(payload),
+        token: this.jwtService.sign(payload, { expiresIn: sessionTimeout }),
       };
-    } catch (error) {
+    } catch (error: unknown) {
       // 如果是业务异常,直接抛出
       if (error instanceof BusinessException) {
         throw error;
       }
       // 其他异常记录日志
+      const err = error as Error;
       this.logger.error(
-        `Login error: ${error.message}`,
-        error.stack,
+        `Login error: ${err.message}`,
+        err.stack,
         'AuthService',
       );
       await this.recordLoginLog(username, ipaddr, browser, os, '1', '系统错误');
@@ -162,11 +215,12 @@ export class AuthService {
         status,
         msg,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       // 记录日志失败不应该影响登录流程
+      const err = error as Error;
       this.logger.error(
-        `Failed to record login log: ${error.message}`,
-        error.stack,
+        `Failed to record login log: ${err.message}`,
+        err.stack,
         'AuthService',
       );
     }
@@ -238,6 +292,13 @@ export class AuthService {
     const userAgent = this.request.headers['user-agent'] || '';
     const { browser, os } = this.parseUserAgent(userAgent);
 
+    // 登录成功，清除失败记录
+    this.securityConfigService.clearLoginFailure(tempData.username);
+
+    // 获取会话超时配置
+    const sessionTimeout =
+      await this.securityConfigService.getSessionTimeoutSeconds();
+
     // 签发 Token
     const payload = {
       sub: tempData.userId,
@@ -257,7 +318,7 @@ export class AuthService {
     );
 
     return {
-      token: this.jwtService.sign(payload),
+      token: this.jwtService.sign(payload, { expiresIn: sessionTimeout }),
     };
   }
 

@@ -12,6 +12,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { RedisModule } from '../redis/redis.module';
 import { CaptchaService } from './captcha.service';
 import { TwoFactorService } from './two-factor.service';
+import { SecurityConfigService } from './security-config.service';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
@@ -41,6 +42,7 @@ import { PrismaModule } from '../prisma/prisma.module';
     JwtAuthGuard,
     CaptchaService,
     TwoFactorService,
+    SecurityConfigService,
   ],
   exports: [AuthService, JwtAuthGuard],
 })
