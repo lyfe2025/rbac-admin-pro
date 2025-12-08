@@ -1387,19 +1387,6 @@ async function main() {
       configValue: '',
       configType: 'Y',
     },
-    // 登录页设置
-    {
-      configName: '登录背景图',
-      configKey: 'sys.login.background',
-      configValue: '',
-      configType: 'Y',
-    },
-    {
-      configName: '登录公告',
-      configKey: 'sys.login.notice',
-      configValue: '',
-      configType: 'Y',
-    },
     // 密码策略
     {
       configName: '密码最小长度',

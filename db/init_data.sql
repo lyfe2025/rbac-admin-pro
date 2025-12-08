@@ -281,9 +281,6 @@ VALUES
   -- 网站Logo和图标
   ('网站Logo', 'sys.app.logo', '', 'Y', NOW()),
   ('网站图标', 'sys.app.favicon', '', 'Y', NOW()),
-  -- 登录页设置
-  ('登录背景图', 'sys.login.background', '', 'Y', NOW()),
-  ('登录公告', 'sys.login.notice', '', 'Y', NOW()),
   -- 密码策略
   ('密码最小长度', 'sys.password.minLength', '6', 'Y', NOW()),
   ('密码复杂度', 'sys.password.complexity', 'low', 'Y', NOW()),

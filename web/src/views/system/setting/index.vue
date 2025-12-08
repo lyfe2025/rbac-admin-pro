@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useToast } from '@/components/ui/toast/use-toast'
+import ImageUpload from '@/components/common/ImageUpload.vue'
 import { listConfig, updateConfig, addConfig, type SysConfig } from '@/api/system/config'
 import {
   Save,
@@ -26,7 +27,6 @@ import {
   Mail,
   HardDrive,
   FileText,
-  LogIn,
   Lock,
   Clock,
   Send,
@@ -49,9 +49,6 @@ const form = reactive({
   'sys.app.email': '',
   'sys.app.logo': '',
   'sys.app.favicon': '',
-  // 登录页设置
-  'sys.login.background': '',
-  'sys.login.notice': '',
   // 安全设置
   'sys.account.captchaEnabled': 'false',
   'sys.account.twoFactorEnabled': 'false',
@@ -97,9 +94,9 @@ async function getData() {
   try {
     const prefixes = [
       'sys.app.',
-      'sys.login.',
       'sys.account.',
       'sys.password.',
+      'sys.login.',
       'sys.session.',
       'sys.mail.',
       'sys.storage.',
@@ -108,10 +105,14 @@ async function getData() {
     ]
     const results = await Promise.all(prefixes.map((p) => listConfig({ configKey: p })))
     configList.value = results.flatMap((r) => r.rows)
+    // 重置 configMap
+    configMap.value = {}
     configList.value.forEach((item: SysConfig) => {
-      configMap.value[item.configKey] = item
+      // 确保 configValue 是字符串
+      const value = String(item.configValue ?? '')
+      configMap.value[item.configKey] = { ...item, configValue: value }
       if (item.configKey in form) {
-        ;(form as any)[item.configKey] = item.configValue
+        ;(form as any)[item.configKey] = value
       }
     })
   } finally {
@@ -122,28 +123,64 @@ async function getData() {
 
 async function handleSubmit() {
   submitLoading.value = true
+
+  // 调试：打印当前 form 值和 configMap
+  console.log('=== 保存调试信息 ===')
+  console.log('form 当前值:', JSON.parse(JSON.stringify(form)))
+  console.log('configMap 键:', Object.keys(configMap.value))
+  console.log('验证码开关 form 值:', form['sys.account.captchaEnabled'])
+  console.log(
+    '验证码开关 configMap 值:',
+    configMap.value['sys.account.captchaEnabled']?.configValue,
+  )
+
   try {
-    const updates = Object.entries(form).map(async ([key, value]) => {
+    const updates: Promise<any>[] = []
+    for (const [key, value] of Object.entries(form)) {
       const originalConfig = configMap.value[key]
       if (originalConfig) {
-        if (originalConfig.configValue !== value) {
-          return updateConfig({ ...originalConfig, configValue: value })
+        // 配置已存在，检查是否有变化（都转为字符串比较）
+        const originalValue = String(originalConfig.configValue ?? '')
+        const newValue = String(value ?? '')
+        if (originalValue !== newValue) {
+          console.log(`更新配置: ${key} = ${newValue} (原值: ${originalValue})`)
+          updates.push(updateConfig({ ...originalConfig, configValue: newValue }))
         }
       } else {
-        return addConfig({
-          configName: getConfigName(key),
-          configKey: key,
-          configValue: value,
-          configType: 'Y',
-          remark: getConfigRemark(key),
-        })
+        // 配置不存在，创建新配置
+        console.log(`创建配置: ${key} = ${value}`)
+        updates.push(
+          addConfig({
+            configName: getConfigName(key),
+            configKey: key,
+            configValue: value,
+            configType: 'Y',
+            remark: getConfigRemark(key),
+          }),
+        )
       }
-      return Promise.resolve()
-    })
-    await Promise.all(updates)
-    toast({ title: '保存成功', description: '系统设置已更新' })
+    }
+
+    if (updates.length === 0) {
+      toast({ title: '无需保存', description: '配置未发生变化' })
+      return
+    }
+
+    const results = await Promise.allSettled(updates)
+    const failed = results.filter((r) => r.status === 'rejected')
+    if (failed.length > 0) {
+      console.error('部分配置保存失败:', failed)
+      toast({
+        title: '部分保存失败',
+        description: `${updates.length - failed.length}/${updates.length} 项保存成功`,
+        variant: 'destructive',
+      })
+    } else {
+      toast({ title: '保存成功', description: '系统设置已更新' })
+    }
     await getData()
   } catch (error) {
+    console.error('保存失败:', error)
     toast({ title: '保存失败', description: '请稍后重试', variant: 'destructive' })
   } finally {
     submitLoading.value = false
@@ -171,8 +208,6 @@ function getConfigName(key: string): string {
     'sys.app.email': '联系邮箱',
     'sys.app.logo': '网站Logo',
     'sys.app.favicon': '网站图标',
-    'sys.login.background': '登录背景图',
-    'sys.login.notice': '登录公告',
     'sys.account.captchaEnabled': '验证码开关',
     'sys.account.twoFactorEnabled': '两步验证开关',
     'sys.account.registerEnabled': '用户注册开关',
@@ -223,6 +258,12 @@ function getConfigRemark(key: string): string {
 function handleReset() {
   getData()
   toast({ title: '已重置', description: '表单已恢复为当前配置' })
+}
+
+// 更新 Switch 开关值
+function updateSwitch(key: keyof typeof form, value: boolean) {
+  ;(form as any)[key] = value ? 'true' : 'false'
+  console.log(`Switch 更新: ${key} = ${(form as any)[key]}`)
 }
 
 onMounted(() => {
@@ -281,12 +322,14 @@ onMounted(() => {
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="grid gap-2">
-                <Label>Logo 地址</Label>
-                <Input v-model="form['sys.app.logo']" placeholder="例如：/logo.png" />
+                <Label>网站 Logo</Label>
+                <ImageUpload v-model="form['sys.app.logo']" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml" />
+                <p class="text-xs text-muted-foreground">建议尺寸：200x50px，支持 PNG/JPG/SVG</p>
               </div>
               <div class="grid gap-2">
-                <Label>Favicon 地址</Label>
-                <Input v-model="form['sys.app.favicon']" placeholder="例如：/favicon.ico" />
+                <Label>网站 Favicon</Label>
+                <ImageUpload v-model="form['sys.app.favicon']" accept=".ico,.png,image/png,image/x-icon" />
+                <p class="text-xs text-muted-foreground">建议尺寸：32x32px，支持 ICO/PNG</p>
               </div>
             </div>
           </CardContent>
@@ -309,23 +352,6 @@ onMounted(() => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle class="flex items-center gap-2"><LogIn class="h-5 w-5" />登录页设置</CardTitle>
-            <CardDescription>配置登录页面的背景和公告</CardDescription>
-          </CardHeader>
-          <CardContent class="space-y-4">
-            <div class="grid gap-2">
-              <Label>背景图片</Label>
-              <Input v-model="form['sys.login.background']" placeholder="背景图片URL，留空使用默认" />
-            </div>
-            <div class="grid gap-2">
-              <Label>登录公告</Label>
-              <Textarea v-model="form['sys.login.notice']" placeholder="登录页显示的公告内容" rows="2" />
-            </div>
-          </CardContent>
-        </Card>
-
       </TabsContent>
 
 
@@ -344,7 +370,7 @@ onMounted(() => {
               </div>
               <Switch
                 :checked="form['sys.account.captchaEnabled'] === 'true'"
-                @update:checked="(v: boolean) => (form['sys.account.captchaEnabled'] = v ? 'true' : 'false')"
+                @update:checked="updateSwitch('sys.account.captchaEnabled', $event)"
               />
             </div>
             <div class="flex items-center justify-between">
@@ -354,7 +380,7 @@ onMounted(() => {
               </div>
               <Switch
                 :checked="form['sys.account.twoFactorEnabled'] === 'true'"
-                @update:checked="(v: boolean) => (form['sys.account.twoFactorEnabled'] = v ? 'true' : 'false')"
+                @update:checked="updateSwitch('sys.account.twoFactorEnabled', $event)"
               />
             </div>
             <div class="flex items-center justify-between">
@@ -364,7 +390,7 @@ onMounted(() => {
               </div>
               <Switch
                 :checked="form['sys.account.registerEnabled'] === 'true'"
-                @update:checked="(v: boolean) => (form['sys.account.registerEnabled'] = v ? 'true' : 'false')"
+                @update:checked="updateSwitch('sys.account.registerEnabled', $event)"
               />
             </div>
           </CardContent>
@@ -444,7 +470,7 @@ onMounted(() => {
               </div>
               <Switch
                 :checked="form['sys.mail.enabled'] === 'true'"
-                @update:checked="(v: boolean) => (form['sys.mail.enabled'] = v ? 'true' : 'false')"
+                @update:checked="updateSwitch('sys.mail.enabled', $event)"
               />
             </div>
 
@@ -564,7 +590,7 @@ onMounted(() => {
               </div>
               <Switch
                 :checked="form['sys.log.enabled'] === 'true'"
-                @update:checked="(v: boolean) => (form['sys.log.enabled'] = v ? 'true' : 'false')"
+                @update:checked="updateSwitch('sys.log.enabled', $event)"
               />
             </div>
 
@@ -603,7 +629,7 @@ onMounted(() => {
               </div>
               <Switch
                 :checked="form['sys.backup.enabled'] === 'true'"
-                @update:checked="(v: boolean) => (form['sys.backup.enabled'] = v ? 'true' : 'false')"
+                @update:checked="updateSwitch('sys.backup.enabled', $event)"
               />
             </div>
 
