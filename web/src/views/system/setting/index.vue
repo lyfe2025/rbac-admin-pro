@@ -504,6 +504,8 @@ onMounted(() => {
                 <SelectTrigger><SelectValue placeholder="选择存储类型" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="local">本地存储</SelectItem>
+                  <SelectItem value="s3">AWS S3</SelectItem>
+                  <SelectItem value="gcs">Google Cloud Storage</SelectItem>
                   <SelectItem value="oss">阿里云 OSS</SelectItem>
                   <SelectItem value="cos">腾讯云 COS</SelectItem>
                   <SelectItem value="r2">Cloudflare R2</SelectItem>
@@ -523,7 +525,7 @@ onMounted(() => {
                   <Label>服务端点 (Endpoint)</Label>
                   <Input
                     v-model="form['sys.storage.oss.endpoint']"
-                    :placeholder="form['sys.storage.type'] === 'oss' ? 'oss-cn-hangzhou.aliyuncs.com' : form['sys.storage.type'] === 'cos' ? 'cos.ap-guangzhou.myqcloud.com' : 'xxxx.r2.cloudflarestorage.com'"
+                    :placeholder="form['sys.storage.type'] === 's3' ? 's3.us-east-1.amazonaws.com' : form['sys.storage.type'] === 'gcs' ? 'storage.googleapis.com' : form['sys.storage.type'] === 'oss' ? 'oss-cn-hangzhou.aliyuncs.com' : form['sys.storage.type'] === 'cos' ? 'cos.ap-guangzhou.myqcloud.com' : 'xxxx.r2.cloudflarestorage.com'"
                   />
                 </div>
                 <div class="grid gap-2">
