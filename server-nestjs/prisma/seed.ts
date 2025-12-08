@@ -242,7 +242,7 @@ async function main() {
 
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash('123456', salt);
-  
+
   const adminUser = await ensureUser({
     userName: 'admin',
     nickName: '超级管理员',
@@ -895,80 +895,120 @@ async function main() {
   }
 
   // 6. 为不同角色分配菜单权限
-  const allMenus = await prisma.sysMenu.findMany({ 
-    select: { menuId: true, path: true, menuType: true, parentId: true } 
+  const allMenus = await prisma.sysMenu.findMany({
+    select: { menuId: true, path: true, menuType: true, parentId: true },
   });
-  
+
   if (allMenus.length > 0) {
     // 6.1 超级管理员 - 拥有所有权限
     await prisma.sysRoleMenu.createMany({
-      data: allMenus.map((m) => ({ roleId: adminRole.roleId, menuId: m.menuId })),
+      data: allMenus.map((m) => ({
+        roleId: adminRole.roleId,
+        menuId: m.menuId,
+      })),
       skipDuplicates: true,
     });
     console.log(`Linked role(admin) with ${allMenus.length} menus`);
 
     // 6.2 系统管理员 - 拥有系统管理模块的所有权限
-    const systemMenu = allMenus.find(m => m.path === 'system' && !m.parentId);
+    const systemMenu = allMenus.find((m) => m.path === 'system' && !m.parentId);
     if (systemMenu) {
-      const systemMenuIds = allMenus.filter(m => 
-        m.menuId === systemMenu.menuId || 
-        m.parentId === systemMenu.menuId ||
-        allMenus.some(parent => parent.menuId === m.parentId && parent.parentId === systemMenu.menuId)
-      ).map(m => m.menuId);
-      
+      const systemMenuIds = allMenus
+        .filter(
+          (m) =>
+            m.menuId === systemMenu.menuId ||
+            m.parentId === systemMenu.menuId ||
+            allMenus.some(
+              (parent) =>
+                parent.menuId === m.parentId &&
+                parent.parentId === systemMenu.menuId,
+            ),
+        )
+        .map((m) => m.menuId);
+
       await prisma.sysRoleMenu.createMany({
-        data: systemMenuIds.map(menuId => ({ roleId: systemAdminRole.roleId, menuId })),
+        data: systemMenuIds.map((menuId) => ({
+          roleId: systemAdminRole.roleId,
+          menuId,
+        })),
         skipDuplicates: true,
       });
-      console.log(`Linked role(system_admin) with ${systemMenuIds.length} menus`);
+      console.log(
+        `Linked role(system_admin) with ${systemMenuIds.length} menus`,
+      );
     }
 
     // 6.3 监控管理员 - 拥有系统监控模块的所有权限
-    const monitorMenu = allMenus.find(m => m.path === 'monitor' && !m.parentId);
-    const toolMenu = allMenus.find(m => m.path === 'tool' && !m.parentId);
-    const swaggerMenu = allMenus.find(m => m.path === 'swagger');
-    
+    const monitorMenu = allMenus.find(
+      (m) => m.path === 'monitor' && !m.parentId,
+    );
+    const toolMenu = allMenus.find((m) => m.path === 'tool' && !m.parentId);
+    const swaggerMenu = allMenus.find((m) => m.path === 'swagger');
+
     if (monitorMenu) {
-      const monitorMenuIds = allMenus.filter(m => 
-        m.menuId === monitorMenu.menuId || 
-        m.parentId === monitorMenu.menuId ||
-        allMenus.some(parent => parent.menuId === m.parentId && parent.parentId === monitorMenu.menuId)
-      ).map(m => m.menuId);
-      
+      const monitorMenuIds = allMenus
+        .filter(
+          (m) =>
+            m.menuId === monitorMenu.menuId ||
+            m.parentId === monitorMenu.menuId ||
+            allMenus.some(
+              (parent) =>
+                parent.menuId === m.parentId &&
+                parent.parentId === monitorMenu.menuId,
+            ),
+        )
+        .map((m) => m.menuId);
+
       // 添加工具菜单和接口文档
       if (toolMenu) monitorMenuIds.push(toolMenu.menuId);
       if (swaggerMenu) monitorMenuIds.push(swaggerMenu.menuId);
-      
+
       await prisma.sysRoleMenu.createMany({
-        data: monitorMenuIds.map(menuId => ({ roleId: monitorAdminRole.roleId, menuId })),
+        data: monitorMenuIds.map((menuId) => ({
+          roleId: monitorAdminRole.roleId,
+          menuId,
+        })),
         skipDuplicates: true,
       });
-      console.log(`Linked role(monitor_admin) with ${monitorMenuIds.length} menus`);
+      console.log(
+        `Linked role(monitor_admin) with ${monitorMenuIds.length} menus`,
+      );
     }
 
     // 6.4 普通用户 - 只有查看权限,无增删改权限(只分配C类型菜单,不分配F类型按钮)
-    const systemMenu2 = allMenus.find(m => m.path === 'system' && !m.parentId);
-    const monitorMenu2 = allMenus.find(m => m.path === 'monitor' && !m.parentId);
-    
+    const systemMenu2 = allMenus.find(
+      (m) => m.path === 'system' && !m.parentId,
+    );
+    const monitorMenu2 = allMenus.find(
+      (m) => m.path === 'monitor' && !m.parentId,
+    );
+
     const commonUserMenuIds: bigint[] = [];
     if (systemMenu2) {
       commonUserMenuIds.push(systemMenu2.menuId);
       // 只添加系统管理下的C类型菜单
-      allMenus.filter(m => m.parentId === systemMenu2.menuId && m.menuType === 'C')
-        .forEach(m => commonUserMenuIds.push(m.menuId));
+      allMenus
+        .filter((m) => m.parentId === systemMenu2.menuId && m.menuType === 'C')
+        .forEach((m) => commonUserMenuIds.push(m.menuId));
     }
     if (monitorMenu2) {
       commonUserMenuIds.push(monitorMenu2.menuId);
       // 只添加系统监控下的C类型菜单
-      allMenus.filter(m => m.parentId === monitorMenu2.menuId && m.menuType === 'C')
-        .forEach(m => commonUserMenuIds.push(m.menuId));
+      allMenus
+        .filter((m) => m.parentId === monitorMenu2.menuId && m.menuType === 'C')
+        .forEach((m) => commonUserMenuIds.push(m.menuId));
     }
-    
+
     await prisma.sysRoleMenu.createMany({
-      data: commonUserMenuIds.map(menuId => ({ roleId: commonUserRole.roleId, menuId })),
+      data: commonUserMenuIds.map((menuId) => ({
+        roleId: commonUserRole.roleId,
+        menuId,
+      })),
       skipDuplicates: true,
     });
-    console.log(`Linked role(common_user) with ${commonUserMenuIds.length} menus (read-only)`);
+    console.log(
+      `Linked role(common_user) with ${commonUserMenuIds.length} menus (read-only)`,
+    );
   } else {
     console.log('No menus found to link with roles');
   }
@@ -1185,6 +1225,7 @@ async function main() {
 
   // 系统配置
   const configsToSeed = [
+    // 账户安全设置
     {
       configName: '初始密码',
       configKey: 'sys.account.initPassword',
@@ -1192,9 +1233,236 @@ async function main() {
       configType: 'Y',
     },
     {
-      configName: '站点名称',
-      configKey: 'sys.site.name',
+      configName: '验证码开关',
+      configKey: 'sys.account.captchaEnabled',
+      configValue: 'false',
+      configType: 'Y',
+    },
+    {
+      configName: '两步验证开关',
+      configKey: 'sys.account.twoFactorEnabled',
+      configValue: 'false',
+      configType: 'Y',
+    },
+    {
+      configName: '用户注册开关',
+      configKey: 'sys.account.registerEnabled',
+      configValue: 'false',
+      configType: 'Y',
+    },
+    // 网站信息设置
+    {
+      configName: '网站名称',
+      configKey: 'sys.app.name',
       configValue: 'RBAC Admin Pro',
+      configType: 'Y',
+    },
+    {
+      configName: '网站描述',
+      configKey: 'sys.app.description',
+      configValue: '企业级全栈权限管理系统',
+      configType: 'Y',
+    },
+    {
+      configName: '版权信息',
+      configKey: 'sys.app.copyright',
+      configValue: '© 2025 RBAC Admin Pro. All rights reserved.',
+      configType: 'Y',
+    },
+    {
+      configName: 'ICP备案号',
+      configKey: 'sys.app.icp',
+      configValue: '',
+      configType: 'Y',
+    },
+    {
+      configName: '联系邮箱',
+      configKey: 'sys.app.email',
+      configValue: 'admin@example.com',
+      configType: 'Y',
+    },
+    // 邮件设置
+    {
+      configName: '邮件服务开关',
+      configKey: 'sys.mail.enabled',
+      configValue: 'false',
+      configType: 'Y',
+    },
+    {
+      configName: 'SMTP服务器',
+      configKey: 'sys.mail.host',
+      configValue: '',
+      configType: 'Y',
+    },
+    {
+      configName: 'SMTP端口',
+      configKey: 'sys.mail.port',
+      configValue: '465',
+      configType: 'Y',
+    },
+    {
+      configName: '邮箱账号',
+      configKey: 'sys.mail.username',
+      configValue: '',
+      configType: 'Y',
+    },
+    {
+      configName: '邮箱密码',
+      configKey: 'sys.mail.password',
+      configValue: '',
+      configType: 'Y',
+    },
+    {
+      configName: '发件人地址',
+      configKey: 'sys.mail.from',
+      configValue: '',
+      configType: 'Y',
+    },
+    // 存储设置
+    {
+      configName: '存储类型',
+      configKey: 'sys.storage.type',
+      configValue: 'local',
+      configType: 'Y',
+    },
+    {
+      configName: '本地存储路径',
+      configKey: 'sys.storage.local.path',
+      configValue: './uploads',
+      configType: 'Y',
+    },
+    {
+      configName: 'OSS端点',
+      configKey: 'sys.storage.oss.endpoint',
+      configValue: '',
+      configType: 'Y',
+    },
+    {
+      configName: 'OSS存储桶',
+      configKey: 'sys.storage.oss.bucket',
+      configValue: '',
+      configType: 'Y',
+    },
+    {
+      configName: 'OSS AccessKey',
+      configKey: 'sys.storage.oss.accessKey',
+      configValue: '',
+      configType: 'Y',
+    },
+    {
+      configName: 'OSS SecretKey',
+      configKey: 'sys.storage.oss.secretKey',
+      configValue: '',
+      configType: 'Y',
+    },
+    // 日志设置
+    {
+      configName: '日志记录开关',
+      configKey: 'sys.log.enabled',
+      configValue: 'true',
+      configType: 'Y',
+    },
+    {
+      configName: '日志保留天数',
+      configKey: 'sys.log.retentionDays',
+      configValue: '30',
+      configType: 'Y',
+    },
+    {
+      configName: '日志级别',
+      configKey: 'sys.log.level',
+      configValue: 'info',
+      configType: 'Y',
+    },
+    // 网站Logo和图标
+    {
+      configName: '网站Logo',
+      configKey: 'sys.app.logo',
+      configValue: '',
+      configType: 'Y',
+    },
+    {
+      configName: '网站图标',
+      configKey: 'sys.app.favicon',
+      configValue: '',
+      configType: 'Y',
+    },
+    // 登录页设置
+    {
+      configName: '登录背景图',
+      configKey: 'sys.login.background',
+      configValue: '',
+      configType: 'Y',
+    },
+    {
+      configName: '登录公告',
+      configKey: 'sys.login.notice',
+      configValue: '',
+      configType: 'Y',
+    },
+    // 密码策略
+    {
+      configName: '密码最小长度',
+      configKey: 'sys.password.minLength',
+      configValue: '6',
+      configType: 'Y',
+    },
+    {
+      configName: '密码复杂度',
+      configKey: 'sys.password.complexity',
+      configValue: 'low',
+      configType: 'Y',
+    },
+    {
+      configName: '密码过期天数',
+      configKey: 'sys.password.expireDays',
+      configValue: '0',
+      configType: 'Y',
+    },
+    // 登录限制
+    {
+      configName: '登录失败次数',
+      configKey: 'sys.login.maxRetry',
+      configValue: '5',
+      configType: 'Y',
+    },
+    {
+      configName: '账户锁定时长',
+      configKey: 'sys.login.lockTime',
+      configValue: '10',
+      configType: 'Y',
+    },
+    // 会话设置
+    {
+      configName: '会话超时时间',
+      configKey: 'sys.session.timeout',
+      configValue: '30',
+      configType: 'Y',
+    },
+    // 邮件SSL
+    {
+      configName: 'SSL/TLS开关',
+      configKey: 'sys.mail.ssl',
+      configValue: 'true',
+      configType: 'Y',
+    },
+    // 备份设置
+    {
+      configName: '自动备份开关',
+      configKey: 'sys.backup.enabled',
+      configValue: 'false',
+      configType: 'Y',
+    },
+    {
+      configName: '备份周期',
+      configKey: 'sys.backup.cron',
+      configValue: 'daily',
+      configType: 'Y',
+    },
+    {
+      configName: '备份保留份数',
+      configKey: 'sys.backup.retention',
+      configValue: '7',
       configType: 'Y',
     },
   ];

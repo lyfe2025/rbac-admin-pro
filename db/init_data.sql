@@ -249,8 +249,56 @@ ON CONFLICT (dict_type, dict_value) DO NOTHING;
 -- 9. 初始化系统配置
 INSERT INTO sys_config (config_name, config_key, config_value, config_type, create_time)
 VALUES
+  -- 账户安全设置
   ('初始密码', 'sys.account.initPassword', '123456', 'Y', NOW()),
-  ('站点名称', 'sys.site.name', 'RBAC Admin Pro', 'Y', NOW())
+  ('验证码开关', 'sys.account.captchaEnabled', 'false', 'Y', NOW()),
+  ('两步验证开关', 'sys.account.twoFactorEnabled', 'false', 'Y', NOW()),
+  ('用户注册开关', 'sys.account.registerEnabled', 'false', 'Y', NOW()),
+  -- 网站信息设置
+  ('网站名称', 'sys.app.name', 'RBAC Admin Pro', 'Y', NOW()),
+  ('网站描述', 'sys.app.description', '企业级全栈权限管理系统', 'Y', NOW()),
+  ('版权信息', 'sys.app.copyright', '© 2025 RBAC Admin Pro. All rights reserved.', 'Y', NOW()),
+  ('ICP备案号', 'sys.app.icp', '', 'Y', NOW()),
+  ('联系邮箱', 'sys.app.email', 'admin@example.com', 'Y', NOW()),
+  -- 邮件设置
+  ('邮件服务开关', 'sys.mail.enabled', 'false', 'Y', NOW()),
+  ('SMTP服务器', 'sys.mail.host', '', 'Y', NOW()),
+  ('SMTP端口', 'sys.mail.port', '465', 'Y', NOW()),
+  ('邮箱账号', 'sys.mail.username', '', 'Y', NOW()),
+  ('邮箱密码', 'sys.mail.password', '', 'Y', NOW()),
+  ('发件人地址', 'sys.mail.from', '', 'Y', NOW()),
+  -- 存储设置
+  ('存储类型', 'sys.storage.type', 'local', 'Y', NOW()),
+  ('本地存储路径', 'sys.storage.local.path', './uploads', 'Y', NOW()),
+  ('OSS端点', 'sys.storage.oss.endpoint', '', 'Y', NOW()),
+  ('OSS存储桶', 'sys.storage.oss.bucket', '', 'Y', NOW()),
+  ('OSS AccessKey', 'sys.storage.oss.accessKey', '', 'Y', NOW()),
+  ('OSS SecretKey', 'sys.storage.oss.secretKey', '', 'Y', NOW()),
+  -- 日志设置
+  ('日志记录开关', 'sys.log.enabled', 'true', 'Y', NOW()),
+  ('日志保留天数', 'sys.log.retentionDays', '30', 'Y', NOW()),
+  ('日志级别', 'sys.log.level', 'info', 'Y', NOW()),
+  -- 网站Logo和图标
+  ('网站Logo', 'sys.app.logo', '', 'Y', NOW()),
+  ('网站图标', 'sys.app.favicon', '', 'Y', NOW()),
+  -- 登录页设置
+  ('登录背景图', 'sys.login.background', '', 'Y', NOW()),
+  ('登录公告', 'sys.login.notice', '', 'Y', NOW()),
+  -- 密码策略
+  ('密码最小长度', 'sys.password.minLength', '6', 'Y', NOW()),
+  ('密码复杂度', 'sys.password.complexity', 'low', 'Y', NOW()),
+  ('密码过期天数', 'sys.password.expireDays', '0', 'Y', NOW()),
+  -- 登录限制
+  ('登录失败次数', 'sys.login.maxRetry', '5', 'Y', NOW()),
+  ('账户锁定时长', 'sys.login.lockTime', '10', 'Y', NOW()),
+  -- 会话设置
+  ('会话超时时间', 'sys.session.timeout', '30', 'Y', NOW()),
+  -- 邮件SSL
+  ('SSL/TLS开关', 'sys.mail.ssl', 'true', 'Y', NOW()),
+  -- 备份设置
+  ('自动备份开关', 'sys.backup.enabled', 'false', 'Y', NOW()),
+  ('备份周期', 'sys.backup.cron', 'daily', 'Y', NOW()),
+  ('备份保留份数', 'sys.backup.retention', '7', 'Y', NOW())
 ON CONFLICT (config_key) DO NOTHING;
 
 
