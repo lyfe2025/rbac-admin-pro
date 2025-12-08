@@ -1,4 +1,6 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import Redis from 'ioredis';
 
 type MultiCmd = {
   type: 'set' | 'sadd' | 'del' | 'srem';
@@ -194,13 +196,61 @@ class InMemoryRedisClient {
 
 @Injectable()
 export class RedisService implements OnModuleDestroy {
-  private client = new InMemoryRedisClient();
+  private readonly logger = new Logger(RedisService.name);
+  private client: Redis | InMemoryRedisClient;
+  private isRealRedis: boolean;
 
-  getClient() {
+  constructor(private configService: ConfigService) {
+    const redisEnabled = configService.get<string>('REDIS_ENABLED', 'false');
+    this.isRealRedis = redisEnabled.toLowerCase() === 'true';
+
+    if (this.isRealRedis) {
+      const redisUrl = configService.get<string>(
+        'REDIS_URL',
+        'redis://127.0.0.1:6379',
+      );
+      this.client = new Redis(redisUrl, {
+        maxRetriesPerRequest: 3,
+        retryStrategy: (times) => {
+          if (times > 3) {
+            this.logger.warn(`Redis 连接失败 ${times} 次，切换到内存模式`);
+            return null; // 停止重试
+          }
+          return Math.min(times * 200, 2000);
+        },
+        lazyConnect: true,
+      });
+
+      // 尝试连接
+      this.client
+        .connect()
+        .then(() => {
+          this.logger.log('Redis 连接成功');
+        })
+        .catch((err: Error) => {
+          this.logger.warn(`Redis 连接失败: ${err.message}，切换到内存模式`);
+          this.client = new InMemoryRedisClient();
+          this.isRealRedis = false;
+        });
+    } else {
+      this.client = new InMemoryRedisClient();
+      this.logger.log('使用内存模式（REDIS_ENABLED=false）');
+    }
+  }
+
+  getClient(): Redis | InMemoryRedisClient {
     return this.client;
   }
 
+  /** 是否使用真实 Redis */
+  isUsingRealRedis(): boolean {
+    return this.isRealRedis;
+  }
+
   onModuleDestroy() {
-    // no-op for in-memory client
+    if (this.isRealRedis && this.client instanceof Redis) {
+      this.client.disconnect();
+      this.logger.log('Redis 连接已关闭');
+    }
   }
 }

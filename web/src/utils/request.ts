@@ -57,13 +57,23 @@ service.interceptors.response.use(
     
     // 判断是否需要跳转登录页 (使用业务错误码)
     if (shouldRedirectToLogin(code)) {
+      const errorMsg = msg || '无效的会话，或者会话已过期，请重新登录'
+      // 先显示提示，延迟后再跳转登录页
+      toast({
+        title: "登录已失效",
+        description: errorMsg,
+        variant: "destructive",
+        duration: 3000,
+      })
       const userStore = useUserStore()
       const appStore = useAppStore()
       const loginPath = appStore.siteConfig.loginPath || '/login'
-      userStore.logout().then(() => {
-        location.href = loginPath
-      })
-      return Promise.reject(new Error(msg || '无效的会话，或者会话已过期，请重新登录。'))
+      setTimeout(() => {
+        userStore.logout().then(() => {
+          location.href = loginPath
+        })
+      }, 2000)
+      return Promise.reject(new Error(errorMsg))
     }
     
     // 判断系统内部错误
@@ -105,15 +115,24 @@ service.interceptors.response.use(
         title = "参数验证失败"
         message = errorMessage || "请求参数验证失败"
       } else if (httpStatus === 401) {
-        title = "未登录"
+        title = "登录已失效"
         message = errorMessage || "无效的会话，或者会话已过期，请重新登录"
-        // 跳转登录页
+        // 先显示提示，延迟后再跳转登录页
+        toast({
+          title,
+          description: message,
+          variant: "destructive",
+          duration: 3000,
+        })
         const userStore = useUserStore()
         const appStore = useAppStore()
         const loginPath = appStore.siteConfig.loginPath || '/login'
-        userStore.logout().then(() => {
-          location.href = loginPath
-        })
+        setTimeout(() => {
+          userStore.logout().then(() => {
+            location.href = loginPath
+          })
+        }, 2000)
+        return Promise.reject(new Error(message))
       } else if (httpStatus === 403) {
         title = "权限不足"
         message = errorMessage || "您没有权限执行此操作"

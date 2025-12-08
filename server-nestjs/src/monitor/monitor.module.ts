@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { LoginLogService } from './login-log/login-log.service';
 import { OnlineService } from './online/online.service';
 import { OnlineController } from './online/online.controller';
@@ -13,9 +13,10 @@ import { JobController } from './job/job.controller';
 import { CacheService } from './cache/cache.service';
 import { CacheController } from './cache/cache.controller';
 import { RedisModule } from '../redis/redis.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [RedisModule],
+  imports: [RedisModule, forwardRef(() => AuthModule)],
   providers: [
     LoginLogService,
     OnlineService,

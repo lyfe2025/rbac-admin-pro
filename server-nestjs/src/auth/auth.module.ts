@@ -44,6 +44,6 @@ import { PrismaModule } from '../prisma/prisma.module';
     TwoFactorService,
     SecurityConfigService,
   ],
-  exports: [AuthService, JwtAuthGuard],
+  exports: [AuthService, JwtAuthGuard, TokenBlacklistService],
 })
 export class AuthModule {}

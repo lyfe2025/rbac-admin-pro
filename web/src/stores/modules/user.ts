@@ -74,7 +74,11 @@ export const useUserStore = defineStore('user', {
     },
     // 退出系统
     async logout() {
-      await logout()
+      try {
+        await logout()
+      } catch {
+        // 忽略错误（可能是 token 已失效）
+      }
       this.token = ''
       this.roles = []
       this.permissions = []
