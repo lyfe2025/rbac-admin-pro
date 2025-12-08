@@ -11,12 +11,26 @@ export interface LoginResult {
   token: string
 }
 
+export interface CaptchaResult {
+  captchaEnabled: boolean
+  uuid?: string
+  img?: string
+}
+
 // 登录方法
 export function login(data: LoginData) {
   return request({
     url: '/auth/login',
     method: 'post',
     data: data
+  })
+}
+
+// 获取验证码
+export function getCaptchaImage() {
+  return request<CaptchaResult>({
+    url: '/auth/captchaImage',
+    method: 'get'
   })
 }
 

@@ -1,5 +1,5 @@
-import { IsNotEmpty, IsString } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class LoginDto {
   @ApiProperty({
@@ -19,4 +19,20 @@ export class LoginDto {
   @IsString()
   @IsNotEmpty({ message: '密码不能为空' })
   password: string;
+
+  @ApiPropertyOptional({
+    description: '验证码',
+    example: 'abcd',
+  })
+  @IsString()
+  @IsOptional()
+  code?: string;
+
+  @ApiPropertyOptional({
+    description: '验证码唯一标识',
+    example: 'uuid-xxx',
+  })
+  @IsString()
+  @IsOptional()
+  uuid?: string;
 }

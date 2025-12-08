@@ -48,6 +48,8 @@ export enum ErrorCode {
   ACCOUNT_DISABLED = 20007,
   /** 账号已被锁定 */
   ACCOUNT_LOCKED = 20008,
+  /** 验证码错误 */
+  CAPTCHA_ERROR = 20009,
 
   // ==================== 用户管理 (3xxxx) ====================
   /** 用户不存在 */
@@ -185,6 +187,7 @@ export const ErrorCodeMessage: Record<ErrorCode, string> = {
   [ErrorCode.FORBIDDEN]: '无权限访问',
   [ErrorCode.ACCOUNT_DISABLED]: '账号已被停用',
   [ErrorCode.ACCOUNT_LOCKED]: '账号已被锁定',
+  [ErrorCode.CAPTCHA_ERROR]: '验证码错误',
 
   // 用户管理
   [ErrorCode.USER_NOT_FOUND]: '用户不存在',

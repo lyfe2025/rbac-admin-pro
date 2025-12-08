@@ -10,6 +10,8 @@ import { MonitorModule } from '../monitor/monitor.module';
 import { TokenBlacklistService } from './token-blacklist.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RedisModule } from '../redis/redis.module';
+import { CaptchaService } from './captcha.service';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [
@@ -17,6 +19,7 @@ import { RedisModule } from '../redis/redis.module';
     PassportModule,
     MonitorModule,
     RedisModule,
+    PrismaModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
@@ -30,7 +33,13 @@ import { RedisModule } from '../redis/redis.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, TokenBlacklistService, JwtAuthGuard],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    TokenBlacklistService,
+    JwtAuthGuard,
+    CaptchaService,
+  ],
   exports: [AuthService, JwtAuthGuard],
 })
 export class AuthModule {}
