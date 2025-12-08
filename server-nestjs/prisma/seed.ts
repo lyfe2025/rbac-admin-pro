@@ -1350,25 +1350,6 @@ async function main() {
       configValue: '',
       configType: 'Y',
     },
-    // 日志设置
-    {
-      configName: '日志记录开关',
-      configKey: 'sys.log.enabled',
-      configValue: 'true',
-      configType: 'Y',
-    },
-    {
-      configName: '日志保留天数',
-      configKey: 'sys.log.retentionDays',
-      configValue: '30',
-      configType: 'Y',
-    },
-    {
-      configName: '日志级别',
-      configKey: 'sys.log.level',
-      configValue: 'info',
-      configType: 'Y',
-    },
     // 网站Logo和图标
     {
       configName: '网站Logo',
@@ -1408,25 +1389,6 @@ async function main() {
       configName: 'SSL/TLS开关',
       configKey: 'sys.mail.ssl',
       configValue: 'true',
-      configType: 'Y',
-    },
-    // 备份设置
-    {
-      configName: '自动备份开关',
-      configKey: 'sys.backup.enabled',
-      configValue: 'false',
-      configType: 'Y',
-    },
-    {
-      configName: '备份周期',
-      configKey: 'sys.backup.cron',
-      configValue: 'daily',
-      configType: 'Y',
-    },
-    {
-      configName: '备份保留份数',
-      configKey: 'sys.backup.retention',
-      configValue: '7',
       configType: 'Y',
     },
   ];

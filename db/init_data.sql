@@ -274,10 +274,6 @@ VALUES
   ('OSS存储桶', 'sys.storage.oss.bucket', '', 'Y', NOW()),
   ('OSS AccessKey', 'sys.storage.oss.accessKey', '', 'Y', NOW()),
   ('OSS SecretKey', 'sys.storage.oss.secretKey', '', 'Y', NOW()),
-  -- 日志设置
-  ('日志记录开关', 'sys.log.enabled', 'true', 'Y', NOW()),
-  ('日志保留天数', 'sys.log.retentionDays', '30', 'Y', NOW()),
-  ('日志级别', 'sys.log.level', 'info', 'Y', NOW()),
   -- 网站Logo和图标
   ('网站Logo', 'sys.app.logo', '', 'Y', NOW()),
   ('网站图标', 'sys.app.favicon', '', 'Y', NOW()),
@@ -288,11 +284,7 @@ VALUES
   -- 会话设置
   ('会话超时时间', 'sys.session.timeout', '30', 'Y', NOW()),
   -- 邮件SSL
-  ('SSL/TLS开关', 'sys.mail.ssl', 'true', 'Y', NOW()),
-  -- 备份设置
-  ('自动备份开关', 'sys.backup.enabled', 'false', 'Y', NOW()),
-  ('备份周期', 'sys.backup.cron', 'daily', 'Y', NOW()),
-  ('备份保留份数', 'sys.backup.retention', '7', 'Y', NOW())
+  ('SSL/TLS开关', 'sys.mail.ssl', 'true', 'Y', NOW())
 ON CONFLICT (config_key) DO NOTHING;
 
 

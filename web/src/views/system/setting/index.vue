@@ -27,10 +27,8 @@ import {
   Globe,
   Mail,
   HardDrive,
-  FileText,
   Clock,
   Send,
-  Database,
   Lock,
   Unlock,
 } from 'lucide-vue-next'
@@ -77,14 +75,6 @@ const form = reactive({
   'sys.storage.oss.bucket': '',
   'sys.storage.oss.accessKey': '',
   'sys.storage.oss.secretKey': '',
-  // 日志设置
-  'sys.log.enabled': 'true',
-  'sys.log.retentionDays': '30',
-  'sys.log.level': 'info',
-  // 备份设置
-  'sys.backup.enabled': 'false',
-  'sys.backup.cron': 'daily',
-  'sys.backup.retention': '7',
 })
 
 const configMap = ref<Record<string, SysConfig>>({})
@@ -99,8 +89,6 @@ async function getData() {
       'sys.session.',
       'sys.mail.',
       'sys.storage.',
-      'sys.log.',
-      'sys.backup.',
     ]
     const results = await Promise.all(prefixes.map((p) => listConfig({ configKey: p })))
     configList.value = results.flatMap((r) => r.rows)
@@ -222,25 +210,16 @@ function getConfigName(key: string): string {
     'sys.storage.oss.bucket': 'OSS存储桶',
     'sys.storage.oss.accessKey': 'OSS AccessKey',
     'sys.storage.oss.secretKey': 'OSS SecretKey',
-    'sys.log.enabled': '日志记录开关',
-    'sys.log.retentionDays': '日志保留天数',
-    'sys.log.level': '日志级别',
-    'sys.backup.enabled': '自动备份开关',
-    'sys.backup.cron': '备份周期',
-    'sys.backup.retention': '备份保留份数',
   }
   return names[key] || key
 }
 
 function getConfigRemark(key: string): string {
   const remarks: Record<string, string> = {
-
     'sys.login.maxRetry': '连续登录失败次数达到后锁定账户',
     'sys.login.lockTime': '账户锁定时长（分钟）',
     'sys.session.timeout': 'Token有效期（分钟）',
     'sys.mail.ssl': '是否启用SSL/TLS加密连接',
-    'sys.backup.cron': '自动备份周期',
-    'sys.backup.retention': '保留最近N份备份文件',
   }
   return remarks[key] || ''
 }
@@ -271,20 +250,6 @@ const mailEnabled = computed({
   get: () => form['sys.mail.enabled'] === 'true',
   set: (val: boolean) => {
     form['sys.mail.enabled'] = val ? 'true' : 'false'
-  }
-})
-
-const logEnabled = computed({
-  get: () => form['sys.log.enabled'] === 'true',
-  set: (val: boolean) => {
-    form['sys.log.enabled'] = val ? 'true' : 'false'
-  }
-})
-
-const backupEnabled = computed({
-  get: () => form['sys.backup.enabled'] === 'true',
-  set: (val: boolean) => {
-    form['sys.backup.enabled'] = val ? 'true' : 'false'
   }
 })
 
@@ -342,7 +307,6 @@ onMounted(() => {
         <TabsTrigger value="security"><Shield class="h-4 w-4 mr-2" />安全设置</TabsTrigger>
         <TabsTrigger value="mail"><Mail class="h-4 w-4 mr-2" />邮件设置</TabsTrigger>
         <TabsTrigger value="storage"><HardDrive class="h-4 w-4 mr-2" />存储设置</TabsTrigger>
-        <TabsTrigger value="log"><FileText class="h-4 w-4 mr-2" />日志备份</TabsTrigger>
       </TabsList>
 
       <!-- 网站设置 -->
@@ -619,80 +583,6 @@ onMounted(() => {
       </TabsContent>
 
 
-      <!-- 日志备份 -->
-      <TabsContent value="log" class="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>日志配置</CardTitle>
-            <CardDescription>配置系统操作日志的记录方式</CardDescription>
-          </CardHeader>
-          <CardContent class="space-y-4">
-            <div class="flex items-center justify-between pb-4 border-b">
-              <div class="space-y-0.5">
-                <Label class="text-base">启用日志记录</Label>
-                <p class="text-sm text-muted-foreground">开启后系统会记录用户的操作日志</p>
-              </div>
-              <Switch v-model:checked="logEnabled" />
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="grid gap-2">
-                <Label>日志保留天数</Label>
-                <Input v-model="form['sys.log.retentionDays']" type="number" placeholder="30" />
-                <p class="text-xs text-muted-foreground">超过保留天数的日志将被自动清理</p>
-              </div>
-              <div class="grid gap-2">
-                <Label>日志级别</Label>
-                <Select v-model="form['sys.log.level']">
-                  <SelectTrigger><SelectValue placeholder="选择日志级别" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="debug">Debug - 调试</SelectItem>
-                    <SelectItem value="info">Info - 信息</SelectItem>
-                    <SelectItem value="warn">Warn - 警告</SelectItem>
-                    <SelectItem value="error">Error - 错误</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle class="flex items-center gap-2"><Database class="h-5 w-5" />数据备份</CardTitle>
-            <CardDescription>配置系统数据的自动备份</CardDescription>
-          </CardHeader>
-          <CardContent class="space-y-4">
-            <div class="flex items-center justify-between pb-4 border-b">
-              <div class="space-y-0.5">
-                <Label class="text-base">启用自动备份</Label>
-                <p class="text-sm text-muted-foreground">开启后系统会定期自动备份数据库</p>
-              </div>
-              <Switch v-model:checked="backupEnabled" />
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="grid gap-2">
-                <Label>备份周期</Label>
-                <Select v-model="form['sys.backup.cron']">
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hourly">每小时</SelectItem>
-                    <SelectItem value="daily">每天</SelectItem>
-                    <SelectItem value="weekly">每周</SelectItem>
-                    <SelectItem value="monthly">每月</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div class="grid gap-2">
-                <Label>保留份数</Label>
-                <Input v-model="form['sys.backup.retention']" type="number" min="1" />
-                <p class="text-xs text-muted-foreground">保留最近N份备份文件</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
     </Tabs>
   </div>
 </template>
