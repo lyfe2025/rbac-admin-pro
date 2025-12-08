@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -115,6 +115,7 @@ async function getData() {
         ;(form as any)[item.configKey] = value
       }
     })
+    console.log('数据加载完成，验证码开关值:', form['sys.account.captchaEnabled'])
   } finally {
     loading.value = false
   }
@@ -123,16 +124,6 @@ async function getData() {
 
 async function handleSubmit() {
   submitLoading.value = true
-
-  // 调试：打印当前 form 值和 configMap
-  console.log('=== 保存调试信息 ===')
-  console.log('form 当前值:', JSON.parse(JSON.stringify(form)))
-  console.log('configMap 键:', Object.keys(configMap.value))
-  console.log('验证码开关 form 值:', form['sys.account.captchaEnabled'])
-  console.log(
-    '验证码开关 configMap 值:',
-    configMap.value['sys.account.captchaEnabled']?.configValue,
-  )
 
   try {
     const updates: Promise<any>[] = []
@@ -260,11 +251,48 @@ function handleReset() {
   toast({ title: '已重置', description: '表单已恢复为当前配置' })
 }
 
-// 更新 Switch 开关值
-function updateSwitch(key: keyof typeof form, value: boolean) {
-  ;(form as any)[key] = value ? 'true' : 'false'
-  console.log(`Switch 更新: ${key} = ${(form as any)[key]}`)
-}
+// 为每个 Switch 创建计算属性，处理字符串和布尔值的转换
+const captchaEnabled = computed({
+  get: () => form['sys.account.captchaEnabled'] === 'true',
+  set: (val: boolean) => {
+    form['sys.account.captchaEnabled'] = val ? 'true' : 'false'
+  }
+})
+
+const twoFactorEnabled = computed({
+  get: () => form['sys.account.twoFactorEnabled'] === 'true',
+  set: (val: boolean) => {
+    form['sys.account.twoFactorEnabled'] = val ? 'true' : 'false'
+  }
+})
+
+const registerEnabled = computed({
+  get: () => form['sys.account.registerEnabled'] === 'true',
+  set: (val: boolean) => {
+    form['sys.account.registerEnabled'] = val ? 'true' : 'false'
+  }
+})
+
+const mailEnabled = computed({
+  get: () => form['sys.mail.enabled'] === 'true',
+  set: (val: boolean) => {
+    form['sys.mail.enabled'] = val ? 'true' : 'false'
+  }
+})
+
+const logEnabled = computed({
+  get: () => form['sys.log.enabled'] === 'true',
+  set: (val: boolean) => {
+    form['sys.log.enabled'] = val ? 'true' : 'false'
+  }
+})
+
+const backupEnabled = computed({
+  get: () => form['sys.backup.enabled'] === 'true',
+  set: (val: boolean) => {
+    form['sys.backup.enabled'] = val ? 'true' : 'false'
+  }
+})
 
 onMounted(() => {
   getData()
@@ -368,30 +396,21 @@ onMounted(() => {
                 <Label class="text-base flex items-center gap-2"><KeyRound class="h-4 w-4" />登录验证码</Label>
                 <p class="text-sm text-muted-foreground">开启后，用户登录时需要输入图形验证码</p>
               </div>
-              <Switch
-                :checked="form['sys.account.captchaEnabled'] === 'true'"
-                @update:checked="updateSwitch('sys.account.captchaEnabled', $event)"
-              />
+              <Switch v-model:checked="captchaEnabled" />
             </div>
             <div class="flex items-center justify-between">
               <div class="space-y-0.5">
                 <Label class="text-base flex items-center gap-2"><Shield class="h-4 w-4" />两步验证</Label>
                 <p class="text-sm text-muted-foreground">开启后，用户可以绑定手机或邮箱进行二次验证</p>
               </div>
-              <Switch
-                :checked="form['sys.account.twoFactorEnabled'] === 'true'"
-                @update:checked="updateSwitch('sys.account.twoFactorEnabled', $event)"
-              />
+              <Switch v-model:checked="twoFactorEnabled" />
             </div>
             <div class="flex items-center justify-between">
               <div class="space-y-0.5">
                 <Label class="text-base flex items-center gap-2"><UserPlus class="h-4 w-4" />用户注册</Label>
                 <p class="text-sm text-muted-foreground">开启后，允许新用户自行注册账号</p>
               </div>
-              <Switch
-                :checked="form['sys.account.registerEnabled'] === 'true'"
-                @update:checked="updateSwitch('sys.account.registerEnabled', $event)"
-              />
+              <Switch v-model:checked="registerEnabled" />
             </div>
           </CardContent>
         </Card>
@@ -468,10 +487,7 @@ onMounted(() => {
                 <Label class="text-base">启用邮件服务</Label>
                 <p class="text-sm text-muted-foreground">开启后系统可发送邮件通知</p>
               </div>
-              <Switch
-                :checked="form['sys.mail.enabled'] === 'true'"
-                @update:checked="updateSwitch('sys.mail.enabled', $event)"
-              />
+              <Switch v-model:checked="mailEnabled" />
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -588,10 +604,7 @@ onMounted(() => {
                 <Label class="text-base">启用日志记录</Label>
                 <p class="text-sm text-muted-foreground">开启后系统会记录用户的操作日志</p>
               </div>
-              <Switch
-                :checked="form['sys.log.enabled'] === 'true'"
-                @update:checked="updateSwitch('sys.log.enabled', $event)"
-              />
+              <Switch v-model:checked="logEnabled" />
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -627,10 +640,7 @@ onMounted(() => {
                 <Label class="text-base">启用自动备份</Label>
                 <p class="text-sm text-muted-foreground">开启后系统会定期自动备份数据库</p>
               </div>
-              <Switch
-                :checked="form['sys.backup.enabled'] === 'true'"
-                @update:checked="updateSwitch('sys.backup.enabled', $event)"
-              />
+              <Switch v-model:checked="backupEnabled" />
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -27,23 +27,53 @@ export class AuthController {
     // 登录日志已在 AuthService 中记录,这里只处理在线用户
     const res = await this.authService.login(loginDto);
 
+    // 解析 User-Agent
+    const userAgent = req.headers['user-agent'] || '';
+    const { browser, os } = this.parseUserAgent(userAgent);
+
     // 注册在线用户
-    this.onlineService.add({
+    await this.onlineService.add({
       token: res.token,
       userName: loginDto.username,
       ipaddr: req.ip || '',
       loginTime: new Date(),
+      browser,
+      os,
     });
 
     return res;
   }
 
+  /**
+   * 解析 User-Agent
+   */
+  private parseUserAgent(userAgent: string): { browser: string; os: string } {
+    let browser = 'Unknown';
+    let os = 'Unknown';
+
+    // 解析浏览器
+    if (userAgent.includes('Edg')) browser = 'Edge';
+    else if (userAgent.includes('Chrome')) browser = 'Chrome';
+    else if (userAgent.includes('Firefox')) browser = 'Firefox';
+    else if (userAgent.includes('Safari')) browser = 'Safari';
+    else if (userAgent.includes('Opera')) browser = 'Opera';
+
+    // 解析操作系统
+    if (userAgent.includes('Windows')) os = 'Windows';
+    else if (userAgent.includes('Mac OS')) os = 'macOS';
+    else if (userAgent.includes('Linux')) os = 'Linux';
+    else if (userAgent.includes('Android')) os = 'Android';
+    else if (userAgent.includes('iOS')) os = 'iOS';
+
+    return { browser, os };
+  }
+
   @Post('logout')
-  logout(@Req() req: Request) {
+  async logout(@Req() req: Request) {
     const auth = req.headers['authorization'];
     const token = auth?.startsWith('Bearer ') ? auth.substring(7) : '';
     if (token) {
-      this.onlineService.remove(token);
+      await this.onlineService.remove(token);
       void this.tokenBlacklist.add(token);
     }
     return this.authService.logout();

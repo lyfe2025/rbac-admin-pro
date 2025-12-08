@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { QueryOnlineDto } from './dto/query-online.dto';
 import { LoggerService } from '../../common/logger/logger.service';
+import { IpUtil } from '../../common/utils/ip.util';
 
 export interface OnlineUser {
   token: string;
@@ -59,7 +60,7 @@ export class OnlineService {
         tokenId: r.token,
         userName: r.userName,
         ipaddr: r.ipaddr,
-        loginLocation: '',
+        loginLocation: IpUtil.getLocation(r.ipaddr),
         browser: r.browser ?? '',
         os: r.os ?? '',
         loginTime:

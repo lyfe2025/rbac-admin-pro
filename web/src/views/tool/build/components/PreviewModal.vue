@@ -104,8 +104,7 @@ function close() {
                <component 
                  :is="field.type === 'switch' ? Switch : Checkbox" 
                  :id="`preview-${field.id}`" 
-                 :checked="previewForm[field.key]"
-                 @update:checked="(val: boolean) => previewForm[field.key] = val"
+                 v-model:checked="previewForm[field.key]"
                />
                <Label :for="`preview-${field.id}`">{{ field.label }}</Label>
              </div>

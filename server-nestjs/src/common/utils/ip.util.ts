@@ -53,18 +53,76 @@ export class IpUtil {
 
       // 中国城市映射
       const cityMap: Record<string, string> = {
+        // 直辖市
         Beijing: '北京',
         Shanghai: '上海',
+        Chongqing: '重庆',
+        Tianjin: '天津',
+        // 省会城市
         Guangzhou: '广州',
         Shenzhen: '深圳',
         Hangzhou: '杭州',
         Chengdu: '成都',
         Wuhan: '武汉',
         Nanjing: '南京',
-        Chongqing: '重庆',
-        Tianjin: '天津',
         "Xi'an": '西安',
+        Xian: '西安',
+        Zhengzhou: '郑州',
+        Changsha: '长沙',
+        Jinan: '济南',
+        Shenyang: '沈阳',
+        Harbin: '哈尔滨',
+        Changchun: '长春',
+        Shijiazhuang: '石家庄',
+        Taiyuan: '太原',
+        Hefei: '合肥',
+        Fuzhou: '福州',
+        Nanchang: '南昌',
+        Kunming: '昆明',
+        Guiyang: '贵阳',
+        Nanning: '南宁',
+        Haikou: '海口',
+        Lanzhou: '兰州',
+        Yinchuan: '银川',
+        Xining: '西宁',
+        Hohhot: '呼和浩特',
+        Urumqi: '乌鲁木齐',
+        Lhasa: '拉萨',
+        // 重要城市
         Suzhou: '苏州',
+        Wuxi: '无锡',
+        Ningbo: '宁波',
+        Qingdao: '青岛',
+        Dalian: '大连',
+        Xiamen: '厦门',
+        Dongguan: '东莞',
+        Foshan: '佛山',
+        Zhuhai: '珠海',
+        Zhongshan: '中山',
+        Huizhou: '惠州',
+        Wenzhou: '温州',
+        Changzhou: '常州',
+        Nantong: '南通',
+        Yangzhou: '扬州',
+        Xuzhou: '徐州',
+        Yantai: '烟台',
+        Weifang: '潍坊',
+        Linyi: '临沂',
+        Tangshan: '唐山',
+        Baoding: '保定',
+        Luoyang: '洛阳',
+        Zibo: '淄博',
+        Quanzhou: '泉州',
+        Shaoxing: '绍兴',
+        Jiaxing: '嘉兴',
+        Taizhou: '台州',
+        Jinhua: '金华',
+        Huzhou: '湖州',
+        Zhenjiang: '镇江',
+        Yancheng: '盐城',
+        Huaian: '淮安',
+        Lianyungang: '连云港',
+        Suqian: '宿迁',
       };
 
       const country = geo.country === 'CN' ? '中国' : geo.country;
@@ -76,7 +134,7 @@ export class IpUtil {
       }
 
       return city ? `${country} ${city}` : country;
-    } catch (error) {
+    } catch {
       return '未知';
     }
   }

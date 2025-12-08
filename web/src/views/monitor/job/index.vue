@@ -270,8 +270,8 @@ onMounted(() => {
             <TableCell><Badge variant="outline">{{ item.cronExpression }}</Badge></TableCell>
             <TableCell>
                <Switch 
-                 :checked="item.status === '0'" 
-                 @update:checked="handleStatusChange(item)"
+                 :model-value="item.status === '0'" 
+                 @update:model-value="handleStatusChange(item)"
                />
             </TableCell>
             <TableCell>{{ item.createTime }}</TableCell>
@@ -392,8 +392,8 @@ onMounted(() => {
             <Label for="status">状态</Label>
             <div class="flex items-center space-x-2">
                <Switch 
-                 :checked="form.status === '0'" 
-                 @update:checked="(v: boolean) => form.status = v ? '0' : '1'"
+                 :model-value="form.status === '0'" 
+                 @update:model-value="(v: boolean) => form.status = v ? '0' : '1'"
                />
                <span class="text-sm text-muted-foreground">{{ form.status === '0' ? '正常' : '暂停' }}</span>
             </div>

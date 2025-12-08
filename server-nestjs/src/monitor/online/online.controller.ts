@@ -1,6 +1,14 @@
-import { Controller, Get, Delete, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Delete,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { OnlineService } from './online.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { QueryOnlineDto } from './dto/query-online.dto';
 
 /**
  * 在线用户接口
@@ -11,13 +19,13 @@ export class OnlineController {
   constructor(private readonly onlineService: OnlineService) {}
 
   @Get('list')
-  list() {
-    return this.onlineService.list();
+  list(@Query() query: QueryOnlineDto) {
+    return this.onlineService.list(query);
   }
 
   @Delete(':token')
-  remove(@Param('token') token: string) {
-    this.onlineService.remove(token);
+  async remove(@Param('token') token: string) {
+    await this.onlineService.remove(token);
     return { removed: true };
   }
 }
