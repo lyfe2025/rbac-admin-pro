@@ -364,6 +364,17 @@ type_check() { (cd "$WEB_DIR" && npm run type-check); }
 validate_server() { (cd "$SERVER_DIR" && npm run validate); }
 migrate_dev() { (cd "$SERVER_DIR" && npx prisma migrate dev); }
 studio() { (cd "$SERVER_DIR" && npx prisma studio); }
+reset_db() {
+  printf "${FG_YELLOW}⚠️  警告: 此操作将删除所有数据并重置数据库到初始状态!${RESET}\n"
+  read -rp "确认重置数据库? (y/N): " confirm
+  if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+    printf "${FG_BLUE}正在重置数据库...${RESET}\n"
+    (cd "$SERVER_DIR" && npx prisma migrate reset --force && npx prisma db seed)
+    printf "${FG_GREEN}数据库已重置并重新初始化${RESET}\n"
+  else
+    printf "${FG_BLUE}已取消重置操作${RESET}\n"
+  fi
+}
 smoke_tests() {
   (cd "$SERVER_DIR" && bash test-login.sh)
   (cd "$SERVER_DIR" && bash test-getinfo.sh)
@@ -409,6 +420,7 @@ print_menu() {
   printf -- "${FG_CYAN}6${RESET}. 前端类型检查\n"
   printf -- "${FG_CYAN}7${RESET}. 后端代码校验\n"
   printf -- "${FG_CYAN}8${RESET}. 后端快速 API 冒烟测试\n"
+  printf -- "${FG_RED}9${RESET}. 重置数据库到初始状态 (危险)\n"
   printf -- "${FG_CYAN}0${RESET}. 退出\n"
 }
 
@@ -422,6 +434,7 @@ run_by_id() {
     6) type_check ;;
     7) validate_server ;;
     8) smoke_tests ;;
+    9) reset_db ;;
     0) exit 0 ;;
     *) echo "无效的选项" ;;
   esac
