@@ -115,7 +115,6 @@ async function getData() {
         ;(form as any)[item.configKey] = value
       }
     })
-    console.log('数据加载完成，验证码开关值:', form['sys.account.captchaEnabled'])
   } finally {
     loading.value = false
   }
@@ -134,12 +133,10 @@ async function handleSubmit() {
         const originalValue = String(originalConfig.configValue ?? '')
         const newValue = String(value ?? '')
         if (originalValue !== newValue) {
-          console.log(`更新配置: ${key} = ${newValue} (原值: ${originalValue})`)
           updates.push(updateConfig({ ...originalConfig, configValue: newValue }))
         }
       } else {
         // 配置不存在，创建新配置
-        console.log(`创建配置: ${key} = ${value}`)
         updates.push(
           addConfig({
             configName: getConfigName(key),
