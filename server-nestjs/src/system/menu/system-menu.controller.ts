@@ -22,15 +22,18 @@ import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
 import { QueryMenuDto } from './dto/query-menu.dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { PermissionGuard } from '../../common/guards/permission.guard';
+import { RequirePermission } from '../../common/decorators/permission.decorator';
 
 @ApiTags('菜单管理')
 @ApiBearerAuth('JWT-auth')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 @Controller('system/menu')
 export class SystemMenuController {
   constructor(private readonly menuService: MenuService) {}
 
   @Post()
+  @RequirePermission('system:menu:add')
   @ApiOperation({ summary: '新增菜单' })
   @ApiBody({ type: CreateMenuDto })
   @ApiResponse({ status: 201, description: '创建成功' })
@@ -39,6 +42,7 @@ export class SystemMenuController {
   }
 
   @Get()
+  @RequirePermission('system:menu:list')
   @ApiOperation({ summary: '查询菜单列表' })
   @ApiResponse({ status: 200, description: '查询成功' })
   findAll(@Query() query: QueryMenuDto) {
@@ -46,6 +50,7 @@ export class SystemMenuController {
   }
 
   @Get('treeselect')
+  @RequirePermission('system:menu:list')
   @ApiOperation({ summary: '查询菜单下拉树' })
   @ApiResponse({ status: 200, description: '查询成功' })
   treeSelect(@Query() query: QueryMenuDto) {
@@ -53,6 +58,7 @@ export class SystemMenuController {
   }
 
   @Get('roleMenuTreeselect/:roleId')
+  @RequirePermission('system:menu:list')
   @ApiOperation({ summary: '查询角色菜单下拉树' })
   @ApiParam({ name: 'roleId', description: '角色ID' })
   @ApiResponse({ status: 200, description: '查询成功' })
@@ -63,6 +69,7 @@ export class SystemMenuController {
   }
 
   @Get(':menuId')
+  @RequirePermission('system:menu:query')
   @ApiOperation({ summary: '查询菜单详情' })
   @ApiParam({ name: 'menuId', description: '菜单ID' })
   @ApiResponse({ status: 200, description: '查询成功' })
@@ -71,6 +78,7 @@ export class SystemMenuController {
   }
 
   @Put(':menuId')
+  @RequirePermission('system:menu:edit')
   @ApiOperation({ summary: '修改菜单' })
   @ApiParam({ name: 'menuId', description: '菜单ID' })
   @ApiBody({ type: UpdateMenuDto })
@@ -83,6 +91,7 @@ export class SystemMenuController {
   }
 
   @Delete(':menuId')
+  @RequirePermission('system:menu:remove')
   @ApiOperation({ summary: '删除菜单' })
   @ApiParam({ name: 'menuId', description: '菜单ID' })
   @ApiResponse({ status: 200, description: '删除成功' })

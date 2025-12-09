@@ -69,7 +69,11 @@ export class JobExecutorService implements OnModuleInit, OnModuleDestroy {
 
       this.logger.log(`已加载 ${jobs.length} 个定时任务`, 'JobExecutor');
     } catch (error) {
-      this.logger.error('加载定时任务失败', (error as Error).stack, 'JobExecutor');
+      this.logger.error(
+        '加载定时任务失败',
+        (error as Error).stack,
+        'JobExecutor',
+      );
     }
   }
 
@@ -125,7 +129,10 @@ export class JobExecutorService implements OnModuleInit, OnModuleDestroy {
 
     // 并发控制：如果不允许并发且任务正在执行，则跳过
     if (task.concurrent === '1' && this.runningJobs.has(jobKey)) {
-      this.logger.warn(`任务 ${task.jobName} 正在执行中，跳过本次调度`, 'JobExecutor');
+      this.logger.warn(
+        `任务 ${task.jobName} 正在执行中，跳过本次调度`,
+        'JobExecutor',
+      );
       return;
     }
 
@@ -188,7 +195,9 @@ export class JobExecutorService implements OnModuleInit, OnModuleDestroy {
     if (target.startsWith('http://') || target.startsWith('https://')) {
       const response = await fetch(target, { method: 'GET' });
       if (!response.ok) {
-        throw new Error(`HTTP 请求失败: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `HTTP 请求失败: ${response.status} ${response.statusText}`,
+        );
       }
       return;
     }
@@ -236,7 +245,11 @@ export class JobExecutorService implements OnModuleInit, OnModuleDestroy {
         },
       });
     } catch (error) {
-      this.logger.error('保存任务日志失败', (error as Error).stack, 'JobExecutor');
+      this.logger.error(
+        '保存任务日志失败',
+        (error as Error).stack,
+        'JobExecutor',
+      );
     }
   }
 

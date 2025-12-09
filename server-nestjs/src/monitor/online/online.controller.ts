@@ -8,13 +8,15 @@ import {
 } from '@nestjs/common';
 import { OnlineService } from './online.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { PermissionGuard } from '../../common/guards/permission.guard';
+import { RequirePermission } from '../../common/decorators/permission.decorator';
 import { QueryOnlineDto } from './dto/query-online.dto';
 import { TokenBlacklistService } from '../../auth/token-blacklist.service';
 
 /**
  * 在线用户接口
  */
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 @Controller('monitor/online')
 export class OnlineController {
   constructor(
@@ -23,11 +25,13 @@ export class OnlineController {
   ) {}
 
   @Get('list')
+  @RequirePermission('monitor:online:list')
   list(@Query() query: QueryOnlineDto) {
     return this.onlineService.list(query);
   }
 
   @Delete(':token')
+  @RequirePermission('monitor:online:forceLogout')
   async remove(@Param('token') token: string) {
     // 将 token 加入黑名单，使其立即失效
     await this.tokenBlacklistService.add(token);

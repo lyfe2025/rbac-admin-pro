@@ -19,6 +19,8 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { PermissionGuard } from '../../common/guards/permission.guard';
+import { RequirePermission } from '../../common/decorators/permission.decorator';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -27,7 +29,7 @@ import { Log, BusinessType } from '../../common/decorators/log.decorator';
 
 @ApiTags('用户管理')
 @ApiBearerAuth('JWT-auth')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 @Controller('system/user')
 export class UserController {
   constructor(private userService: UserService) {}
@@ -77,6 +79,7 @@ export class UserController {
   }
 
   @Post()
+  @RequirePermission('system:user:add')
   @Log('用户管理', BusinessType.INSERT)
   @ApiOperation({ summary: '新增用户' })
   @ApiBody({ type: CreateUserDto })
@@ -86,6 +89,7 @@ export class UserController {
   }
 
   @Get()
+  @RequirePermission('system:user:list')
   @ApiOperation({ summary: '查询用户列表' })
   @ApiResponse({ status: 200, description: '查询成功' })
   findAll(@Query() query: QueryUserDto) {
@@ -93,6 +97,7 @@ export class UserController {
   }
 
   @Get(':userId')
+  @RequirePermission('system:user:query')
   @ApiOperation({ summary: '查询用户详情' })
   @ApiParam({ name: 'userId', description: '用户ID' })
   @ApiResponse({ status: 200, description: '查询成功' })
@@ -101,6 +106,7 @@ export class UserController {
   }
 
   @Put('resetPwd')
+  @RequirePermission('system:user:resetPwd')
   @ApiOperation({ summary: '重置用户密码' })
   @ApiResponse({ status: 200, description: '重置成功' })
   resetPassword(@Body() body: { userId: string; password: string }) {
@@ -108,6 +114,7 @@ export class UserController {
   }
 
   @Put('changeStatus')
+  @RequirePermission('system:user:edit')
   @ApiOperation({ summary: '修改用户状态' })
   @ApiResponse({ status: 200, description: '修改成功' })
   changeStatus(@Body() body: { userId: string; status: string }) {
@@ -115,6 +122,7 @@ export class UserController {
   }
 
   @Put(':userId')
+  @RequirePermission('system:user:edit')
   @Log('用户管理', BusinessType.UPDATE)
   @ApiOperation({ summary: '修改用户' })
   @ApiParam({ name: 'userId', description: '用户ID' })
@@ -128,6 +136,7 @@ export class UserController {
   }
 
   @Delete(':userId')
+  @RequirePermission('system:user:remove')
   @Log('用户管理', BusinessType.DELETE)
   @ApiOperation({ summary: '删除用户' })
   @ApiParam({ name: 'userId', description: '用户ID' })

@@ -10,6 +10,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { PermissionGuard } from '../../common/guards/permission.guard';
+import { RequirePermission } from '../../common/decorators/permission.decorator';
 import { ConfigService } from './config.service';
 import { QueryConfigDto } from './dto/query-config.dto';
 import { CreateConfigDto } from './dto/create-config.dto';
@@ -35,38 +37,44 @@ export class ConfigController {
     return await this.service.getSiteConfig();
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('system:config:list')
   @Get()
   list(@Query() query: QueryConfigDto) {
     return this.service.findAll(query);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('system:config:query')
   @Get(':configId')
   get(@Param('configId') configId: string) {
     return this.service.findOne(configId);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('system:config:add')
   @Post()
   create(@Body() dto: CreateConfigDto) {
     return this.service.create(dto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('system:config:edit')
   @Put(':configId')
   update(@Param('configId') configId: string, @Body() dto: UpdateConfigDto) {
     return this.service.update(configId, dto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('system:config:remove')
   @Delete()
   remove(@Query('ids') ids: string) {
     const configIds = ids ? ids.split(',') : [];
     return this.service.remove(configIds);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequirePermission('system:config:edit')
   @Get('refreshCache')
   refresh() {
     return this.service.refreshCache();

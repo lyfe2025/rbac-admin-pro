@@ -381,7 +381,7 @@ FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '服务监控', 'server', 'monitor/server/index', 5, 'C', '0', '0', 'server', 1, menu_id, 'monitor:server:view'
+SELECT '服务监控', 'server', 'monitor/server/index', 5, 'C', '0', '0', 'server', 1, menu_id, 'monitor:server:list'
 FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL
 ON CONFLICT DO NOTHING;
 
@@ -415,160 +415,195 @@ ON CONFLICT DO NOTHING;
 -- 13. 初始化按钮权限（F 类型）
 -- 13.1 用户管理按钮
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '用户新增', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'system:user:add'
+SELECT '用户查询', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'system:user:query'
 FROM sys_menu WHERE path = 'user' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '用户修改', '', '', 2, 'F', '1', '0', '#', 1, menu_id, 'system:user:edit'
+SELECT '用户新增', '', '', 2, 'F', '1', '0', '#', 1, menu_id, 'system:user:add'
 FROM sys_menu WHERE path = 'user' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '用户删除', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'system:user:remove'
+SELECT '用户修改', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'system:user:edit'
 FROM sys_menu WHERE path = 'user' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '重置密码', '', '', 4, 'F', '1', '0', '#', 1, menu_id, 'system:user:resetPwd'
+SELECT '用户删除', '', '', 4, 'F', '1', '0', '#', 1, menu_id, 'system:user:remove'
 FROM sys_menu WHERE path = 'user' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '修改状态', '', '', 5, 'F', '1', '0', '#', 1, menu_id, 'system:user:changeStatus'
+SELECT '重置密码', '', '', 5, 'F', '1', '0', '#', 1, menu_id, 'system:user:resetPwd'
 FROM sys_menu WHERE path = 'user' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 -- 13.2 角色管理按钮
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '角色新增', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'system:role:add'
+SELECT '角色查询', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'system:role:query'
 FROM sys_menu WHERE path = 'role' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '角色修改', '', '', 2, 'F', '1', '0', '#', 1, menu_id, 'system:role:edit'
+SELECT '角色新增', '', '', 2, 'F', '1', '0', '#', 1, menu_id, 'system:role:add'
 FROM sys_menu WHERE path = 'role' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '角色删除', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'system:role:remove'
+SELECT '角色修改', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'system:role:edit'
+FROM sys_menu WHERE path = 'role' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '角色删除', '', '', 4, 'F', '1', '0', '#', 1, menu_id, 'system:role:remove'
 FROM sys_menu WHERE path = 'role' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 -- 13.3 菜单管理按钮
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '菜单新增', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'system:menu:add'
+SELECT '菜单查询', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'system:menu:query'
 FROM sys_menu WHERE path = 'menu' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '菜单修改', '', '', 2, 'F', '1', '0', '#', 1, menu_id, 'system:menu:edit'
+SELECT '菜单新增', '', '', 2, 'F', '1', '0', '#', 1, menu_id, 'system:menu:add'
 FROM sys_menu WHERE path = 'menu' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '菜单删除', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'system:menu:remove'
+SELECT '菜单修改', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'system:menu:edit'
+FROM sys_menu WHERE path = 'menu' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '菜单删除', '', '', 4, 'F', '1', '0', '#', 1, menu_id, 'system:menu:remove'
 FROM sys_menu WHERE path = 'menu' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 -- 13.4 部门管理按钮
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '部门新增', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'system:dept:add'
+SELECT '部门查询', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'system:dept:query'
 FROM sys_menu WHERE path = 'dept' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '部门修改', '', '', 2, 'F', '1', '0', '#', 1, menu_id, 'system:dept:edit'
+SELECT '部门新增', '', '', 2, 'F', '1', '0', '#', 1, menu_id, 'system:dept:add'
 FROM sys_menu WHERE path = 'dept' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '部门删除', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'system:dept:remove'
+SELECT '部门修改', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'system:dept:edit'
+FROM sys_menu WHERE path = 'dept' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '部门删除', '', '', 4, 'F', '1', '0', '#', 1, menu_id, 'system:dept:remove'
 FROM sys_menu WHERE path = 'dept' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 -- 13.5 岗位管理按钮
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '岗位新增', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'system:post:add'
+SELECT '岗位查询', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'system:post:query'
 FROM sys_menu WHERE path = 'post' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '岗位修改', '', '', 2, 'F', '1', '0', '#', 1, menu_id, 'system:post:edit'
+SELECT '岗位新增', '', '', 2, 'F', '1', '0', '#', 1, menu_id, 'system:post:add'
 FROM sys_menu WHERE path = 'post' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '岗位删除', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'system:post:remove'
+SELECT '岗位修改', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'system:post:edit'
+FROM sys_menu WHERE path = 'post' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '岗位删除', '', '', 4, 'F', '1', '0', '#', 1, menu_id, 'system:post:remove'
 FROM sys_menu WHERE path = 'post' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 -- 13.6 字典管理按钮
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '字典新增', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'system:dict:add'
+SELECT '字典查询', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'system:dict:query'
 FROM sys_menu WHERE path = 'dict' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '字典修改', '', '', 2, 'F', '1', '0', '#', 1, menu_id, 'system:dict:edit'
+SELECT '字典新增', '', '', 2, 'F', '1', '0', '#', 1, menu_id, 'system:dict:add'
 FROM sys_menu WHERE path = 'dict' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '字典删除', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'system:dict:remove'
+SELECT '字典修改', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'system:dict:edit'
+FROM sys_menu WHERE path = 'dict' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '字典删除', '', '', 4, 'F', '1', '0', '#', 1, menu_id, 'system:dict:remove'
 FROM sys_menu WHERE path = 'dict' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 -- 13.7 参数设置按钮
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '参数新增', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'system:config:add'
+SELECT '参数查询', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'system:config:query'
 FROM sys_menu WHERE path = 'config' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '参数修改', '', '', 2, 'F', '1', '0', '#', 1, menu_id, 'system:config:edit'
+SELECT '参数新增', '', '', 2, 'F', '1', '0', '#', 1, menu_id, 'system:config:add'
 FROM sys_menu WHERE path = 'config' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '参数删除', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'system:config:remove'
+SELECT '参数修改', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'system:config:edit'
+FROM sys_menu WHERE path = 'config' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '参数删除', '', '', 4, 'F', '1', '0', '#', 1, menu_id, 'system:config:remove'
 FROM sys_menu WHERE path = 'config' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 -- 13.8 通知公告按钮
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '公告新增', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'system:notice:add'
+SELECT '公告查询', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'system:notice:query'
 FROM sys_menu WHERE path = 'notice' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '公告修改', '', '', 2, 'F', '1', '0', '#', 1, menu_id, 'system:notice:edit'
+SELECT '公告新增', '', '', 2, 'F', '1', '0', '#', 1, menu_id, 'system:notice:add'
 FROM sys_menu WHERE path = 'notice' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '公告删除', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'system:notice:remove'
+SELECT '公告修改', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'system:notice:edit'
+FROM sys_menu WHERE path = 'notice' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '公告删除', '', '', 4, 'F', '1', '0', '#', 1, menu_id, 'system:notice:remove'
 FROM sys_menu WHERE path = 'notice' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 -- 13.9 定时任务按钮
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '任务新增', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'monitor:job:add'
+SELECT '任务查询', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'monitor:job:query'
 FROM sys_menu WHERE path = 'job' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '任务修改', '', '', 2, 'F', '1', '0', '#', 1, menu_id, 'monitor:job:edit'
+SELECT '任务新增', '', '', 2, 'F', '1', '0', '#', 1, menu_id, 'monitor:job:add'
 FROM sys_menu WHERE path = 'job' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '任务删除', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'monitor:job:remove'
+SELECT '任务修改', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'monitor:job:edit'
 FROM sys_menu WHERE path = 'job' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
-SELECT '立即执行', '', '', 4, 'F', '1', '0', '#', 1, menu_id, 'monitor:job:run'
+SELECT '任务删除', '', '', 4, 'F', '1', '0', '#', 1, menu_id, 'monitor:job:remove'
 FROM sys_menu WHERE path = 'job' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
@@ -592,6 +627,18 @@ ON CONFLICT DO NOTHING;
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
 SELECT '强退用户', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'monitor:online:forceLogout'
 FROM sys_menu WHERE path = 'online' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+-- 13.12 操作日志按钮
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '日志删除', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'monitor:operlog:remove'
+FROM sys_menu WHERE path = 'operlog' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+-- 13.13 登录日志按钮
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '日志删除', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'monitor:logininfor:remove'
+FROM sys_menu WHERE path = 'logininfor' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
 

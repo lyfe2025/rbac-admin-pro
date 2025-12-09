@@ -570,7 +570,7 @@ async function main() {
     menuType: 'C',
     visible: '0',
     status: '0',
-    perms: 'monitor:server:view',
+    perms: 'monitor:server:list',
     icon: 'server',
     isFrame: 1,
   });
@@ -646,208 +646,250 @@ async function main() {
   const userMenu = await getMenuByPath(systemDir.menuId, 'user');
   if (userMenu) {
     await ensureButton({
+      menuName: '用户查询',
+      parentId: userMenu.menuId,
+      perms: 'system:user:query',
+      orderNum: 1,
+    });
+    await ensureButton({
       menuName: '用户新增',
       parentId: userMenu.menuId,
       perms: 'system:user:add',
-      orderNum: 1,
+      orderNum: 2,
     });
     await ensureButton({
       menuName: '用户修改',
       parentId: userMenu.menuId,
       perms: 'system:user:edit',
-      orderNum: 2,
+      orderNum: 3,
     });
     await ensureButton({
       menuName: '用户删除',
       parentId: userMenu.menuId,
       perms: 'system:user:remove',
-      orderNum: 3,
+      orderNum: 4,
     });
     await ensureButton({
       menuName: '重置密码',
       parentId: userMenu.menuId,
       perms: 'system:user:resetPwd',
-      orderNum: 4,
-    });
-    await ensureButton({
-      menuName: '修改状态',
-      parentId: userMenu.menuId,
-      perms: 'system:user:changeStatus',
       orderNum: 5,
     });
   }
   const roleMenu = await getMenuByPath(systemDir.menuId, 'role');
   if (roleMenu) {
     await ensureButton({
+      menuName: '角色查询',
+      parentId: roleMenu.menuId,
+      perms: 'system:role:query',
+      orderNum: 1,
+    });
+    await ensureButton({
       menuName: '角色新增',
       parentId: roleMenu.menuId,
       perms: 'system:role:add',
-      orderNum: 1,
+      orderNum: 2,
     });
     await ensureButton({
       menuName: '角色修改',
       parentId: roleMenu.menuId,
       perms: 'system:role:edit',
-      orderNum: 2,
+      orderNum: 3,
     });
     await ensureButton({
       menuName: '角色删除',
       parentId: roleMenu.menuId,
       perms: 'system:role:remove',
-      orderNum: 3,
+      orderNum: 4,
     });
   }
   const menuMenu = await getMenuByPath(systemDir.menuId, 'menu');
   if (menuMenu) {
     await ensureButton({
+      menuName: '菜单查询',
+      parentId: menuMenu.menuId,
+      perms: 'system:menu:query',
+      orderNum: 1,
+    });
+    await ensureButton({
       menuName: '菜单新增',
       parentId: menuMenu.menuId,
       perms: 'system:menu:add',
-      orderNum: 1,
+      orderNum: 2,
     });
     await ensureButton({
       menuName: '菜单修改',
       parentId: menuMenu.menuId,
       perms: 'system:menu:edit',
-      orderNum: 2,
+      orderNum: 3,
     });
     await ensureButton({
       menuName: '菜单删除',
       parentId: menuMenu.menuId,
       perms: 'system:menu:remove',
-      orderNum: 3,
+      orderNum: 4,
     });
   }
   const deptMenu = await getMenuByPath(systemDir.menuId, 'dept');
   if (deptMenu) {
     await ensureButton({
+      menuName: '部门查询',
+      parentId: deptMenu.menuId,
+      perms: 'system:dept:query',
+      orderNum: 1,
+    });
+    await ensureButton({
       menuName: '部门新增',
       parentId: deptMenu.menuId,
       perms: 'system:dept:add',
-      orderNum: 1,
+      orderNum: 2,
     });
     await ensureButton({
       menuName: '部门修改',
       parentId: deptMenu.menuId,
       perms: 'system:dept:edit',
-      orderNum: 2,
+      orderNum: 3,
     });
     await ensureButton({
       menuName: '部门删除',
       parentId: deptMenu.menuId,
       perms: 'system:dept:remove',
-      orderNum: 3,
+      orderNum: 4,
     });
   }
   const postMenu = await getMenuByPath(systemDir.menuId, 'post');
   if (postMenu) {
     await ensureButton({
+      menuName: '岗位查询',
+      parentId: postMenu.menuId,
+      perms: 'system:post:query',
+      orderNum: 1,
+    });
+    await ensureButton({
       menuName: '岗位新增',
       parentId: postMenu.menuId,
       perms: 'system:post:add',
-      orderNum: 1,
+      orderNum: 2,
     });
     await ensureButton({
       menuName: '岗位修改',
       parentId: postMenu.menuId,
       perms: 'system:post:edit',
-      orderNum: 2,
+      orderNum: 3,
     });
     await ensureButton({
       menuName: '岗位删除',
       parentId: postMenu.menuId,
       perms: 'system:post:remove',
-      orderNum: 3,
+      orderNum: 4,
     });
   }
   const dictMenu = await getMenuByPath(systemDir.menuId, 'dict');
   if (dictMenu) {
     await ensureButton({
+      menuName: '字典查询',
+      parentId: dictMenu.menuId,
+      perms: 'system:dict:query',
+      orderNum: 1,
+    });
+    await ensureButton({
       menuName: '字典新增',
       parentId: dictMenu.menuId,
       perms: 'system:dict:add',
-      orderNum: 1,
+      orderNum: 2,
     });
     await ensureButton({
       menuName: '字典修改',
       parentId: dictMenu.menuId,
       perms: 'system:dict:edit',
-      orderNum: 2,
+      orderNum: 3,
     });
     await ensureButton({
       menuName: '字典删除',
       parentId: dictMenu.menuId,
       perms: 'system:dict:remove',
-      orderNum: 3,
+      orderNum: 4,
     });
   }
   const configMenu = await getMenuByPath(systemDir.menuId, 'config');
   if (configMenu) {
     await ensureButton({
+      menuName: '参数查询',
+      parentId: configMenu.menuId,
+      perms: 'system:config:query',
+      orderNum: 1,
+    });
+    await ensureButton({
       menuName: '参数新增',
       parentId: configMenu.menuId,
       perms: 'system:config:add',
-      orderNum: 1,
+      orderNum: 2,
     });
     await ensureButton({
       menuName: '参数修改',
       parentId: configMenu.menuId,
       perms: 'system:config:edit',
-      orderNum: 2,
+      orderNum: 3,
     });
     await ensureButton({
       menuName: '参数删除',
       parentId: configMenu.menuId,
       perms: 'system:config:remove',
-      orderNum: 3,
+      orderNum: 4,
     });
   }
   const noticeMenu = await getMenuByPath(systemDir.menuId, 'notice');
   if (noticeMenu) {
     await ensureButton({
+      menuName: '公告查询',
+      parentId: noticeMenu.menuId,
+      perms: 'system:notice:query',
+      orderNum: 1,
+    });
+    await ensureButton({
       menuName: '公告新增',
       parentId: noticeMenu.menuId,
       perms: 'system:notice:add',
-      orderNum: 1,
+      orderNum: 2,
     });
     await ensureButton({
       menuName: '公告修改',
       parentId: noticeMenu.menuId,
       perms: 'system:notice:edit',
-      orderNum: 2,
+      orderNum: 3,
     });
     await ensureButton({
       menuName: '公告删除',
       parentId: noticeMenu.menuId,
       perms: 'system:notice:remove',
-      orderNum: 3,
+      orderNum: 4,
     });
   }
 
   const jobMenu = await getMenuByPath(monitorDir.menuId, 'job');
   if (jobMenu) {
     await ensureButton({
+      menuName: '任务查询',
+      parentId: jobMenu.menuId,
+      perms: 'monitor:job:query',
+      orderNum: 1,
+    });
+    await ensureButton({
       menuName: '任务新增',
       parentId: jobMenu.menuId,
       perms: 'monitor:job:add',
-      orderNum: 1,
+      orderNum: 2,
     });
     await ensureButton({
       menuName: '任务修改',
       parentId: jobMenu.menuId,
       perms: 'monitor:job:edit',
-      orderNum: 2,
+      orderNum: 3,
     });
     await ensureButton({
       menuName: '任务删除',
       parentId: jobMenu.menuId,
       perms: 'monitor:job:remove',
-      orderNum: 3,
-    });
-    await ensureButton({
-      menuName: '立即执行',
-      parentId: jobMenu.menuId,
-      perms: 'monitor:job:run',
       orderNum: 4,
     });
     await ensureButton({
@@ -878,6 +920,24 @@ async function main() {
       menuName: '强退用户',
       parentId: onlineMenu.menuId,
       perms: 'monitor:online:forceLogout',
+      orderNum: 1,
+    });
+  }
+  const operlogMenu = await getMenuByPath(monitorDir.menuId, 'operlog');
+  if (operlogMenu) {
+    await ensureButton({
+      menuName: '日志删除',
+      parentId: operlogMenu.menuId,
+      perms: 'monitor:operlog:remove',
+      orderNum: 1,
+    });
+  }
+  const logininforMenu = await getMenuByPath(monitorDir.menuId, 'logininfor');
+  if (logininforMenu) {
+    await ensureButton({
+      menuName: '日志删除',
+      parentId: logininforMenu.menuId,
+      perms: 'monitor:logininfor:remove',
       orderNum: 1,
     });
   }

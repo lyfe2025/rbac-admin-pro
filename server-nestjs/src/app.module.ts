@@ -13,6 +13,7 @@ import { DictModule } from './system/dict/dict.module';
 import { SysConfigModule } from './system/config/config.module';
 import { NoticeModule } from './system/notice/notice.module';
 import { OperationLogInterceptor } from './common/interceptors/operation-log.interceptor';
+import { PermissionGuard } from './common/guards/permission.guard';
 import { PostModule } from './system/post/post.module';
 import { MonitorModule } from './monitor/monitor.module';
 import { LoggerModule } from './common/logger/logger.module';
@@ -43,6 +44,7 @@ import { MailModule } from './common/mail/mail.module';
   controllers: [AppController],
   providers: [
     AppService,
+    PermissionGuard,
     {
       provide: APP_INTERCEPTOR,
       useClass: OperationLogInterceptor,

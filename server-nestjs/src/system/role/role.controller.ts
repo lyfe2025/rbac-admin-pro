@@ -22,15 +22,18 @@ import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { QueryRoleDto } from './dto/query-role.dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { PermissionGuard } from '../../common/guards/permission.guard';
+import { RequirePermission } from '../../common/decorators/permission.decorator';
 
 @ApiTags('角色管理')
 @ApiBearerAuth('JWT-auth')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 @Controller('system/role')
 export class RoleController {
   constructor(private readonly roleService: RoleService) {}
 
   @Post()
+  @RequirePermission('system:role:add')
   @ApiOperation({ summary: '新增角色' })
   @ApiBody({ type: CreateRoleDto })
   @ApiResponse({ status: 201, description: '创建成功' })
@@ -39,6 +42,7 @@ export class RoleController {
   }
 
   @Get()
+  @RequirePermission('system:role:list')
   @ApiOperation({ summary: '查询角色列表' })
   @ApiResponse({ status: 200, description: '查询成功' })
   findAll(@Query() query: QueryRoleDto) {
@@ -46,6 +50,7 @@ export class RoleController {
   }
 
   @Get(':roleId')
+  @RequirePermission('system:role:query')
   @ApiOperation({ summary: '查询角色详情' })
   @ApiParam({ name: 'roleId', description: '角色ID' })
   @ApiResponse({ status: 200, description: '查询成功' })
@@ -54,6 +59,7 @@ export class RoleController {
   }
 
   @Put(':roleId')
+  @RequirePermission('system:role:edit')
   @ApiOperation({ summary: '修改角色' })
   @ApiParam({ name: 'roleId', description: '角色ID' })
   @ApiBody({ type: UpdateRoleDto })
@@ -66,6 +72,7 @@ export class RoleController {
   }
 
   @Delete(':roleId')
+  @RequirePermission('system:role:remove')
   @ApiOperation({ summary: '删除角色' })
   @ApiParam({ name: 'roleId', description: '角色ID' })
   @ApiResponse({ status: 200, description: '删除成功' })
@@ -74,6 +81,7 @@ export class RoleController {
   }
 
   @Put('changeStatus')
+  @RequirePermission('system:role:edit')
   @ApiOperation({ summary: '修改角色状态' })
   @ApiResponse({ status: 200, description: '修改成功' })
   changeStatus(@Body() body: { roleId: string; status: string }) {
