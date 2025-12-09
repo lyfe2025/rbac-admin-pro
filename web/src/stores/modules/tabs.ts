@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import type { RouteLocationNormalized } from 'vue-router'
 
 export interface TabItem {
@@ -49,15 +49,17 @@ export const useTabsStore = defineStore('tabs', () => {
     const index = tabs.value.findIndex(tab => tab.path === path)
     if (index === -1) return null
     
+    const tab = tabs.value[index]
     // 不能关闭固定标签（仪表盘）
-    if (!tabs.value[index].closable) return null
+    if (!tab || !tab.closable) return null
     
     tabs.value.splice(index, 1)
     
     // 如果关闭的是当前标签，切换到前一个或后一个
     if (activeTab.value === path) {
       const newIndex = Math.min(index, tabs.value.length - 1)
-      return tabs.value[newIndex]?.path || '/dashboard'
+      const newTab = newIndex >= 0 ? tabs.value[newIndex] : undefined
+      return newTab?.path || '/dashboard'
     }
     return null
   }
