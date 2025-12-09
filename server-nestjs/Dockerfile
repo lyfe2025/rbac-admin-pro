@@ -14,12 +14,19 @@ ENV TZ=Asia/Shanghai
 # 设置工作目录
 WORKDIR /app
 
+# 强制刷新缓存 - 更新此值可触发重新构建
+ENV CACHE_BUST=20251210_v2
+
 # 复制 package 文件
 COPY package.json ./
 COPY prisma ./prisma/
 
 # 安装所有依赖
-RUN pnpm install
+RUN pnpm install && \
+    echo "=== 验证关键依赖 ===" && \
+    ls -la node_modules/express && \
+    ls -la node_modules/multer && \
+    ls -la node_modules/@nestjs/platform-express
 
 # 复制源代码
 COPY . .
