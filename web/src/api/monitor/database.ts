@@ -47,5 +47,5 @@ export function getDatabase() {
   return request<{ data: DatabaseInfo }>({
     url: '/monitor/database',
     method: 'get'
-  }).then((res: any) => res)
+  }).then((res: any) => res.data)
 }

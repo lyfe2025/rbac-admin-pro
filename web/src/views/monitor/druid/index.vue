@@ -27,7 +27,7 @@ async function getData() {
   loading.value = true
   try {
     const res = await getDatabase()
-    data.value = res.data
+    data.value = res
     lastUpdateTime.value = new Date().toLocaleTimeString('zh-CN')
   } catch {
     toast({

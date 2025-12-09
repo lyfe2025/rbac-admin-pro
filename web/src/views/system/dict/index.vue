@@ -104,7 +104,7 @@ async function handleUpdate(row: DictType) {
   try {
     resetForm()
     const res = await getType(row.dictId)
-    Object.assign(form, res.data)
+    Object.assign(form, res)
     dialogTitle.value = '修改字典类型'
     showDialog.value = true
   } catch (error) {

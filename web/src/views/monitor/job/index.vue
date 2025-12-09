@@ -126,7 +126,7 @@ async function handleUpdate(row: SysJob) {
   resetForm()
   isEdit.value = true
   const res = await getJob(row.jobId)
-  Object.assign(form, res.data)
+  Object.assign(form, res)
   showDialog.value = true
 }
 

@@ -45,7 +45,7 @@ async function getData() {
   loading.value = true
   try {
     const res = await getServer()
-    server.value = res.data
+    server.value = res
     lastUpdateTime.value = new Date().toLocaleTimeString('zh-CN')
   } catch (error) {
     toast({

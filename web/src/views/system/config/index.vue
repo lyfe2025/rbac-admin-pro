@@ -109,7 +109,7 @@ async function handleUpdate(row: SysConfig) {
   resetForm()
   isEdit.value = true
   const res = await getConfig(row.configId)
-  Object.assign(form, res.data)
+  Object.assign(form, res)
   showDialog.value = true
 }
 

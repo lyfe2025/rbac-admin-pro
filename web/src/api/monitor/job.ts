@@ -12,10 +12,10 @@ export function listJob(query: any) {
 }
 
 export function getJob(jobId: string) {
-  return request<{ data: { data: SysJob } }>({
+  return request<{ data: SysJob }>({
     url: `/monitor/job/${jobId}`,
     method: 'get'
-  }).then((res: any) => res)
+  }).then((res: any) => res.data)
 }
 
 export function addJob(data: any) {

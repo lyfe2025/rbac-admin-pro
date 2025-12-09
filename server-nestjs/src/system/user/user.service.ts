@@ -207,7 +207,7 @@ export class UserService {
     const { password, roles, posts, ...userInfo } = user;
 
     return {
-      data: userInfo,
+      user: userInfo,
       roleIds,
       postIds,
       roles: roleList,

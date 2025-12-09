@@ -16,14 +16,14 @@ export function listPost(query: PostQuery) {
     url: '/system/post',
     method: 'get',
     params: query
-  }).then((res) => res.data.data)
+  }).then((res: any) => res.data)
 }
 
 export function getPost(postId: string) {
   return request<{ data: SysPost }>({
     url: `/system/post/${postId}`,
     method: 'get'
-  })
+  }).then((res: any) => res.data)
 }
 
 export function addPost(data: PostForm) {

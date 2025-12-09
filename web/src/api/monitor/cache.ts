@@ -20,7 +20,7 @@ export function getCache() {
   return request<{ data: CacheInfo }>({
     url: '/monitor/cache',
     method: 'get'
-  }).then((res: any) => res)
+  }).then((res: any) => res.data)
 }
 
 export function clearCacheName(cacheName: string) {
@@ -42,7 +42,7 @@ export function listCacheName() {
   return request<{ data: any[] }>({
     url: '/monitor/cache/listCacheName',
     method: 'get'
-  }).then((res: any) => res)
+  }).then((res: any) => res.data)
 }
 
 export function listCacheKey(cacheName: string) {
@@ -50,7 +50,7 @@ export function listCacheKey(cacheName: string) {
     url: '/monitor/cache/listCacheKey',
     method: 'get',
     params: { cacheName }
-  }).then((res: any) => res)
+  }).then((res: any) => res.data)
 }
 
 export function getCacheValue(cacheName: string, cacheKey: string) {
@@ -58,5 +58,5 @@ export function getCacheValue(cacheName: string, cacheKey: string) {
     url: '/monitor/cache/getCacheValue',
     method: 'get',
     params: { cacheName, cacheKey }
-  }).then((res: any) => res)
+  }).then((res: any) => res.data)
 }

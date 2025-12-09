@@ -22,14 +22,14 @@ export function listUser(query: UserQuery) {
     url: '/system/user',
     method: 'get',
     params: query
-  }).then((res) => res.data.data)
+  }).then((res: any) => res.data)
 }
 
 export function getUser(userId: string) {
   return request<{ data: { user: SysUser; roleIds: string[]; postIds: string[]; roles?: any[]; posts?: any[] } }>({
     url: `/system/user/${userId}`,
     method: 'get'
-  }).then((res) => res.data.data)
+  }).then((res: any) => res.data)
 }
 
 export function addUser(data: UserForm) {

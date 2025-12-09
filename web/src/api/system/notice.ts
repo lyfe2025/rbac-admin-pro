@@ -18,14 +18,14 @@ export function listNotice(query: NoticeQuery) {
     url: '/system/notice',
     method: 'get',
     params: query
-  }).then((res) => res.data.data)
+  }).then((res: any) => res.data)
 }
 
 export function getNotice(noticeId: string) {
   return request<{ data: SysNotice }>({
     url: `/system/notice/${noticeId}`,
     method: 'get'
-  })
+  }).then((res: any) => res.data)
 }
 
 export function addNotice(data: NoticeForm) {

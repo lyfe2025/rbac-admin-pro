@@ -6,6 +6,7 @@ import { listOperLog } from '@/api/monitor/operlog'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -139,6 +140,7 @@ watch(() => props.user, async (newUser) => {
     <DialogContent class="sm:max-w-[800px] max-h-[90vh]">
       <DialogHeader>
         <DialogTitle>用户详情</DialogTitle>
+        <DialogDescription>查看用户的详细信息、登录历史和操作记录</DialogDescription>
       </DialogHeader>
 
       <Tabs default-value="basic" class="w-full">

@@ -47,5 +47,5 @@ export function getServer() {
   return request<{ data: ServerInfo }>({
     url: '/monitor/server',
     method: 'get'
-  }).then((res: any) => res)
+  }).then((res: any) => res.data)
 }

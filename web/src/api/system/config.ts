@@ -18,14 +18,14 @@ export function listConfig(query: ConfigQuery) {
     url: '/system/config',
     method: 'get',
     params: query
-  }).then((res) => res.data.data)
+  }).then((res: any) => res.data)
 }
 
 export function getConfig(configId: string) {
   return request<{ data: SysConfig }>({
     url: `/system/config/${configId}`,
     method: 'get'
-  })
+  }).then((res: any) => res.data)
 }
 
 export function addConfig(data: ConfigForm) {

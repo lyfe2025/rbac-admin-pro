@@ -110,7 +110,7 @@ async function handleUpdate(row: SysNotice) {
   resetForm()
   isEdit.value = true
   const res = await getNotice(row.noticeId)
-  Object.assign(form, res.data)
+  Object.assign(form, res)
   showDialog.value = true
 }
 

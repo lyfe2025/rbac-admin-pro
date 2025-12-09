@@ -37,14 +37,14 @@ export function listType(query: DictTypeQuery) {
     url: '/system/dict/type',
     method: 'get',
     params: query
-  }).then((res) => res.data.data)
+  }).then((res: any) => res.data)
 }
 
 export function getType(dictId: string) {
   return request<{ data: DictType }>({
     url: `/system/dict/type/${dictId}`,
     method: 'get'
-  })
+  }).then((res: any) => res.data)
 }
 
 export function addType(data: DictTypeForm) {
@@ -77,14 +77,14 @@ export function listData(query: DictDataQuery) {
     url: '/system/dict/data',
     method: 'get',
     params: query
-  }).then((res) => res.data.data)
+  }).then((res: any) => res.data)
 }
 
 export function getData(dictCode: string) {
   return request<{ data: DictData }>({
     url: `/system/dict/data/${dictCode}`,
     method: 'get'
-  })
+  }).then((res: any) => res.data)
 }
 
 export function addData(data: DictDataForm) {

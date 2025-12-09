@@ -23,7 +23,7 @@ export function listMenu(query?: MenuQuery) {
     url: '/system/menu',
     method: 'get',
     params: query
-  }).then((res) => res.data.data)
+  }).then((res: any) => res.data)
 }
 
 export function getMenu(menuId: string) {

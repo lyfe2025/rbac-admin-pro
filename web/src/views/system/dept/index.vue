@@ -78,7 +78,7 @@ async function getList() {
   loading.value = true
   try {
     const res = await listDept(queryParams)
-    deptList.value = toTreeDept(res.data)
+    deptList.value = toTreeDept(res)
     // Default expand all for demo
     expandAll(deptList.value)
   } finally {
@@ -116,7 +116,7 @@ function toggleExpandAll() {
 
 async function getDeptTree() {
   const res = await listDeptTree()
-  deptOptions.value = toTreeDept(res.data)
+  deptOptions.value = toTreeDept(res)
 }
 
 // Helper to flatten tree for table display with expansion control
@@ -179,7 +179,7 @@ async function handleUpdate(row: SysDept) {
   isEdit.value = true
   await getDeptTree()
   const res = await getDept(row.deptId)
-  Object.assign(form, res.data)
+  Object.assign(form, res)
   showDialog.value = true
 }
 

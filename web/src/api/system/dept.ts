@@ -6,14 +6,14 @@ export function listDept(query?: any) {
     url: '/system/dept',
     method: 'get',
     params: query
-  }).then((res: any) => res)
+  }).then((res: any) => res.data)
 }
 
 export function getDept(deptId: string) {
   return request<{ data: SysDept }>({
     url: `/system/dept/${deptId}`,
     method: 'get'
-  }).then((res: any) => res)
+  }).then((res: any) => res.data)
 }
 
 export function addDept(data: any) {
@@ -43,7 +43,7 @@ export function listDeptExcludeChild(deptId: string) {
   return request<{ data: SysDept[] }>({
     url: `/system/dept/list/exclude/${deptId}`,
     method: 'get'
-  }).then((res: any) => res)
+  }).then((res: any) => res.data)
 }
 
 export function listDeptTree() {
@@ -51,5 +51,5 @@ export function listDeptTree() {
   return request<{ data: SysDept[] }>({
     url: '/system/dept',
     method: 'get'
-  }).then((res: any) => res)
+  }).then((res: any) => res.data)
 }

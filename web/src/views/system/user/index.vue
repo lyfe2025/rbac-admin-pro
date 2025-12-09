@@ -228,7 +228,7 @@ async function getList() {
 
 async function getDeptTree() {
   const res = await listDeptTree()
-  deptOptions.value = toTreeDept(res.data)
+  deptOptions.value = toTreeDept(res)
 }
 
 // Search Operations
