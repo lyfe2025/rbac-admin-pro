@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/components/ui/toast/use-toast'
 import { Trash2, RefreshCw, Search } from 'lucide-vue-next'
-import { listLogininfor, delLogininfor, cleanLogininfor } from '@/api/monitor/logininfor'
+import { listLogininfor, delLogininfor, cleanLogininfor, type LogininforQuery } from '@/api/monitor/logininfor'
 import type { SysLoginLog } from '@/api/system/types'
 import { formatDate } from '@/utils/format'
 import TablePagination from '@/components/common/TablePagination.vue'
@@ -41,11 +41,14 @@ const { toast } = useToast()
 const loading = ref(true)
 const logList = ref<SysLoginLog[]>([])
 const total = ref(0)
-const queryParams = reactive({
+const queryParams = reactive<LogininforQuery>({
   pageNum: 1,
   pageSize: 10,
   userName: '',
-  status: undefined
+  ipaddr: '',
+  status: undefined,
+  beginTime: undefined,
+  endTime: undefined
 })
 const showCleanDialog = ref(false)
 const showDeleteDialog = ref(false)
@@ -71,7 +74,10 @@ function handleQuery() {
 
 function resetQuery() {
   queryParams.userName = ''
+  queryParams.ipaddr = ''
   queryParams.status = undefined
+  queryParams.beginTime = undefined
+  queryParams.endTime = undefined
   handleQuery()
 }
 
@@ -145,9 +151,18 @@ onMounted(() => {
         />
       </div>
       <div class="flex items-center gap-2">
+        <span class="text-sm font-medium">登录地址</span>
+        <Input 
+          v-model="queryParams.ipaddr" 
+          placeholder="请输入IP地址" 
+          class="w-[150px]"
+          @keyup.enter="handleQuery"
+        />
+      </div>
+      <div class="flex items-center gap-2">
         <span class="text-sm font-medium">状态</span>
         <Select v-model="queryParams.status">
-          <SelectTrigger class="w-[120px]">
+          <SelectTrigger class="w-[100px]">
             <SelectValue placeholder="请选择" />
           </SelectTrigger>
           <SelectContent>
@@ -155,6 +170,20 @@ onMounted(() => {
             <SelectItem value="1">失败</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-medium">登录时间</span>
+        <Input 
+          v-model="queryParams.beginTime" 
+          type="date" 
+          class="w-[140px]"
+        />
+        <span class="text-muted-foreground">至</span>
+        <Input 
+          v-model="queryParams.endTime" 
+          type="date" 
+          class="w-[140px]"
+        />
       </div>
       <div class="flex gap-2 ml-auto">
         <Button @click="handleQuery">

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch, computed } from 'vue'
-import { getToken } from '@/utils/auth'
 import { useToast } from '@/components/ui/toast/use-toast'
+import { uploadAvatar } from '@/api/upload'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -104,45 +104,27 @@ watch(() => formData.value.password, (val) => {
 async function handleAvatarUpload(event: Event) {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
-  if (file) {
-    // 验证文件类型
-    if (!file.type.startsWith('image/')) {
-      toast({ title: '上传失败', description: '请上传图片文件', variant: 'destructive' })
-      return
-    }
-    // 验证文件大小 (2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast({ title: '上传失败', description: '图片大小不能超过2MB', variant: 'destructive' })
-      return
-    }
-    
-    // 上传到服务器
-    const uploadFormData = new FormData()
-    uploadFormData.append('file', file)
-    
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/upload/avatar`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${getToken()}`
-        },
-        body: uploadFormData
-      })
-      
-      const result = await response.json()
-      
-      if (result.code === 200) {
-        // 上传成功,保存文件路径
-        const fileUrl = `${import.meta.env.VITE_API_URL}${result.data.url}`
-        avatarPreview.value = fileUrl
-        formData.value.avatar = result.data.url // 只存储路径
-      } else {
-        toast({ title: '上传失败', description: result.msg || '上传失败', variant: 'destructive' })
-      }
-    } catch (error) {
-      console.error('上传失败:', error)
-      toast({ title: '上传失败', description: '上传失败,请重试', variant: 'destructive' })
-    }
+  if (!file) return
+
+  // 验证文件类型
+  if (!file.type.startsWith('image/')) {
+    toast({ title: '上传失败', description: '请上传图片文件', variant: 'destructive' })
+    return
+  }
+  // 验证文件大小 (2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    toast({ title: '上传失败', description: '图片大小不能超过2MB', variant: 'destructive' })
+    return
+  }
+
+  try {
+    const result = await uploadAvatar(file)
+    // 上传成功,保存文件路径
+    avatarPreview.value = `${import.meta.env.VITE_API_URL}${result.url}`
+    formData.value.avatar = result.url // 只存储路径
+    toast({ title: '上传成功', description: '头像已更新' })
+  } catch {
+    toast({ title: '上传失败', description: '上传失败,请重试', variant: 'destructive' })
   }
 }
 

@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsDateString } from 'class-validator';
 
 export class QueryLogininforDto {
   @IsOptional()
@@ -8,6 +8,18 @@ export class QueryLogininforDto {
   @IsOptional()
   @IsString()
   status?: string;
+
+  @IsOptional()
+  @IsString()
+  ipaddr?: string;
+
+  @IsOptional()
+  @IsDateString()
+  beginTime?: string;
+
+  @IsOptional()
+  @IsDateString()
+  endTime?: string;
 
   @IsOptional()
   pageNum?: number;

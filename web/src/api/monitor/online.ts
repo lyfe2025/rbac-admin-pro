@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import { type PageQuery, type PageResult } from '@/api/system/types'
 
 export interface SysUserOnline {
   tokenId: string
@@ -12,17 +13,23 @@ export interface SysUserOnline {
   onlineDuration: number
 }
 
-export function listOnline(query: any) {
-  return request<{ data: { rows: SysUserOnline[]; total: number } }>({
+/** 在线用户查询参数 */
+export interface OnlineQuery extends PageQuery {
+  userName?: string
+  ipaddr?: string
+}
+
+export function listOnline(query: OnlineQuery): Promise<PageResult<SysUserOnline>> {
+  return request<{ data: PageResult<SysUserOnline> }>({
     url: '/monitor/online/list',
     method: 'get',
     params: query
-  }).then((res: any) => res.data)
+  }).then((res: unknown) => (res as { data: PageResult<SysUserOnline> }).data)
 }
 
 export function forceLogout(tokenId: string) {
-  return request({
+  return request<{ msg: string }>({
     url: `/monitor/online/${tokenId}`,
     method: 'delete'
-  }).then((res: any) => res)
+  })
 }

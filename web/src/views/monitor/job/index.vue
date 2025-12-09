@@ -145,7 +145,7 @@ function handleRun(row: SysJob) {
   confirmDialog.title = '执行任务'
   confirmDialog.description = `确认要立即执行一次任务"${row.jobName}"吗？`
   confirmDialog.action = async () => {
-    await runJob(row.jobId, row.jobGroup)
+    await runJob(row.jobId)
     toast({ title: "执行成功", description: "任务已下发执行" })
   }
   confirmDialog.open = true

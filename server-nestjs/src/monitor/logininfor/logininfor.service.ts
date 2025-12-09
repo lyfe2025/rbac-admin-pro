@@ -11,6 +11,21 @@ export class LogininforService {
     const where: Prisma.SysLoginLogWhereInput = {};
     if (query.userName) where.userName = { contains: query.userName };
     if (query.status) where.status = query.status;
+    if (query.ipaddr) where.ipaddr = { contains: query.ipaddr };
+
+    // 时间范围筛选
+    if (query.beginTime || query.endTime) {
+      where.loginTime = {};
+      if (query.beginTime) {
+        where.loginTime.gte = new Date(query.beginTime);
+      }
+      if (query.endTime) {
+        // 结束时间设置为当天的 23:59:59
+        const endDate = new Date(query.endTime);
+        endDate.setHours(23, 59, 59, 999);
+        where.loginTime.lte = endDate;
+      }
+    }
 
     const pageNum = Number(query.pageNum ?? 1);
     const pageSize = Number(query.pageSize ?? 10);

@@ -1,55 +1,72 @@
 import request from '@/utils/request'
 import { type SysDept } from './types'
 
-export function listDept(query?: any) {
+/** 部门查询参数 */
+export interface DeptQuery {
+  deptName?: string
+  status?: string
+}
+
+/** 部门表单参数 */
+export interface DeptForm {
+  deptId?: string
+  parentId?: string | number | null
+  deptName?: string
+  orderNum?: number
+  leader?: string
+  phone?: string
+  email?: string
+  status?: string
+}
+
+export function listDept(query?: DeptQuery): Promise<SysDept[]> {
   return request<{ data: SysDept[] }>({
     url: '/system/dept',
     method: 'get',
     params: query
-  }).then((res: any) => res.data)
+  }).then((res: unknown) => (res as { data: SysDept[] }).data)
 }
 
-export function getDept(deptId: string) {
+export function getDept(deptId: string): Promise<SysDept> {
   return request<{ data: SysDept }>({
     url: `/system/dept/${deptId}`,
     method: 'get'
-  }).then((res: any) => res.data)
+  }).then((res: unknown) => (res as { data: SysDept }).data)
 }
 
-export function addDept(data: any) {
-  return request({
+export function addDept(data: DeptForm) {
+  return request<{ msg: string }>({
     url: '/system/dept',
     method: 'post',
     data
-  }).then((res: any) => res)
+  })
 }
 
-export function updateDept(data: any) {
-  return request({
+export function updateDept(data: DeptForm) {
+  return request<{ msg: string }>({
     url: `/system/dept/${data.deptId}`,
     method: 'put',
     data
-  }).then((res: any) => res)
+  })
 }
 
 export function delDept(deptId: string) {
-  return request({
+  return request<{ msg: string }>({
     url: `/system/dept/${deptId}`,
     method: 'delete'
-  }).then((res: any) => res)
+  })
 }
 
-export function listDeptExcludeChild(deptId: string) {
+export function listDeptExcludeChild(deptId: string): Promise<SysDept[]> {
   return request<{ data: SysDept[] }>({
     url: `/system/dept/list/exclude/${deptId}`,
     method: 'get'
-  }).then((res: any) => res.data)
+  }).then((res: unknown) => (res as { data: SysDept[] }).data)
 }
 
-export function listDeptTree() {
-  // 兼容旧前端用法，直接返回树形结构数据
+export function listDeptTree(): Promise<SysDept[]> {
   return request<{ data: SysDept[] }>({
     url: '/system/dept',
     method: 'get'
-  }).then((res: any) => res.data)
+  }).then((res: unknown) => (res as { data: SysDept[] }).data)
 }
