@@ -9,6 +9,11 @@
 </p>
 
 <p align="center">
+  <a href="https://rbac.zeabur.app/login" target="_blank">🌐 在线演示</a> |
+  <a href="https://api-rbac.zeabur.app/api-docs" target="_blank">📖 API 文档</a>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Vue-3.5-4FC08D?logo=vue.js" alt="Vue">
   <img src="https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs" alt="NestJS">
   <img src="https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma" alt="Prisma">
