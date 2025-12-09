@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -114,6 +114,13 @@ async function getData() {
 
 
 async function handleSubmit() {
+  // 校验所有字段
+  if (hasValidationError.value) {
+    const firstError = Object.values(formErrors).find((e) => e !== '')
+    toast({ title: '保存失败', description: firstError || '请检查表单填写', variant: 'destructive' })
+    return
+  }
+
   submitLoading.value = true
 
   try {
@@ -252,7 +259,100 @@ const twoFactorEnabled = computed({
   }
 })
 
+// 登录路径输入（不含前缀 /）
+const loginPathInput = ref('')
 
+// 表单校验错误
+const formErrors = reactive({
+  loginPath: '',
+  email: '',
+  maxRetry: '',
+  lockTime: '',
+  sessionTimeout: '',
+  mailPort: '',
+  mailFrom: '',
+})
+
+// 校验函数
+const validators = {
+  loginPath(value: string): string {
+    if (!value) return ''
+    if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
+      return '只允许字母、数字、中划线(-)、下划线(_)'
+    }
+    if (value.length < 2 || value.length > 50) {
+      return '长度需在 2-50 个字符之间'
+    }
+    return ''
+  },
+  email(value: string): string {
+    if (!value) return ''
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      return '邮箱格式不正确'
+    }
+    return ''
+  },
+  positiveInt(value: string, min: number, max: number, label: string): string {
+    if (!value) return ''
+    const num = parseInt(value, 10)
+    if (isNaN(num) || num < min || num > max) {
+      return `${label}需在 ${min}-${max} 之间`
+    }
+    return ''
+  },
+  port(value: string): string {
+    if (!value) return ''
+    const num = parseInt(value, 10)
+    if (isNaN(num) || num < 1 || num > 65535) {
+      return '端口需在 1-65535 之间'
+    }
+    return ''
+  },
+}
+
+// 是否有校验错误
+const hasValidationError = computed(() => {
+  return Object.values(formErrors).some((e) => e !== '')
+})
+
+// 监听输入变化，实时校验并同步到 form
+watch(loginPathInput, (val) => {
+  formErrors.loginPath = validators.loginPath(val)
+  form['sys.security.loginPath'] = val ? `/${val}` : '/login'
+})
+
+// 从 form 初始化 loginPathInput（去掉前缀 /）
+watch(() => form['sys.security.loginPath'], (val) => {
+  const path = val?.startsWith('/') ? val.slice(1) : val
+  if (path !== loginPathInput.value) {
+    loginPathInput.value = path || ''
+  }
+}, { immediate: true })
+
+// 监听其他字段校验
+watch(() => form['sys.app.email'], (val) => {
+  formErrors.email = validators.email(val)
+})
+watch(() => form['sys.login.maxRetry'], (val) => {
+  formErrors.maxRetry = validators.positiveInt(val, 1, 10, '失败锁定次数')
+})
+watch(() => form['sys.login.lockTime'], (val) => {
+  formErrors.lockTime = validators.positiveInt(val, 1, 1440, '锁定时长')
+})
+watch(() => form['sys.session.timeout'], (val) => {
+  formErrors.sessionTimeout = validators.positiveInt(val, 5, 10080, '会话超时')
+})
+watch(() => form['sys.mail.port'], (val) => {
+  formErrors.mailPort = validators.port(val)
+})
+watch(() => form['sys.mail.from'], (val) => {
+  // 仅在启用邮件时校验
+  if (form['sys.mail.enabled'] === 'true' && val) {
+    formErrors.mailFrom = validators.email(val)
+  } else {
+    formErrors.mailFrom = ''
+  }
+})
 
 const mailEnabled = computed({
   get: () => form['sys.mail.enabled'] === 'true',
@@ -332,7 +432,12 @@ onMounted(() => {
               </div>
               <div class="grid gap-2">
                 <Label>联系邮箱</Label>
-                <Input v-model="form['sys.app.email']" placeholder="support@example.com" />
+                <Input 
+                  v-model="form['sys.app.email']" 
+                  placeholder="support@example.com"
+                  :class="{ 'border-destructive focus-visible:ring-destructive': formErrors.email }"
+                />
+                <p v-if="formErrors.email" class="text-xs text-destructive">{{ formErrors.email }}</p>
               </div>
             </div>
             <div class="grid gap-2">
@@ -384,9 +489,18 @@ onMounted(() => {
           <CardContent class="space-y-4">
             <div class="grid gap-2">
               <Label>登录页路径</Label>
-              <Input v-model="form['sys.security.loginPath']" placeholder="/login" />
+              <div class="flex">
+                <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">/</span>
+                <Input 
+                  v-model="loginPathInput" 
+                  placeholder="login" 
+                  class="rounded-l-none"
+                  :class="{ 'border-destructive focus-visible:ring-destructive': formErrors.loginPath }"
+                />
+              </div>
+              <p v-if="formErrors.loginPath" class="text-xs text-destructive">{{ formErrors.loginPath }}</p>
               <p class="text-xs text-muted-foreground">
-                自定义登录页访问路径，例如：/admin-login、/secure-entry 等。修改后需要使用新路径访问登录页。
+                自定义登录页访问路径，例如：admin-login、secure-entry 等。修改后需要使用新路径访问登录页。
               </p>
             </div>
           </CardContent>
@@ -424,17 +538,36 @@ onMounted(() => {
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div class="grid gap-2">
                 <Label>失败锁定次数</Label>
-                <Input v-model="form['sys.login.maxRetry']" type="number" min="1" max="10" />
-                <p class="text-xs text-muted-foreground">连续失败N次后锁定</p>
+                <Input 
+                  v-model="form['sys.login.maxRetry']" 
+                  type="number" 
+                  min="1" 
+                  max="10"
+                  :class="{ 'border-destructive focus-visible:ring-destructive': formErrors.maxRetry }"
+                />
+                <p v-if="formErrors.maxRetry" class="text-xs text-destructive">{{ formErrors.maxRetry }}</p>
+                <p v-else class="text-xs text-muted-foreground">连续失败N次后锁定</p>
               </div>
               <div class="grid gap-2">
                 <Label>锁定时长（分钟）</Label>
-                <Input v-model="form['sys.login.lockTime']" type="number" min="1" />
+                <Input 
+                  v-model="form['sys.login.lockTime']" 
+                  type="number" 
+                  min="1"
+                  :class="{ 'border-destructive focus-visible:ring-destructive': formErrors.lockTime }"
+                />
+                <p v-if="formErrors.lockTime" class="text-xs text-destructive">{{ formErrors.lockTime }}</p>
               </div>
               <div class="grid gap-2">
                 <Label>会话超时（分钟）</Label>
-                <Input v-model="form['sys.session.timeout']" type="number" min="5" />
-                <p class="text-xs text-muted-foreground">无操作超过此时间后自动退出</p>
+                <Input 
+                  v-model="form['sys.session.timeout']" 
+                  type="number" 
+                  min="5"
+                  :class="{ 'border-destructive focus-visible:ring-destructive': formErrors.sessionTimeout }"
+                />
+                <p v-if="formErrors.sessionTimeout" class="text-xs text-destructive">{{ formErrors.sessionTimeout }}</p>
+                <p v-else class="text-xs text-muted-foreground">无操作超过此时间后自动退出</p>
               </div>
             </div>
           </CardContent>
@@ -505,7 +638,12 @@ onMounted(() => {
               </div>
               <div class="grid gap-2">
                 <Label>SMTP 端口</Label>
-                <Input v-model="form['sys.mail.port']" placeholder="465" />
+                <Input 
+                  v-model="form['sys.mail.port']" 
+                  placeholder="465"
+                  :class="{ 'border-destructive focus-visible:ring-destructive': formErrors.mailPort }"
+                />
+                <p v-if="formErrors.mailPort" class="text-xs text-destructive">{{ formErrors.mailPort }}</p>
               </div>
               <div class="grid gap-2">
                 <Label>SSL/TLS</Label>
@@ -534,8 +672,13 @@ onMounted(() => {
 
             <div class="grid gap-2">
               <Label>发件人地址</Label>
-              <Input v-model="form['sys.mail.from']" placeholder="noreply@example.com" />
-              <p class="text-xs text-muted-foreground">收件人看到的发件人，QQ 邮箱需与账号一致</p>
+              <Input 
+                v-model="form['sys.mail.from']" 
+                placeholder="noreply@example.com"
+                :class="{ 'border-destructive focus-visible:ring-destructive': formErrors.mailFrom }"
+              />
+              <p v-if="formErrors.mailFrom" class="text-xs text-destructive">{{ formErrors.mailFrom }}</p>
+              <p v-else class="text-xs text-muted-foreground">收件人看到的发件人，QQ 邮箱需与账号一致</p>
             </div>
 
             <div class="pt-4 border-t">
