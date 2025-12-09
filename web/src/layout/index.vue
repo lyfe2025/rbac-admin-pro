@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import ThemeCustomizer from '@/components/ThemeCustomizer.vue'
@@ -7,6 +7,8 @@ import ProfileDialog from '@/components/ProfileDialog.vue'
 import SettingsDialog from '@/components/SettingsDialog.vue'
 import { useUserStore } from '@/stores/modules/user'
 import { useAppStore } from '@/stores/modules/app'
+import { useMenuStore } from '@/stores/modules/menu'
+import { useThemeStore } from '@/stores/theme'
 import { useToast } from '@/components/ui/toast/use-toast'
 import {
   Accordion,
@@ -22,6 +24,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from '@/components/ui/navigation-menu'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -75,15 +85,82 @@ import {
   LogOut,
   ChevronsUpDown
 } from 'lucide-vue-next'
+import * as icons from 'lucide-vue-next'
 import UserMenuButton from '@/components/UserMenuButton.vue'
 import DynamicMenu from '@/components/DynamicMenu.vue'
+import TabsView from '@/components/TabsView.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const appStore = useAppStore()
+const menuStore = useMenuStore()
+const themeStore = useThemeStore()
 const { toast } = useToast()
 const isCollapsed = ref(false)
+
+// 菜单模式
+const isNormalMode = computed(() => themeStore.menuMode === 'normal')
+const isTopMode = computed(() => themeStore.menuMode === 'top')
+const isMixedMode = computed(() => themeStore.menuMode === 'mixed')
+
+// 混合模式下当前选中的一级菜单
+const activeTopMenu = ref<string>('')
+
+// 混合模式下的二级菜单
+const mixedSubMenus = computed(() => {
+  if (!isMixedMode.value || !activeTopMenu.value) return []
+  const topMenu = menuStore.menuList.find(m => m.path === activeTopMenu.value)
+  return topMenu?.children || []
+})
+
+// 监听路由变化，更新混合模式下的一级菜单选中状态
+watch(() => route.path, (path) => {
+  if (isMixedMode.value) {
+    const topMenu = menuStore.menuList.find(m => 
+      path.startsWith(m.path) || m.children?.some(c => path === (c.path.startsWith('/') ? c.path : `${m.path}/${c.path}`))
+    )
+    if (topMenu) {
+      activeTopMenu.value = topMenu.path
+    }
+  }
+}, { immediate: true })
+
+// 图标工具函数
+function toPascalCase(str: string): string {
+  if (!str) return ''
+  return str.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('')
+}
+
+function getIcon(iconName: string) {
+  if (!iconName) return icons.Settings
+  const pascalName = toPascalCase(iconName)
+  return (icons as any)[pascalName] || icons.Settings
+}
+
+// 侧边栏宽度样式
+const sidebarStyle = computed(() => ({
+  width: isCollapsed.value 
+    ? `${themeStore.sidebarCollapsedWidth}px` 
+    : `${themeStore.sidebarExpandedWidth}px`
+}))
+
+const sidebarWidthClass = computed(() => 
+  isCollapsed.value 
+    ? `w-[${themeStore.sidebarCollapsedWidth}px]` 
+    : `w-[${themeStore.sidebarExpandedWidth}px]`
+)
+
+// 页面切换动画类名
+const transitionName = computed(() => {
+  const map = {
+    slide: 'slide-fade',
+    fade: 'fade',
+    scale: 'scale',
+    none: ''
+  }
+  return map[themeStore.pageTransition] || ''
+})
 
 // 网站配置
 const siteName = computed(() => appStore.siteConfig.name || 'RBAC Admin')
@@ -155,8 +232,12 @@ const handleOpenEditDialog = (userId: string) => {
 
 <template>
   <div class="flex min-h-screen w-full flex-col bg-muted/40">
-    <!-- Desktop Sidebar -->
-    <aside :class="cn('fixed inset-y-0 left-0 z-10 hidden flex-col border-r bg-background sm:flex transition-all duration-300', isCollapsed ? 'w-14' : 'w-64')">
+    <!-- Desktop Sidebar (normal 和 mixed 模式) -->
+    <aside 
+      v-if="isNormalMode || isMixedMode"
+      :class="cn('fixed inset-y-0 left-0 z-10 hidden flex-col border-r bg-background sm:flex transition-all duration-300')"
+      :style="sidebarStyle"
+    >
       <nav class="flex flex-col gap-4 px-2 sm:py-5">
         <div :class="cn('flex items-center px-2', isCollapsed ? 'justify-center' : 'gap-2')">
           <router-link to="/" class="flex items-center gap-2">
@@ -173,56 +254,89 @@ const handleOpenEditDialog = (userId: string) => {
         </div>
 
         <TooltipProvider>
-          <div v-if="!isCollapsed" class="space-y-1">
-            <Tooltip :delay-duration="0">
-              <TooltipTrigger as-child>
-                <router-link
-                  to="/dashboard"
-                  :class="cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:text-primary',
-                    isActive('/dashboard') ? 'bg-muted text-primary' : 'text-muted-foreground',
-                    isCollapsed ? 'justify-center h-9 w-9 p-0' : ''
-                  )"
-                >
-                  <LayoutDashboard class="h-4 w-4" />
-                  <span v-if="!isCollapsed">仪表盘</span>
-                  <span v-else class="sr-only">仪表盘</span>
-                </router-link>
-              </TooltipTrigger>
-              <TooltipContent side="right" v-if="isCollapsed">仪表盘</TooltipContent>
-            </Tooltip>
+          <!-- Normal 模式：完整菜单 -->
+          <template v-if="isNormalMode">
+            <div v-if="!isCollapsed" class="space-y-1">
+              <Tooltip :delay-duration="0">
+                <TooltipTrigger as-child>
+                  <router-link
+                    to="/dashboard"
+                    :class="cn(
+                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:text-primary',
+                      isActive('/dashboard') ? 'bg-muted text-primary' : 'text-muted-foreground',
+                      isCollapsed ? 'justify-center h-9 w-9 p-0' : ''
+                    )"
+                  >
+                    <LayoutDashboard class="h-4 w-4" />
+                    <span v-if="!isCollapsed">仪表盘</span>
+                    <span v-else class="sr-only">仪表盘</span>
+                  </router-link>
+                </TooltipTrigger>
+                <TooltipContent side="right" v-if="isCollapsed">仪表盘</TooltipContent>
+              </Tooltip>
+              <DynamicMenu />
+            </div>
+            <div v-else class="flex flex-col gap-4 items-center">
+              <Tooltip :delay-duration="0">
+                <TooltipTrigger as-child>
+                  <div class="h-9 w-9 flex items-center justify-center text-muted-foreground">
+                    <Settings class="h-4 w-4" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">系统管理 (展开查看更多)</TooltipContent>
+              </Tooltip>
+              <Tooltip :delay-duration="0">
+                <TooltipTrigger as-child>
+                  <div class="h-9 w-9 flex items-center justify-center text-muted-foreground">
+                    <Monitor class="h-4 w-4" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">系统监控 (展开查看更多)</TooltipContent>
+              </Tooltip>
+              <Tooltip :delay-duration="0">
+                <TooltipTrigger as-child>
+                  <div class="h-9 w-9 flex items-center justify-center text-muted-foreground">
+                    <PenTool class="h-4 w-4" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">系统工具 (展开查看更多)</TooltipContent>
+              </Tooltip>
+            </div>
+          </template>
 
-            <!-- 动态菜单 -->
-            <DynamicMenu />
-          </div>
-          <!-- Collapsed Icons for Modules (Simplified) -->
-          <div v-else class="flex flex-col gap-4 items-center">
-             <Tooltip :delay-duration="0">
-              <TooltipTrigger as-child>
-                <div class="h-9 w-9 flex items-center justify-center text-muted-foreground">
-                  <Settings class="h-4 w-4" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">系统管理 (展开查看更多)</TooltipContent>
-            </Tooltip>
-             <Tooltip :delay-duration="0">
-              <TooltipTrigger as-child>
-                <div class="h-9 w-9 flex items-center justify-center text-muted-foreground">
-                  <Monitor class="h-4 w-4" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">系统监控 (展开查看更多)</TooltipContent>
-            </Tooltip>
-             <Tooltip :delay-duration="0">
-              <TooltipTrigger as-child>
-                <div class="h-9 w-9 flex items-center justify-center text-muted-foreground">
-                  <PenTool class="h-4 w-4" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">系统工具 (展开查看更多)</TooltipContent>
-            </Tooltip>
-          </div>
-
+          <!-- Mixed 模式：只显示二级菜单 -->
+          <template v-if="isMixedMode">
+            <div v-if="!isCollapsed && mixedSubMenus.length" class="space-y-1">
+              <router-link 
+                v-for="child in mixedSubMenus" 
+                :key="child.path"
+                :to="child.path.startsWith('/') ? child.path : `${activeTopMenu}/${child.path}`" 
+                :class="cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', 
+                  isActive(child.path.startsWith('/') ? child.path : `${activeTopMenu}/${child.path}`) ? 'bg-muted text-primary' : 'text-muted-foreground'
+                )"
+              >
+                <component :is="getIcon(child.meta?.icon)" class="h-4 w-4" />
+                {{ child.meta?.title }}
+              </router-link>
+            </div>
+            <div v-else-if="isCollapsed" class="flex flex-col gap-2 items-center">
+              <Tooltip v-for="child in mixedSubMenus" :key="child.path" :delay-duration="0">
+                <TooltipTrigger as-child>
+                  <router-link 
+                    :to="child.path.startsWith('/') ? child.path : `${activeTopMenu}/${child.path}`"
+                    :class="cn(
+                      'h-9 w-9 flex items-center justify-center rounded-lg transition-colors',
+                      isActive(child.path.startsWith('/') ? child.path : `${activeTopMenu}/${child.path}`) ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-primary'
+                    )"
+                  >
+                    <component :is="getIcon(child.meta?.icon)" class="h-4 w-4" />
+                  </router-link>
+                </TooltipTrigger>
+                <TooltipContent side="right">{{ child.meta?.title }}</TooltipContent>
+              </Tooltip>
+            </div>
+          </template>
         </TooltipProvider>
       </nav>
       
@@ -273,7 +387,10 @@ const handleOpenEditDialog = (userId: string) => {
     </aside>
 
     <!-- Main Content -->
-    <div :class="cn('flex flex-col sm:py-4 transition-all duration-300', isCollapsed ? 'sm:pl-14' : 'sm:pl-64')">
+    <div 
+      class="flex flex-col sm:py-4 transition-all duration-300"
+      :style="{ paddingLeft: (isNormalMode || isMixedMode) ? `${isCollapsed ? themeStore.sidebarCollapsedWidth : themeStore.sidebarExpandedWidth}px` : '0' }"
+    >
        <header class="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
           <!-- Mobile Toggle -->
           <Sheet>
@@ -405,11 +522,91 @@ const handleOpenEditDialog = (userId: string) => {
             </SheetContent>
           </Sheet>
 
-          <!-- Desktop Collapse Toggle -->
-          <Button size="icon" variant="outline" class="hidden sm:flex" @click="toggleSidebar">
+          <!-- Desktop Collapse Toggle (normal 和 mixed 模式) -->
+          <Button v-if="isNormalMode || isMixedMode" size="icon" variant="outline" class="hidden sm:flex" @click="toggleSidebar">
              <PanelLeft class="h-5 w-5" />
              <span class="sr-only">Toggle Sidebar</span>
           </Button>
+
+          <!-- Top 模式：Logo -->
+          <div v-if="isTopMode" class="hidden sm:flex items-center gap-2 shrink-0">
+            <router-link to="/" class="flex items-center gap-2">
+              <template v-if="siteLogo">
+                <img :src="siteLogo" :alt="siteName" class="h-8 max-w-[160px] object-contain" />
+              </template>
+              <template v-else>
+                <div class="group flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                  <Package2 class="h-4 w-4" />
+                </div>
+              </template>
+              <span class="font-semibold text-lg whitespace-nowrap">{{ siteName }}</span>
+            </router-link>
+          </div>
+
+          <!-- Top 模式 / Mixed 模式：顶部菜单 -->
+          <NavigationMenu v-if="isTopMode || isMixedMode" class="hidden sm:flex">
+            <NavigationMenuList>
+              <!-- 仪表盘 -->
+              <NavigationMenuItem>
+                <router-link to="/dashboard">
+                  <NavigationMenuLink 
+                    :class="cn(
+                      'group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50',
+                      isActive('/dashboard') && 'bg-accent text-accent-foreground'
+                    )"
+                  >
+                    <LayoutDashboard class="mr-2 h-4 w-4" />
+                    仪表盘
+                  </NavigationMenuLink>
+                </router-link>
+              </NavigationMenuItem>
+
+              <!-- Top 模式：展开子菜单 -->
+              <template v-if="isTopMode">
+                <NavigationMenuItem v-for="menu in menuStore.menuList" :key="menu.path">
+                  <NavigationMenuTrigger class="h-9">
+                    <component :is="getIcon(menu.meta?.icon)" class="mr-2 h-4 w-4" />
+                    {{ menu.meta?.title }}
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul class="grid w-[200px] gap-1 p-2">
+                      <li v-for="child in menu.children" :key="child.path">
+                        <router-link :to="child.path.startsWith('/') ? child.path : `${menu.path}/${child.path}`">
+                          <NavigationMenuLink 
+                            :class="cn(
+                              'block select-none rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+                              isActive(child.path.startsWith('/') ? child.path : `${menu.path}/${child.path}`) && 'bg-accent'
+                            )"
+                          >
+                            <div class="flex items-center gap-2">
+                              <component :is="getIcon(child.meta?.icon)" class="h-4 w-4" />
+                              {{ child.meta?.title }}
+                            </div>
+                          </NavigationMenuLink>
+                        </router-link>
+                      </li>
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              </template>
+
+              <!-- Mixed 模式：一级菜单作为切换按钮 -->
+              <template v-if="isMixedMode">
+                <NavigationMenuItem v-for="menu in menuStore.menuList" :key="menu.path">
+                  <NavigationMenuLink 
+                    :class="cn(
+                      'group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer',
+                      activeTopMenu === menu.path && 'bg-accent text-accent-foreground'
+                    )"
+                    @click="activeTopMenu = menu.path"
+                  >
+                    <component :is="getIcon(menu.meta?.icon)" class="mr-2 h-4 w-4" />
+                    {{ menu.meta?.title }}
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              </template>
+            </NavigationMenuList>
+          </NavigationMenu>
 
           <div class="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
             <div class="ml-auto flex-1 sm:flex-initial">
@@ -419,8 +616,16 @@ const handleOpenEditDialog = (userId: string) => {
             <UserMenuButton />
           </div>
        </header>
+       
+       <!-- 标签页 -->
+       <TabsView v-if="themeStore.showTabs" />
+       
        <main class="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-         <RouterView />
+         <RouterView v-slot="{ Component }">
+           <Transition :name="transitionName" mode="out-in">
+             <component :is="Component" />
+           </Transition>
+         </RouterView>
        </main>
     </div>
 

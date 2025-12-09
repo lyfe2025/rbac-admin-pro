@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useMenuStore } from '@/stores/modules/menu'
+import { useThemeStore } from '@/stores/theme'
 import { cn } from '@/lib/utils'
 import {
   Accordion,
@@ -13,6 +14,12 @@ import * as icons from 'lucide-vue-next'
 
 const route = useRoute()
 const menuStore = useMenuStore()
+const themeStore = useThemeStore()
+
+// 菜单项高度样式
+const menuItemStyle = computed(() => ({
+  height: `${themeStore.sidebarItemHeight}px`
+}))
 
 const menuList = computed(() => menuStore.menuList)
 
@@ -55,9 +62,10 @@ function getIcon(iconName: string) {
           :key="child.path"
           :to="child.path.startsWith('/') ? child.path : `${item.path}/${child.path}`" 
           :class="cn(
-            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', 
+            'flex items-center gap-3 rounded-lg px-3 text-sm transition-all hover:text-primary', 
             isActive(child.path.startsWith('/') ? child.path : `${item.path}/${child.path}`) ? 'bg-muted text-primary' : 'text-muted-foreground'
           )"
+          :style="menuItemStyle"
         >
           <component :is="getIcon(child.meta.icon)" class="h-4 w-4" />
           {{ child.meta.title }}

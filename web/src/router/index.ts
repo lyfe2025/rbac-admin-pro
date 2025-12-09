@@ -138,6 +138,17 @@ const router = createRouter({
       ]
     },
     {
+      path: '/redirect/:path(.*)',
+      name: 'Redirect',
+      component: Layout,
+      children: [
+        {
+          path: '',
+          component: () => import('@/views/redirect/index.vue')
+        }
+      ]
+    },
+    {
       path: '/403',
       name: 'Forbidden',
       component: () => import('@/views/error/403.vue'),
