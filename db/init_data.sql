@@ -2,7 +2,7 @@
 -- RBAC Admin Pro - 初始化数据脚本
 -- 说明：本脚本用于初始化系统基础数据
 -- 注意：密码使用 bcrypt 加密，默认密码为 123456
--- 建议：生产环境请使用 Prisma seed.ts 进行初始化
+-- 前置条件：需先执行 schema.sql 创建表结构和索引
 -- =============================================
 
 -- 1. 初始化部门数据（层级结构）
@@ -658,6 +658,30 @@ WHERE r.role_key = 'common_user' AND r.del_flag = '0'
 ON CONFLICT DO NOTHING;
 
 
+-- 15. 任务日志样例
+INSERT INTO sys_job_log (job_name, job_group, invoke_target, job_message, status, exception_info, create_time)
+VALUES 
+  ('示例任务', 'DEFAULT', 'demoTask.execute()', '执行成功', '0', '', NOW()),
+  ('示例任务', 'DEFAULT', 'demoTask.execute()', '执行失败：模拟异常', '1', 'MockError: something wrong', NOW())
+ON CONFLICT DO NOTHING;
+
+
+-- 16. 登录日志样例
+INSERT INTO sys_login_log (user_name, ipaddr, browser, os, status, msg, login_time)
+VALUES 
+  ('admin', '127.0.0.1', 'Chrome', 'macOS', '0', '登录成功', NOW()),
+  ('user', '127.0.0.1', 'Chrome', 'macOS', '1', '密码错误', NOW())
+ON CONFLICT DO NOTHING;
+
+
+-- 17. 操作日志样例
+INSERT INTO sys_oper_log (title, business_type, method, request_method, oper_name, dept_name, oper_url, oper_ip, oper_location, oper_param, json_result, status, oper_time)
+VALUES 
+  ('部门管理', 1, 'DeptController.create', 'POST', 'admin', '总公司', '/system/dept', '127.0.0.1', '内网', '{"deptName":"技术部"}', '{"code":200}', 0, NOW()),
+  ('岗位管理', 3, 'PostController.remove', 'DELETE', 'admin', '总公司', '/system/post', '127.0.0.1', '内网', '{"ids":"1,2"}', '{"code":200}', 0, NOW())
+ON CONFLICT DO NOTHING;
+
+
 -- 提示信息
 DO $$
 DECLARE
@@ -688,8 +712,11 @@ BEGIN
   RAISE NOTICE '- 菜单：% 个', menu_count;
   RAISE NOTICE '- 超级管理员权限：% 个菜单', role_menu_count;
   RAISE NOTICE '- 字典类型：10 个';
-  RAISE NOTICE '- 字典数据：32 条';
-  RAISE NOTICE '- 系统配置：2 条'
+  RAISE NOTICE '- 字典数据：29 条';
+  RAISE NOTICE '- 系统配置：27 条';
+  RAISE NOTICE '- 任务日志样例：2 条';
+  RAISE NOTICE '- 登录日志样例：2 条';
+  RAISE NOTICE '- 操作日志样例：2 条';
   RAISE NOTICE '==============================================';
   RAISE NOTICE '注意事项：';
   RAISE NOTICE '1. 生产环境请立即修改默认密码';

@@ -181,8 +181,8 @@ export const ErrorCodeMessage: Record<ErrorCodeType, string> = {
 /**
  * 获取错误码对应的消息
  */
-export function getErrorMessage(code: ErrorCodeType): string {
-  return ErrorCodeMessage[code] || '未知错误'
+export function getErrorMessage(code: number): string {
+  return ErrorCodeMessage[code as ErrorCodeType] || '未知错误'
 }
 
 /**

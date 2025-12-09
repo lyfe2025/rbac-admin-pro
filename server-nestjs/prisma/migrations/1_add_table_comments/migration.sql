@@ -166,16 +166,16 @@ COMMENT ON COLUMN public.sys_config.update_by IS '更新者';
 COMMENT ON COLUMN public.sys_config.update_time IS '更新时间';
 COMMENT ON COLUMN public.sys_config.remark IS '备注';
 
-COMMENT ON TABLE public.sys_logininfor IS '系统访问记录';
-COMMENT ON COLUMN public.sys_logininfor.info_id IS '访问ID';
-COMMENT ON COLUMN public.sys_logininfor.user_name IS '用户账号';
-COMMENT ON COLUMN public.sys_logininfor.ipaddr IS '登录IP地址';
-COMMENT ON COLUMN public.sys_logininfor.login_location IS '登录地点';
-COMMENT ON COLUMN public.sys_logininfor.browser IS '浏览器类型';
-COMMENT ON COLUMN public.sys_logininfor.os IS '操作系统';
-COMMENT ON COLUMN public.sys_logininfor.status IS '登录状态（0成功 1失败）';
-COMMENT ON COLUMN public.sys_logininfor.msg IS '提示消息';
-COMMENT ON COLUMN public.sys_logininfor.login_time IS '访问时间';
+COMMENT ON TABLE public.sys_login_log IS '系统访问记录';
+COMMENT ON COLUMN public.sys_login_log.info_id IS '访问ID';
+COMMENT ON COLUMN public.sys_login_log.user_name IS '用户账号';
+COMMENT ON COLUMN public.sys_login_log.ipaddr IS '登录IP地址';
+COMMENT ON COLUMN public.sys_login_log.login_location IS '登录地点';
+COMMENT ON COLUMN public.sys_login_log.browser IS '浏览器类型';
+COMMENT ON COLUMN public.sys_login_log.os IS '操作系统';
+COMMENT ON COLUMN public.sys_login_log.status IS '登录状态（0成功 1失败）';
+COMMENT ON COLUMN public.sys_login_log.msg IS '提示消息';
+COMMENT ON COLUMN public.sys_login_log.login_time IS '访问时间';
 
 COMMENT ON TABLE public.sys_notice IS '通知公告表';
 COMMENT ON COLUMN public.sys_notice.notice_id IS '公告ID';
@@ -213,4 +213,69 @@ COMMENT ON COLUMN public.sys_job_log.job_message IS '日志信息';
 COMMENT ON COLUMN public.sys_job_log.status IS '执行状态（0正常 1失败）';
 COMMENT ON COLUMN public.sys_job_log.exception_info IS '异常信息';
 COMMENT ON COLUMN public.sys_job_log.create_time IS '创建时间';
+
+
+
+-- =============================================
+-- 索引注释
+-- =============================================
+
+-- sys_dept 索引
+COMMENT ON INDEX public.sys_dept_parent_id_idx IS '部门父级ID索引，用于树形结构查询';
+COMMENT ON INDEX public.sys_dept_status_del_flag_idx IS '部门状态+删除标志复合索引';
+
+-- sys_user 索引
+COMMENT ON INDEX public.sys_user_user_name_del_flag_key IS '用户名+删除标志唯一索引，确保未删除用户名唯一';
+COMMENT ON INDEX public.sys_user_dept_id_idx IS '用户部门ID索引，用于按部门查询用户';
+COMMENT ON INDEX public.sys_user_status_del_flag_idx IS '用户状态+删除标志复合索引';
+COMMENT ON INDEX public.sys_user_phonenumber_idx IS '用户手机号索引';
+COMMENT ON INDEX public.sys_user_email_idx IS '用户邮箱索引';
+
+-- sys_post 索引
+COMMENT ON INDEX public.sys_post_post_code_key IS '岗位编码唯一索引';
+COMMENT ON INDEX public.sys_post_status_idx IS '岗位状态索引';
+
+-- sys_role 索引
+COMMENT ON INDEX public.sys_role_role_key_del_flag_key IS '角色标识+删除标志唯一索引';
+COMMENT ON INDEX public.sys_role_status_del_flag_idx IS '角色状态+删除标志复合索引';
+
+-- sys_menu 索引
+COMMENT ON INDEX public.sys_menu_parent_id_idx IS '菜单父级ID索引，用于树形结构查询';
+COMMENT ON INDEX public.sys_menu_status_visible_idx IS '菜单状态+可见性复合索引';
+COMMENT ON INDEX public.sys_menu_perms_idx IS '菜单权限标识索引，用于权限校验';
+
+-- sys_oper_log 索引
+COMMENT ON INDEX public.sys_oper_log_oper_time_idx IS '操作日志时间索引，用于按时间范围查询';
+COMMENT ON INDEX public.sys_oper_log_oper_name_idx IS '操作日志操作人索引';
+COMMENT ON INDEX public.sys_oper_log_business_type_idx IS '操作日志业务类型索引';
+COMMENT ON INDEX public.sys_oper_log_status_idx IS '操作日志状态索引';
+
+-- sys_dict_type 索引
+COMMENT ON INDEX public.sys_dict_type_dict_type_key IS '字典类型唯一索引';
+COMMENT ON INDEX public.sys_dict_type_status_idx IS '字典类型状态索引';
+
+-- sys_dict_data 索引
+COMMENT ON INDEX public.sys_dict_data_dict_type_idx IS '字典数据类型索引，用于按类型查询字典项';
+COMMENT ON INDEX public.sys_dict_data_status_idx IS '字典数据状态索引';
+
+-- sys_config 索引
+COMMENT ON INDEX public.sys_config_config_key_key IS '系统配置键名唯一索引';
+
+-- sys_login_log 索引
+COMMENT ON INDEX public.sys_login_log_login_time_idx IS '登录日志时间索引，用于按时间范围查询';
+COMMENT ON INDEX public.sys_login_log_user_name_idx IS '登录日志用户名索引';
+COMMENT ON INDEX public.sys_login_log_status_idx IS '登录日志状态索引';
+
+-- sys_notice 索引
+COMMENT ON INDEX public.sys_notice_status_idx IS '通知公告状态索引';
+COMMENT ON INDEX public.sys_notice_notice_type_idx IS '通知公告类型索引';
+
+-- sys_job 索引
+COMMENT ON INDEX public.sys_job_status_idx IS '定时任务状态索引';
+COMMENT ON INDEX public.sys_job_job_group_idx IS '定时任务分组索引';
+
+-- sys_job_log 索引
+COMMENT ON INDEX public.sys_job_log_create_time_idx IS '任务日志创建时间索引';
+COMMENT ON INDEX public.sys_job_log_job_name_job_group_idx IS '任务日志名称+分组复合索引';
+COMMENT ON INDEX public.sys_job_log_status_idx IS '任务日志状态索引';
 

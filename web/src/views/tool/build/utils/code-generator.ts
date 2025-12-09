@@ -129,7 +129,6 @@ const form = useForm({
 })
 
 const onSubmit = form.handleSubmit((values) => {
-  console.log('Form submitted:', values)
   toast({
     title: '提交成功',
     description: JSON.stringify(values, null, 2),

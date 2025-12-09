@@ -1,46 +1,58 @@
 import request from '@/utils/request'
-import { type SysUser } from './types'
+import { type SysUser, type UserQuery, type PageResult } from './types'
 
-export function listUser(query: any) {
-  return request({
+/** 用户创建/更新参数 */
+export interface UserForm {
+  userId?: string
+  deptId?: string | number
+  userName: string
+  nickName: string
+  password?: string
+  phonenumber?: string
+  email?: string
+  sex?: string
+  status?: string
+  roleIds?: string[]
+  postIds?: string[]
+  remark?: string
+}
+
+export function listUser(query: UserQuery) {
+  return request<{ data: PageResult<SysUser> }>({
     url: '/system/user',
     method: 'get',
     params: query
-  }).then((res: any) => res.data)
+  }).then((res) => res.data)
 }
 
 export function getUser(userId: string) {
-  return request<{ data: SysUser; roleIds: string[] }>({
+  return request<{ data: { user: SysUser; roleIds: string[]; postIds: string[] } }>({
     url: `/system/user/${userId}`,
     method: 'get'
-  }).then((res: any) => {
-    const data = res.data || {}
-    return { ...data, postIds: data.postIds ?? [] }
-  })
+  }).then((res) => res.data)
 }
 
-export function addUser(data: any) {
+export function addUser(data: UserForm) {
   return request({
     url: '/system/user',
     method: 'post',
     data
-  }).then((res: any) => res)
+  })
 }
 
-export function updateUser(data: any) {
+export function updateUser(data: UserForm) {
   return request({
     url: `/system/user/${data.userId}`,
     method: 'put',
     data
-  }).then((res: any) => res)
+  })
 }
 
 export function delUser(userIds: string[]) {
-  // 批量删除时前端通常逐个调用，这里简单处理第一个
   return request({
     url: `/system/user/${userIds[0]}`,
     method: 'delete'
-  }).then((res: any) => res)
+  })
 }
 
 export function changeUserStatus(userId: string, status: string) {
@@ -48,7 +60,7 @@ export function changeUserStatus(userId: string, status: string) {
     url: '/system/user/changeStatus',
     method: 'put',
     data: { userId, status }
-  }).then((res: any) => res)
+  })
 }
 
 export function resetUserPwd(userId: string, password: string) {
@@ -56,10 +68,9 @@ export function resetUserPwd(userId: string, password: string) {
     url: '/system/user/resetPwd',
     method: 'put',
     data: { userId, password }
-  }).then((res: any) => res)
+  })
 }
 
-// 更新个人信息
 export function updateProfile(data: {
   nickName?: string
   email?: string
@@ -74,7 +85,6 @@ export function updateProfile(data: {
   })
 }
 
-// 修改个人密码
 export function updatePassword(oldPassword: string, newPassword: string) {
   return request({
     url: '/system/user/profile/updatePwd',

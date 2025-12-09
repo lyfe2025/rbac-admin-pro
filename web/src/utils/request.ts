@@ -30,8 +30,7 @@ service.interceptors.request.use(
     // 可以在这里添加其他通用 header，如 tenant-id 等
     return config
   },
-  (error: any) => {
-    console.log(error)
+  (error: unknown) => {
     return Promise.reject(error)
   }
 )
@@ -99,17 +98,17 @@ service.interceptors.response.use(
     // 成功,返回数据
     return response.data
   },
-  (error: any) => {
-    console.log('err' + error)
-    let { message } = error
+  (error: unknown) => {
+    const err = error as { message?: string; response?: { status: number; data?: { code?: number; msg?: string } } }
+    let message = err.message || '未知错误'
     let title = "网络错误"
     
     // 尝试从响应中获取后端返回的错误信息
-    if (error.response && error.response.data) {
-      const httpStatus = error.response.status     // HTTP 状态码
-      const { code, msg } = error.response.data    // 业务错误码和消息
+    if (err.response?.data) {
+      const httpStatus = err.response.status     // HTTP 状态码
+      const { code, msg } = err.response.data    // 业务错误码和消息
       // 优先使用后端返回的 msg,如果没有则使用错误码映射
-      const errorMessage = msg || (code ? getErrorMessage(code) : '')
+      const errorMessage = msg || (code !== undefined ? getErrorMessage(code) : '')
       
       if (httpStatus === 400) {
         title = "参数验证失败"

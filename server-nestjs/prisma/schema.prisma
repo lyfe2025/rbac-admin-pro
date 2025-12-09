@@ -41,6 +41,8 @@ model SysDept {
   roles      SysRoleDept[]
   users      SysUser[]
 
+  @@index([parentId])
+  @@index([status, delFlag])
   @@map("sys_dept")
 }
 
@@ -92,6 +94,11 @@ model SysUser {
   posts            SysUserPost[]
   roles            SysUserRole[]
 
+  @@unique([userName, delFlag])
+  @@index([deptId])
+  @@index([status, delFlag])
+  @@index([phonenumber])
+  @@index([email])
   @@map("sys_user")
 }
 
@@ -119,6 +126,8 @@ model SysPost {
   remark     String?       @db.VarChar(500)
   users      SysUserPost[]
 
+  @@unique([postCode])
+  @@index([status])
   @@map("sys_post")
 }
 
@@ -156,6 +165,8 @@ model SysRole {
   menus             SysRoleMenu[]
   users             SysUserRole[]
 
+  @@unique([roleKey, delFlag])
+  @@index([status, delFlag])
   @@map("sys_role")
 }
 
@@ -201,6 +212,9 @@ model SysMenu {
   children   SysMenu[]     @relation("MenuToMenu")
   roles      SysRoleMenu[]
 
+  @@index([parentId])
+  @@index([status, visible])
+  @@index([perms])
   @@map("sys_menu")
 }
 
@@ -291,6 +305,10 @@ model SysOperLog {
   /// 操作时间
   operTime      DateTime? @default(now()) @map("oper_time") @db.Timestamp(6)
 
+  @@index([operTime])
+  @@index([operName])
+  @@index([businessType])
+  @@index([status])
   @@map("sys_oper_log")
 }
 
@@ -315,6 +333,8 @@ model SysDictType {
   /// 备注
   remark     String?   @db.VarChar(500)
 
+  @@unique([dictType])
+  @@index([status])
   @@map("sys_dict_type")
 }
 
@@ -349,6 +369,8 @@ model SysDictData {
   /// 备注
   remark     String?   @db.VarChar(500)
 
+  @@index([dictType])
+  @@index([status])
   @@map("sys_dict_data")
 }
 
@@ -375,6 +397,7 @@ model SysConfig {
   /// 备注
   remark      String?   @db.VarChar(500)
 
+  @@unique([configKey])
   @@map("sys_config")
 }
 
@@ -390,6 +413,9 @@ model SysLoginLog {
   msg           String?   @default("") @db.VarChar(255) /// 提示消息
   loginTime     DateTime? @default(now()) @map("login_time") @db.Timestamp(6) /// 访问时间
 
+  @@index([loginTime])
+  @@index([userName])
+  @@index([status])
   @@map("sys_login_log")
 }
 
@@ -416,6 +442,8 @@ model SysNotice {
   /// 备注
   remark        String?   @db.VarChar(255)
 
+  @@index([status])
+  @@index([noticeType])
   @@map("sys_notice")
 }
 
@@ -448,6 +476,8 @@ model SysJob {
   /// 备注信息
   remark         String?   @db.VarChar(500)
 
+  @@index([status])
+  @@index([jobGroup])
   @@map("sys_job")
 }
 
@@ -470,5 +500,8 @@ model SysJobLog {
   /// 创建时间
   createTime    DateTime? @default(now()) @map("create_time") @db.Timestamp(6)
 
+  @@index([createTime])
+  @@index([jobName, jobGroup])
+  @@index([status])
   @@map("sys_job_log")
 }

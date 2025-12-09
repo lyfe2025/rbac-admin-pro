@@ -1,35 +1,45 @@
 import request from '@/utils/request'
-import { type SysPost } from './types'
+import { type SysPost, type PostQuery, type PageResult } from './types'
 
-export function listPost(query: any) {
-  return request<{ data: { total: number; rows: SysPost[] } }>({
+/** 岗位创建/更新参数 */
+export interface PostForm {
+  postId?: string
+  postCode: string
+  postName: string
+  postSort: number
+  status: string
+  remark?: string
+}
+
+export function listPost(query: PostQuery) {
+  return request<{ data: PageResult<SysPost> }>({
     url: '/system/post',
     method: 'get',
     params: query
-  }).then((res: any) => res.data)
+  }).then((res) => res.data)
 }
 
 export function getPost(postId: string) {
-  return request<{ data: { data: SysPost } }>({
+  return request<{ data: SysPost }>({
     url: `/system/post/${postId}`,
     method: 'get'
-  }).then((res: any) => res)
+  })
 }
 
-export function addPost(data: any) {
+export function addPost(data: PostForm) {
   return request({
     url: '/system/post',
     method: 'post',
     data
-  }).then((res: any) => res)
+  })
 }
 
-export function updatePost(data: any) {
+export function updatePost(data: PostForm) {
   return request({
     url: `/system/post/${data.postId}`,
     method: 'put',
     data
-  }).then((res: any) => res)
+  })
 }
 
 export function delPost(postIds: string[]) {
@@ -37,5 +47,5 @@ export function delPost(postIds: string[]) {
     url: '/system/post',
     method: 'delete',
     params: { ids: postIds.join(',') }
-  }).then((res: any) => res)
+  })
 }

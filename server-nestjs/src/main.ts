@@ -7,6 +7,7 @@ import { LoggerService } from './common/logger/logger.service';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import { json, urlencoded } from 'express';
 
 // 全局 BigInt 序列化支持
 // 解决 "TypeError: Do not know how to serialize a BigInt" 错误
@@ -36,10 +37,8 @@ async function bootstrap() {
   // app.setGlobalPrefix('api'); // 前端 .env 配置为 /api，如果我们不使用代理重写，可能需要这个配置
 
   // 增加请求体大小限制 (支持文件上传,如头像)
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-  app.use(require('body-parser').json({ limit: '10mb' }));
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-  app.use(require('body-parser').urlencoded({ limit: '10mb', extended: true }));
+  app.use(json({ limit: '10mb' }));
+  app.use(urlencoded({ limit: '10mb', extended: true }));
 
   // 全局参数校验管道
   app.useGlobalPipes(
@@ -54,7 +53,27 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter(logger));
 
   // 启用 CORS (跨域资源共享)
-  app.enableCors();
+  // 生产环境必须配置白名单，未配置则拒绝所有跨域请求
+  // 开发环境允许所有来源
+  const isProduction = process.env.NODE_ENV === 'production';
+  const corsOrigins = process.env.CORS_ORIGINS?.split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+
+  if (isProduction && (!corsOrigins || corsOrigins.length === 0)) {
+    logger.warn(
+      '生产环境未配置 CORS_ORIGINS，将拒绝所有跨域请求！请在 .env 中配置允许的来源',
+      'Bootstrap',
+    );
+  }
+
+  app.enableCors({
+    origin: isProduction ? corsOrigins || false : true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['X-New-Token'], // 暴露滑动过期的新 Token 头
+  });
 
   // 配置 Swagger 文档
   const config = new DocumentBuilder()

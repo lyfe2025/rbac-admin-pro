@@ -310,18 +310,66 @@ ALTER TABLE "sys_user_post" ADD CONSTRAINT "sys_user_post_user_id_fkey" FOREIGN 
 -- AddForeignKey
 ALTER TABLE "sys_user_post" ADD CONSTRAINT "sys_user_post_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "sys_post"("post_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
--- CreateTable: sys_logininfor
-CREATE TABLE "sys_logininfor" (
-    "info_id" BIGSERIAL NOT NULL,
-    "user_name" VARCHAR(50) DEFAULT '',
-    "ipaddr" VARCHAR(128) DEFAULT '',
-    "login_location" VARCHAR(255) DEFAULT '',
-    "browser" VARCHAR(50) DEFAULT '',
-    "os" VARCHAR(50) DEFAULT '',
-    "status" CHAR(1) DEFAULT '0',
-    "msg" VARCHAR(255) DEFAULT '',
-    "login_time" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
+-- =============================================
+-- 索引定义 (对应 schema.prisma 中的 @@index)
+-- =============================================
 
-    CONSTRAINT "sys_logininfor_pkey" PRIMARY KEY ("info_id")
-);
+-- sys_dept 索引
+CREATE INDEX "sys_dept_parent_id_idx" ON "sys_dept"("parent_id");
+CREATE INDEX "sys_dept_status_del_flag_idx" ON "sys_dept"("status", "del_flag");
+
+-- sys_user 索引
+CREATE UNIQUE INDEX "sys_user_user_name_del_flag_key" ON "sys_user"("user_name", "del_flag");
+CREATE INDEX "sys_user_dept_id_idx" ON "sys_user"("dept_id");
+CREATE INDEX "sys_user_status_del_flag_idx" ON "sys_user"("status", "del_flag");
+CREATE INDEX "sys_user_phonenumber_idx" ON "sys_user"("phonenumber");
+CREATE INDEX "sys_user_email_idx" ON "sys_user"("email");
+
+-- sys_post 索引
+CREATE UNIQUE INDEX "sys_post_post_code_key" ON "sys_post"("post_code");
+CREATE INDEX "sys_post_status_idx" ON "sys_post"("status");
+
+-- sys_role 索引
+CREATE UNIQUE INDEX "sys_role_role_key_del_flag_key" ON "sys_role"("role_key", "del_flag");
+CREATE INDEX "sys_role_status_del_flag_idx" ON "sys_role"("status", "del_flag");
+
+-- sys_menu 索引
+CREATE INDEX "sys_menu_parent_id_idx" ON "sys_menu"("parent_id");
+CREATE INDEX "sys_menu_status_visible_idx" ON "sys_menu"("status", "visible");
+CREATE INDEX "sys_menu_perms_idx" ON "sys_menu"("perms");
+
+-- sys_oper_log 索引
+CREATE INDEX "sys_oper_log_oper_time_idx" ON "sys_oper_log"("oper_time");
+CREATE INDEX "sys_oper_log_oper_name_idx" ON "sys_oper_log"("oper_name");
+CREATE INDEX "sys_oper_log_business_type_idx" ON "sys_oper_log"("business_type");
+CREATE INDEX "sys_oper_log_status_idx" ON "sys_oper_log"("status");
+
+-- sys_dict_type 索引
+CREATE UNIQUE INDEX "sys_dict_type_dict_type_key" ON "sys_dict_type"("dict_type");
+CREATE INDEX "sys_dict_type_status_idx" ON "sys_dict_type"("status");
+
+-- sys_dict_data 索引
+CREATE INDEX "sys_dict_data_dict_type_idx" ON "sys_dict_data"("dict_type");
+CREATE INDEX "sys_dict_data_status_idx" ON "sys_dict_data"("status");
+
+-- sys_config 索引
+CREATE UNIQUE INDEX "sys_config_config_key_key" ON "sys_config"("config_key");
+
+-- sys_login_log 索引
+CREATE INDEX "sys_login_log_login_time_idx" ON "sys_login_log"("login_time");
+CREATE INDEX "sys_login_log_user_name_idx" ON "sys_login_log"("user_name");
+CREATE INDEX "sys_login_log_status_idx" ON "sys_login_log"("status");
+
+-- sys_notice 索引
+CREATE INDEX "sys_notice_status_idx" ON "sys_notice"("status");
+CREATE INDEX "sys_notice_notice_type_idx" ON "sys_notice"("notice_type");
+
+-- sys_job 索引
+CREATE INDEX "sys_job_status_idx" ON "sys_job"("status");
+CREATE INDEX "sys_job_job_group_idx" ON "sys_job"("job_group");
+
+-- sys_job_log 索引
+CREATE INDEX "sys_job_log_create_time_idx" ON "sys_job_log"("create_time");
+CREATE INDEX "sys_job_log_job_name_job_group_idx" ON "sys_job_log"("job_name", "job_group");
+CREATE INDEX "sys_job_log_status_idx" ON "sys_job_log"("status");
 

@@ -1,6 +1,70 @@
 export interface PageQuery {
-  pageNum: number
-  pageSize: number
+  pageNum?: number
+  pageSize?: number
+}
+
+/** 通用分页响应 */
+export interface PageResult<T> {
+  rows: T[]
+  total: number
+}
+
+/** 用户查询参数 */
+export interface UserQuery extends PageQuery {
+  userName?: string
+  phonenumber?: string
+  status?: string
+  deptId?: string | number
+  beginTime?: string
+  endTime?: string
+}
+
+/** 角色查询参数 */
+export interface RoleQuery extends PageQuery {
+  roleName?: string
+  roleKey?: string
+  status?: string
+}
+
+/** 岗位查询参数 */
+export interface PostQuery extends PageQuery {
+  postCode?: string
+  postName?: string
+  status?: string
+}
+
+/** 字典类型查询参数 */
+export interface DictTypeQuery extends PageQuery {
+  dictName?: string
+  dictType?: string
+  status?: string
+}
+
+/** 字典数据查询参数 */
+export interface DictDataQuery extends PageQuery {
+  dictType?: string
+  dictLabel?: string
+  status?: string
+}
+
+/** 参数配置查询参数 */
+export interface ConfigQuery extends PageQuery {
+  configName?: string
+  configKey?: string
+  configType?: string
+}
+
+/** 通知公告查询参数 */
+export interface NoticeQuery extends PageQuery {
+  noticeTitle?: string
+  noticeType?: string
+  createBy?: string
+}
+
+/** 菜单查询参数 */
+export interface MenuQuery {
+  menuName?: string
+  status?: string
 }
 
 export interface BaseEntity {

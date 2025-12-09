@@ -1,76 +1,106 @@
 import request from '@/utils/request'
-import { type SysDictType as DictType, type SysDictData as DictData } from './types'
+import {
+  type SysDictType as DictType,
+  type SysDictData as DictData,
+  type DictTypeQuery,
+  type DictDataQuery,
+  type PageResult
+} from './types'
+
 export type { SysDictType as DictType, SysDictData as DictData } from './types'
 
-export function listType(query: any) {
-  return request<{ data: { total: number; rows: DictType[] } }>({
+/** 字典类型创建/更新参数 */
+export interface DictTypeForm {
+  dictId?: string
+  dictName: string
+  dictType: string
+  status?: string
+  remark?: string
+}
+
+/** 字典数据创建/更新参数 */
+export interface DictDataForm {
+  dictCode?: string
+  dictSort?: number
+  dictLabel: string
+  dictValue: string
+  dictType: string
+  cssClass?: string
+  listClass?: string
+  isDefault?: string
+  status?: string
+  remark?: string
+}
+
+export function listType(query: DictTypeQuery) {
+  return request<{ data: PageResult<DictType> }>({
     url: '/system/dict/type',
     method: 'get',
     params: query
-  }).then((res: any) => res.data)
+  }).then((res) => res.data)
 }
 
 export function getType(dictId: string) {
-  return request<{ data: { data: DictType } }>({
+  return request<{ data: DictType }>({
     url: `/system/dict/type/${dictId}`,
     method: 'get'
-  }).then((res: any) => res)
+  })
 }
 
-export function addType(data: any) {
+export function addType(data: DictTypeForm) {
   return request({
     url: '/system/dict/type',
     method: 'post',
     data
-  }).then((res: any) => res)
+  })
 }
 
-export function updateType(data: any) {
+export function updateType(data: DictTypeForm) {
   return request({
     url: `/system/dict/type/${data.dictId}`,
     method: 'put',
     data
-  }).then((res: any) => res)
+  })
 }
 
 export function delType(dictIds: string[]) {
   return request({
-    url: `/system/dict/type`,
+    url: '/system/dict/type',
     method: 'delete',
     params: { ids: dictIds.join(',') }
-  }).then((res: any) => res)
+  })
 }
 
 // 字典数据
-export function listData(query: any) {
-  return request<{ data: { rows: DictData[]; total: number } }>({
+export function listData(query: DictDataQuery) {
+  return request<{ data: PageResult<DictData> }>({
     url: '/system/dict/data',
     method: 'get',
     params: query
-  }).then((res: any) => res.data)
+  }).then((res) => res.data)
 }
 
 export function getData(dictCode: string) {
-  return request<{ data: { data: DictData } }>({
+  return request<{ data: DictData }>({
     url: `/system/dict/data/${dictCode}`,
     method: 'get'
-  }).then((res: any) => res)
+  })
 }
 
-export function addData(data: any) {
+export function addData(data: DictDataForm) {
   return request({
     url: '/system/dict/data',
     method: 'post',
     data
-  }).then((res: any) => res)
+  })
 }
 
-export function updateData(data: any) {
+export function updateData(data: DictDataForm) {
   return request({
     url: `/system/dict/data/${data.dictCode}`,
     method: 'put',
     data
-  }).then((res: any) => res)
+  })
 }
 
 export function delData(dictCodes: string[]) {
@@ -78,5 +108,5 @@ export function delData(dictCodes: string[]) {
     url: '/system/dict/data',
     method: 'delete',
     params: { ids: dictCodes.join(',') }
-  }).then((res: any) => res)
+  })
 }

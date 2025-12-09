@@ -4,6 +4,7 @@ import * as QRCode from 'qrcode';
 import { RedisService } from '../redis/redis.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoggerService } from '../common/logger/logger.service';
+import { generateUuid } from '../common/utils/uuid.util';
 
 const TWO_FACTOR_TEMP_PREFIX = '2fa:temp:'; // 临时存储待验证的登录信息
 const TWO_FACTOR_TEMP_EXPIRE = 300; // 5分钟过期
@@ -127,10 +128,6 @@ export class TwoFactorService {
    * 生成临时 token
    */
   generateTempToken(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0;
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
+    return generateUuid();
   }
 }

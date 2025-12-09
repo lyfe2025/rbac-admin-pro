@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { generateUuid } from '../common/utils/uuid.util';
 
 // svg-captcha 没有类型定义
 /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment */
@@ -41,7 +42,7 @@ export class CaptchaService {
       height: 40,
     });
 
-    const uuid = this.generateUuid();
+    const uuid = generateUuid();
     const key = CAPTCHA_PREFIX + uuid;
 
     // 存储验证码到 Redis，5分钟过期
@@ -69,7 +70,7 @@ export class CaptchaService {
     if (!storedCode) return false;
 
     // 验证后删除，防止重复使用
-    this.redis.getClient().del(key);
+    void this.redis.getClient().del(key);
 
     return storedCode === code.toLowerCase();
   }
@@ -82,16 +83,5 @@ export class CaptchaService {
       where: { configKey: 'sys.account.captchaEnabled' },
     });
     return config?.configValue === 'true';
-  }
-
-  /**
-   * 生成 UUID
-   */
-  private generateUuid(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0;
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
   }
 }

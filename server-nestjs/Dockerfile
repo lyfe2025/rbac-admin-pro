@@ -42,11 +42,13 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nestjs -u 1001
 # 设置工作目录
 WORKDIR /app
 
-# 从构建阶段复制必要文件
+# 复制 package 文件并安装生产依赖（减小镜像体积）
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/prisma ./prisma
+RUN npm ci --omit=dev && npx prisma generate
+
+# 从构建阶段复制编译产物
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nestjs:nodejs /app/package*.json ./
 
 # 创建日志目录
 RUN mkdir -p logs && chown -R nestjs:nodejs logs

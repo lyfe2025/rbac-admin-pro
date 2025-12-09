@@ -1,36 +1,47 @@
 import request from '@/utils/request'
-import { type SysConfig } from './types'
+import { type SysConfig, type ConfigQuery, type PageResult } from './types'
+
 export type { SysConfig } from './types'
 
-export function listConfig(query: any) {
-  return request<{ data: { rows: SysConfig[]; total: number } }>({
+/** 参数配置创建/更新参数 */
+export interface ConfigForm {
+  configId?: string
+  configName: string
+  configKey: string
+  configValue: string
+  configType: string
+  remark?: string
+}
+
+export function listConfig(query: ConfigQuery) {
+  return request<{ data: PageResult<SysConfig> }>({
     url: '/system/config',
     method: 'get',
     params: query
-  }).then((res: any) => res.data)
+  }).then((res) => res.data)
 }
 
 export function getConfig(configId: string) {
-  return request<{ data: { data: SysConfig } }>({
+  return request<{ data: SysConfig }>({
     url: `/system/config/${configId}`,
     method: 'get'
-  }).then((res: any) => res)
+  })
 }
 
-export function addConfig(data: any) {
+export function addConfig(data: ConfigForm) {
   return request({
     url: '/system/config',
     method: 'post',
     data
-  }).then((res: any) => res)
+  })
 }
 
-export function updateConfig(data: any) {
+export function updateConfig(data: ConfigForm) {
   return request({
     url: `/system/config/${data.configId}`,
     method: 'put',
     data
-  }).then((res: any) => res)
+  })
 }
 
 export function delConfig(configIds: string[]) {
@@ -38,12 +49,12 @@ export function delConfig(configIds: string[]) {
     url: '/system/config',
     method: 'delete',
     params: { ids: configIds.join(',') }
-  }).then((res: any) => res)
+  })
 }
 
 export function refreshCache() {
   return request({
     url: '/system/config/refreshCache',
     method: 'get'
-  }).then((res: any) => res)
+  })
 }
