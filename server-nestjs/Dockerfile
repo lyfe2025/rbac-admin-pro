@@ -24,20 +24,17 @@ RUN pnpm install
 # 复制源代码
 COPY . .
 
-# 显示目录结构
-RUN echo "=== 源代码目录 ===" && ls -la && ls -la src/
-
 # 生成 Prisma Client
 RUN DATABASE_URL="postgresql://temp:temp@localhost:5432/temp" pnpm prisma generate
 
-# 构建应用（使用 nest build 直接调用）
-RUN echo "=== 开始构建 ===" && ./node_modules/.bin/nest build && echo "=== 构建完成 ==="
+# 构建应用
+RUN pnpm build
 
-# 显示构建结果
-RUN echo "=== 构建产物 ===" && ls -la dist/ || echo "dist 目录不存在"
+# 清理 devDependencies 减小镜像体积
+RUN pnpm prune --prod
 
 # 暴露端口
 EXPOSE 3000
 
-# 启动应用
-CMD ["node", "dist/main.js"]
+# 启动应用（注意：构建产物在 dist/src/ 目录下）
+CMD ["node", "dist/src/main.js"]
