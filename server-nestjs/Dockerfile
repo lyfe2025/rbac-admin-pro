@@ -21,12 +21,8 @@ ENV CACHE_BUST=20251210_v2
 COPY package.json ./
 COPY prisma ./prisma/
 
-# 安装所有依赖
-RUN pnpm install && \
-    echo "=== 验证关键依赖 ===" && \
-    ls -la node_modules/express && \
-    ls -la node_modules/multer && \
-    ls -la node_modules/@nestjs/platform-express
+# 安装所有依赖（shamefully-hoist=true 会提升依赖到根目录）
+RUN pnpm install
 
 # 复制源代码
 COPY . .
