@@ -15,7 +15,7 @@ ENV TZ=Asia/Shanghai
 WORKDIR /app
 
 # 强制刷新缓存 - 更新此值可触发重新构建
-ENV CACHE_BUST=20251210_v2
+ENV CACHE_BUST=20251210_v3
 
 # 复制 package 文件
 COPY package.json ./
