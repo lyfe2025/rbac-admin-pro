@@ -109,6 +109,24 @@ export class ConfigService {
   }
 
   /**
+   * 根据配置键获取配置值
+   */
+  async getConfigValue(configKey: string): Promise<string | null> {
+    const config = await this.prisma.sysConfig.findFirst({
+      where: { configKey },
+    });
+    return config?.configValue ?? null;
+  }
+
+  /**
+   * 获取初始密码配置
+   */
+  async getInitPassword(): Promise<string> {
+    const password = await this.getConfigValue('sys.account.initPassword');
+    return password || 'admin123';
+  }
+
+  /**
    * 获取网站公开配置（无需登录）
    */
   async getSiteConfig(): Promise<{

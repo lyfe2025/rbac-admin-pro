@@ -452,11 +452,11 @@ async function confirmDelete() {
 // 重置密码
 const showResetPwdDialog = ref(false)
 const userToResetPwd = ref<SysUser | null>(null)
-const newPassword = ref('123456')
+const newPassword = ref('admin123')
 
 function handleResetPwd(row: SysUser) {
   userToResetPwd.value = row
-  newPassword.value = '123456'
+  newPassword.value = 'admin123'
   showResetPwdDialog.value = true
 }
 

@@ -121,9 +121,8 @@ watch(() => props.user, async (newUser) => {
                param.includes(`userName=${userName}`)
       })
       
-      console.log(`找到 ${operLogs.value.length} 条与用户 ${userName} 相关的操作日志`)
-    } catch (error) {
-      console.error('加载操作日志失败:', error)
+    } catch {
+      // 加载操作日志失败，静默处理
       operLogs.value = []
     } finally {
       loadingOperLogs.value = false

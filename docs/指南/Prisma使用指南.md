@@ -179,7 +179,7 @@ SELECT role_name, role_key, role_sort FROM sys_role WHERE del_flag = '0';
 ```
 
 **预期结果:**
-- ✅ 用户: admin (密码: 123456)
+- ✅ 用户: admin (密码: admin123)
 - ✅ 角色: 超级管理员、部门管理员、普通管理员
 - ✅ 部门: 总公司及其子部门
 - ✅ 菜单: 完整的菜单树

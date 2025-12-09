@@ -241,7 +241,8 @@ async function main() {
   };
 
   const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash('123456', salt);
+  // 默认密码与文档保持一致
+  const hashedPassword = await bcrypt.hash('admin123', salt);
 
   const adminUser = await ensureUser({
     userName: 'admin',
@@ -1216,7 +1217,7 @@ async function main() {
     {
       configName: '初始密码',
       configKey: 'sys.account.initPassword',
-      configValue: '123456',
+      configValue: 'admin123',
       configType: 'Y',
     },
     {

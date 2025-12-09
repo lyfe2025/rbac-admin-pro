@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/ui/toast/use-toast'
-import { Loader2, Shield, Users, Settings, BarChart3, RefreshCw, KeyRound } from 'lucide-vue-next'
+import { Loader2, Shield, Users, Settings, BarChart3, RefreshCw, KeyRound, Eye, EyeOff } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/modules/user'
 import { useAppStore } from '@/stores/modules/app'
 import { getCaptchaImage, verifyTwoFactor, type CaptchaResult, type LoginResult } from '@/api/login'
@@ -32,7 +32,8 @@ const siteLogo = computed(() => {
 })
 
 const username = ref('admin')
-const password = ref('123456')
+const password = ref('admin123')
+const showPassword = ref(false)
 const code = ref('')
 const uuid = ref('')
 const captchaImg = ref('')
@@ -280,14 +281,24 @@ const backToLogin = () => {
             </div>
             <div class="space-y-2">
               <Label for="password">密码</Label>
-              <Input
-                id="password"
-                type="password"
-                v-model="password"
-                placeholder="请输入密码"
-                class="h-11"
-                @keyup.enter="handleLogin"
-              />
+              <div class="relative">
+                <Input
+                  id="password"
+                  :type="showPassword ? 'text' : 'password'"
+                  v-model="password"
+                  placeholder="请输入密码"
+                  class="h-11 pr-10"
+                  @keyup.enter="handleLogin"
+                />
+                <button
+                  type="button"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  @click="showPassword = !showPassword"
+                >
+                  <EyeOff v-if="showPassword" class="h-4 w-4" />
+                  <Eye v-else class="h-4 w-4" />
+                </button>
+              </div>
             </div>
             <div v-if="captchaEnabled" class="space-y-2">
               <Label for="code">验证码</Label>
@@ -316,7 +327,7 @@ const backToLogin = () => {
           </div>
 
           <p class="text-center text-sm text-muted-foreground">
-            默认账号：admin / 123456
+            默认账号：admin / admin123
           </p>
         </template>
       </div>

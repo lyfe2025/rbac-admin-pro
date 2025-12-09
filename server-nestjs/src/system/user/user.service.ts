@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -8,15 +13,18 @@ import * as bcrypt from 'bcrypt';
 import { LoggerService } from '../../common/logger/logger.service';
 import { BusinessException } from '../../common/exceptions/business.exception';
 import { ErrorCode } from '../../common/enums/error-code.enum';
+import { ConfigService } from '../config/config.service';
 
 @Injectable()
 export class UserService {
   constructor(
     private prisma: PrismaService,
     private logger: LoggerService,
+    @Inject(forwardRef(() => ConfigService))
+    private configService: ConfigService,
   ) {}
 
-  async findByUsername(username: string) {
+  findByUsername(username: string) {
     this.logger.debug(`查询用户: ${username}`, 'UserService');
     return this.prisma.sysUser.findFirst({
       where: {
@@ -227,9 +235,11 @@ export class UserService {
 
     const { roleIds, postIds, password, deptId, ...userData } = createUserDto;
 
-    // 密码加密
+    // 密码加密（未提供密码时使用系统配置的初始密码）
     const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(password || '123456', salt);
+    const initPassword =
+      password || (await this.configService.getInitPassword());
+    const hashedPassword = await bcrypt.hash(initPassword, salt);
 
     return this.prisma.$transaction(async (tx) => {
       // 1. 创建用户

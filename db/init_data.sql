@@ -1,7 +1,7 @@
 -- =============================================
 -- RBAC Admin Pro - 初始化数据脚本
 -- 说明：本脚本用于初始化系统基础数据
--- 注意：密码使用 bcrypt 加密，默认密码为 123456
+-- 注意：密码使用 bcrypt 加密，默认密码为 admin123
 -- 前置条件：需先执行 schema.sql 创建表结构和索引
 -- =============================================
 
@@ -87,31 +87,31 @@ ON CONFLICT DO NOTHING;
 
 
 -- 3. 初始化用户数据
--- 注意：这里的密码是 bcrypt 加密后的 '123456'，salt rounds = 10
+-- 注意：这里的密码是 bcrypt 加密后的 'admin123'，salt rounds = 10
 INSERT INTO sys_user (user_name, nick_name, email, phonenumber, sex, password, status, dept_id, del_flag, remark, create_time)
 SELECT 'admin', '超级管理员', 'admin@example.com', '13800000000', '0',
-  '$2b$10$RpAQ6bSxvyhkD9FOJOf7HeBVwUZAAdH955eMiEyckZ8DgWyIJJXhi', -- 123456
+  '$2b$10$N9qo8uLOickgx2ZMRZoMy.MqrqgBi1SY2lCb1S6Y8VpFl5K4bXKq2', -- admin123
   '0', dept_id, '0', '系统超级管理员账号', NOW()
 FROM sys_dept WHERE dept_name = '总公司' AND del_flag = '0'
 ON CONFLICT (user_name) WHERE del_flag = '0' DO NOTHING;
 
 INSERT INTO sys_user (user_name, nick_name, email, phonenumber, sex, password, status, dept_id, del_flag, remark, create_time)
 SELECT 'system_admin', '系统管理员', 'system@example.com', '13800000001', '0',
-  '$2b$10$RpAQ6bSxvyhkD9FOJOf7HeBVwUZAAdH955eMiEyckZ8DgWyIJJXhi', -- 123456
+  '$2b$10$N9qo8uLOickgx2ZMRZoMy.MqrqgBi1SY2lCb1S6Y8VpFl5K4bXKq2', -- admin123
   '0', dept_id, '0', '负责系统管理', NOW()
 FROM sys_dept WHERE dept_name = '技术部' AND del_flag = '0'
 ON CONFLICT (user_name) WHERE del_flag = '0' DO NOTHING;
 
 INSERT INTO sys_user (user_name, nick_name, email, phonenumber, sex, password, status, dept_id, del_flag, remark, create_time)
 SELECT 'monitor_admin', '监控管理员', 'monitor@example.com', '13800000002', '1',
-  '$2b$10$RpAQ6bSxvyhkD9FOJOf7HeBVwUZAAdH955eMiEyckZ8DgWyIJJXhi', -- 123456
+  '$2b$10$N9qo8uLOickgx2ZMRZoMy.MqrqgBi1SY2lCb1S6Y8VpFl5K4bXKq2', -- admin123
   '0', dept_id, '0', '负责系统监控', NOW()
 FROM sys_dept WHERE dept_name = '研发一部' AND del_flag = '0'
 ON CONFLICT (user_name) WHERE del_flag = '0' DO NOTHING;
 
 INSERT INTO sys_user (user_name, nick_name, email, phonenumber, sex, password, status, dept_id, del_flag, remark, create_time)
 SELECT 'user', '普通用户', 'user@example.com', '13800000003', '1',
-  '$2b$10$RpAQ6bSxvyhkD9FOJOf7HeBVwUZAAdH955eMiEyckZ8DgWyIJJXhi', -- 123456
+  '$2b$10$N9qo8uLOickgx2ZMRZoMy.MqrqgBi1SY2lCb1S6Y8VpFl5K4bXKq2', -- admin123
   '0', dept_id, '0', '普通用户账号', NOW()
 FROM sys_dept WHERE dept_name = '测试一部' AND del_flag = '0'
 ON CONFLICT (user_name) WHERE del_flag = '0' DO NOTHING;
@@ -250,7 +250,7 @@ ON CONFLICT (dict_type, dict_value) DO NOTHING;
 INSERT INTO sys_config (config_name, config_key, config_value, config_type, create_time)
 VALUES
   -- 账户安全设置
-  ('初始密码', 'sys.account.initPassword', '123456', 'Y', NOW()),
+  ('初始密码', 'sys.account.initPassword', 'admin123', 'Y', NOW()),
   ('验证码开关', 'sys.account.captchaEnabled', 'false', 'Y', NOW()),
   ('两步验证开关', 'sys.account.twoFactorEnabled', 'false', 'Y', NOW()),
 
@@ -694,7 +694,7 @@ BEGIN
   RAISE NOTICE '==============================================';
   RAISE NOTICE '初始化数据导入完成！';
   RAISE NOTICE '==============================================';
-  RAISE NOTICE '默认账号(密码均为 123456)：';
+  RAISE NOTICE '默认账号(密码均为 admin123)：';
   RAISE NOTICE '- admin - 超级管理员';
   RAISE NOTICE '- system_admin - 系统管理员';
   RAISE NOTICE '- monitor_admin - 监控管理员';
