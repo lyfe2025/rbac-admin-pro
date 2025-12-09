@@ -513,4 +513,142 @@ export class UserService {
     );
     return userInfo;
   }
+
+  /**
+   * 获取导出数据
+   */
+  async getExportData(query: QueryUserDto) {
+    const { userName, phonenumber, status, deptId } = query;
+
+    const where: Prisma.SysUserWhereInput = { delFlag: '0' };
+    if (userName) where.userName = { contains: userName };
+    if (phonenumber) where.phonenumber = { contains: phonenumber };
+    if (status) where.status = status;
+    if (deptId) where.deptId = BigInt(deptId);
+
+    const users = await this.prisma.sysUser.findMany({
+      where,
+      include: { dept: true },
+      orderBy: { userId: 'asc' },
+    });
+
+    return users.map((user) => ({
+      userId: user.userId.toString(),
+      userName: user.userName,
+      nickName: user.nickName,
+      deptName: user.dept?.deptName || '',
+      phonenumber: user.phonenumber || '',
+      email: user.email || '',
+      sex: user.sex === '0' ? '男' : user.sex === '1' ? '女' : '未知',
+      status: user.status === '0' ? '正常' : '停用',
+      createTime: user.createTime
+        ? new Date(user.createTime).toLocaleString('zh-CN')
+        : '',
+    }));
+  }
+
+  /**
+   * 批量导入用户
+   */
+  async importUsers(
+    users: Array<{
+      userName: string;
+      nickName: string;
+      deptName?: string;
+      phonenumber?: string;
+      email?: string;
+      sex?: string;
+      status?: string;
+    }>,
+    updateSupport: boolean,
+  ): Promise<{ success: number; fail: number; errors: string[] }> {
+    this.logger.log(`批量导入用户: ${users.length} 条`, 'UserService');
+
+    let success = 0;
+    let fail = 0;
+    const errors: string[] = [];
+
+    // 获取部门映射
+    const depts = await this.prisma.sysDept.findMany({
+      where: { delFlag: '0' },
+      select: { deptId: true, deptName: true },
+    });
+    const deptMap = new Map(depts.map((d) => [d.deptName, d.deptId]));
+
+    // 获取初始密码
+    const initPassword = await this.configService.getInitPassword();
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(initPassword, salt);
+
+    for (let i = 0; i < users.length; i++) {
+      const row = users[i];
+      const rowNum = i + 2; // Excel 行号（从2开始，1是表头）
+
+      try {
+        // 校验必填字段
+        if (!row.userName || !row.nickName) {
+          errors.push(`第${rowNum}行: 用户名和昵称不能为空`);
+          fail++;
+          continue;
+        }
+
+        // 查找部门
+        let deptId: bigint | null = null;
+        if (row.deptName) {
+          deptId = deptMap.get(row.deptName) || null;
+          if (!deptId) {
+            errors.push(`第${rowNum}行: 部门"${row.deptName}"不存在`);
+            fail++;
+            continue;
+          }
+        }
+
+        // 检查用户是否存在
+        const existUser = await this.prisma.sysUser.findFirst({
+          where: { userName: row.userName, delFlag: '0' },
+        });
+
+        const userData = {
+          nickName: row.nickName,
+          deptId,
+          phonenumber: row.phonenumber || null,
+          email: row.email || null,
+          sex: row.sex === '男' ? '0' : row.sex === '女' ? '1' : '2',
+          status: row.status === '停用' ? '1' : '0',
+        };
+
+        if (existUser) {
+          if (updateSupport) {
+            await this.prisma.sysUser.update({
+              where: { userId: existUser.userId },
+              data: { ...userData, updateTime: new Date() },
+            });
+            success++;
+          } else {
+            errors.push(`第${rowNum}行: 用户"${row.userName}"已存在`);
+            fail++;
+          }
+        } else {
+          await this.prisma.sysUser.create({
+            data: {
+              userName: row.userName,
+              ...userData,
+              password: hashedPassword,
+              createTime: new Date(),
+            },
+          });
+          success++;
+        }
+      } catch (e) {
+        errors.push(`第${rowNum}行: ${(e as Error).message}`);
+        fail++;
+      }
+    }
+
+    this.logger.log(
+      `导入完成: 成功${success}条, 失败${fail}条`,
+      'UserService',
+    );
+    return { success, fail, errors };
+  }
 }

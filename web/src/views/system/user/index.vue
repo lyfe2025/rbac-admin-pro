@@ -53,6 +53,7 @@ import {
   Plus, 
   Search, 
   FileDown, 
+  FileUp,
   Trash2, 
   Loader2, 
   RefreshCw, 
@@ -62,9 +63,10 @@ import {
   XSquare,
   Filter,
   Edit,
-  Settings2
+  Settings2,
+  Download
 } from 'lucide-vue-next'
-import { listUser, getUser, delUser, addUser, updateUser, resetUserPwd, changeUserStatus } from '@/api/system/user'
+import { listUser, getUser, delUser, addUser, updateUser, resetUserPwd, changeUserStatus, exportUserExcel, downloadUserTemplate, importUserExcel } from '@/api/system/user'
 import { listDeptTree } from '@/api/system/dept'
 import { listRole } from '@/api/system/role'
 import { listPost } from '@/api/system/post'
@@ -391,32 +393,82 @@ async function confirmBatchStatus() {
 }
 
 // 导出功能
-function handleExport() {
-  // 简单的 CSV 导出
-  const headers = ['用户编号', '用户名', '用户昵称', '部门', '手机号码', '邮箱', '状态', '创建时间']
-  const rows = userList.value.map(user => [
-    user.userId,
-    user.userName,
-    user.nickName,
-    user.dept?.deptName || '',
-    user.phonenumber,
-    user.email,
-    user.status === '0' ? '正常' : '停用',
-    formatDate(user.createTime)
-  ])
-  
-  const csvContent = [
-    headers.join(','),
-    ...rows.map(row => row.join(','))
-  ].join('\n')
-  
-  const blob = new Blob([`\ufeff${csvContent}`], { type: 'text/csv;charset=utf-8;' })
-  const link = document.createElement('a')
-  link.href = URL.createObjectURL(blob)
-  link.download = `用户列表_${new Date().getTime()}.csv`
-  link.click()
-  
-  toast({ title: "导出成功", description: "用户数据已导出" })
+const exportLoading = ref(false)
+async function handleExport() {
+  exportLoading.value = true
+  try {
+    const res = await exportUserExcel(queryParams)
+    const blob = new Blob([res as any], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `用户数据_${Date.now()}.xlsx`
+    link.click()
+    URL.revokeObjectURL(link.href)
+    toast({ title: "导出成功", description: "用户数据已导出为 Excel" })
+  } catch {
+    toast({ title: "导出失败", variant: "destructive" })
+  } finally {
+    exportLoading.value = false
+  }
+}
+
+// 导入功能
+const showImportDialog = ref(false)
+const importFile = ref<File | null>(null)
+const importLoading = ref(false)
+const updateSupport = ref(false)
+const importResult = ref<{ success: number; fail: number; errors: string[] } | null>(null)
+
+function handleImport() {
+  importFile.value = null
+  updateSupport.value = false
+  importResult.value = null
+  showImportDialog.value = true
+}
+
+async function handleDownloadTemplate() {
+  try {
+    const res = await downloadUserTemplate()
+    const blob = new Blob([res as any], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = '用户导入模板.xlsx'
+    link.click()
+    URL.revokeObjectURL(link.href)
+  } catch {
+    toast({ title: "下载失败", variant: "destructive" })
+  }
+}
+
+function handleFileChange(e: Event) {
+  const target = e.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    importFile.value = target.files[0]
+  }
+}
+
+async function confirmImport() {
+  if (!importFile.value) {
+    toast({ title: "请选择文件", variant: "destructive" })
+    return
+  }
+  importLoading.value = true
+  try {
+    const result = await importUserExcel(importFile.value, updateSupport.value)
+    importResult.value = result
+    if (result.success > 0) {
+      toast({ title: "导入完成", description: `成功 ${result.success} 条，失败 ${result.fail} 条` })
+      getList()
+    }
+  } catch {
+    toast({ title: "导入失败", variant: "destructive" })
+  } finally {
+    importLoading.value = false
+  }
 }
 
 
@@ -603,8 +655,13 @@ onMounted(async () => {
           <XSquare class="mr-2 h-4 w-4" />
           批量停用
         </Button>
-        <Button variant="outline" @click="handleExport">
-          <FileDown class="mr-2 h-4 w-4" />
+        <Button variant="outline" @click="handleImport">
+          <FileUp class="mr-2 h-4 w-4" />
+          导入
+        </Button>
+        <Button variant="outline" :disabled="exportLoading" @click="handleExport">
+          <Loader2 v-if="exportLoading" class="mr-2 h-4 w-4 animate-spin" />
+          <FileDown v-else class="mr-2 h-4 w-4" />
           导出
         </Button>
         <DropdownMenu>
@@ -912,5 +969,69 @@ onMounted(async () => {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+
+    <!-- Import Dialog -->
+    <Dialog v-model:open="showImportDialog">
+      <DialogContent class="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>导入用户</DialogTitle>
+          <DialogDescription>
+            上传 Excel 文件批量导入用户数据
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div class="space-y-4 py-4">
+          <div class="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
+            <div class="text-sm">
+              <p class="font-medium">下载导入模板</p>
+              <p class="text-muted-foreground">请先下载模板，按格式填写数据</p>
+            </div>
+            <Button variant="outline" size="sm" @click="handleDownloadTemplate">
+              <Download class="mr-2 h-4 w-4" />
+              下载模板
+            </Button>
+          </div>
+
+          <div class="grid gap-2">
+            <Label>选择文件</Label>
+            <Input 
+              type="file" 
+              accept=".xlsx,.xls"
+              @change="handleFileChange"
+            />
+            <p v-if="importFile" class="text-sm text-muted-foreground">
+              已选择: {{ importFile.name }}
+            </p>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <Checkbox id="updateSupport" v-model:checked="updateSupport" />
+            <Label for="updateSupport" class="text-sm font-normal">
+              更新已存在的用户数据
+            </Label>
+          </div>
+
+          <div v-if="importResult" class="p-4 border rounded-lg space-y-2">
+            <div class="flex gap-4 text-sm">
+              <span class="text-green-600">成功: {{ importResult.success }} 条</span>
+              <span class="text-red-600">失败: {{ importResult.fail }} 条</span>
+            </div>
+            <div v-if="importResult.errors.length > 0" class="max-h-32 overflow-y-auto">
+              <p v-for="(err, idx) in importResult.errors" :key="idx" class="text-sm text-red-600">
+                {{ err }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" @click="showImportDialog = false">关闭</Button>
+          <Button :disabled="importLoading || !importFile" @click="confirmImport">
+            <Loader2 v-if="importLoading" class="mr-2 h-4 w-4 animate-spin" />
+            开始导入
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>

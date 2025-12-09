@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Textarea } from '@/components/ui/textarea'
+import RichTextEditor from '@/components/common/RichTextEditor.vue'
 import { useToast } from '@/components/ui/toast/use-toast'
 import { Plus, Edit, Trash2, RefreshCw, Search, Loader2, Eye } from 'lucide-vue-next'
 import {
@@ -302,7 +302,7 @@ onMounted(() => {
 
     <!-- Add/Edit Dialog -->
     <Dialog v-model:open="showDialog">
-      <DialogContent class="sm:max-w-[600px]">
+      <DialogContent class="sm:max-w-[800px]">
         <DialogHeader>
           <DialogTitle>{{ isEdit ? '修改公告' : '新增公告' }}</DialogTitle>
           <DialogDescription>
@@ -345,7 +345,7 @@ onMounted(() => {
 
           <div class="grid gap-2">
             <Label for="noticeContent">内容 *</Label>
-            <Textarea id="noticeContent" v-model="form.noticeContent" placeholder="请输入内容" rows="5" />
+            <RichTextEditor v-model="form.noticeContent" placeholder="请输入公告内容..." />
           </div>
         </div>
 
@@ -386,9 +386,7 @@ onMounted(() => {
             <span class="text-muted-foreground">{{ previewNotice?.createBy }} 发布于 {{ formatDate(previewNotice?.createTime) }}</span>
           </DialogDescription>
         </DialogHeader>
-        <div class="py-4 whitespace-pre-wrap">
-          {{ previewNotice?.noticeContent }}
-        </div>
+        <div class="py-4 prose prose-sm dark:prose-invert max-w-none" v-html="previewNotice?.noticeContent" />
         <DialogFooter>
           <Button variant="outline" @click="showPreviewDialog = false">关闭</Button>
         </DialogFooter>

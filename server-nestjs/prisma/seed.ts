@@ -675,6 +675,18 @@ async function main() {
       perms: 'system:user:resetPwd',
       orderNum: 5,
     });
+    await ensureButton({
+      menuName: '用户导出',
+      parentId: userMenu.menuId,
+      perms: 'system:user:export',
+      orderNum: 6,
+    });
+    await ensureButton({
+      menuName: '用户导入',
+      parentId: userMenu.menuId,
+      perms: 'system:user:import',
+      orderNum: 7,
+    });
   }
   const roleMenu = await getMenuByPath(systemDir.menuId, 'role');
   if (roleMenu) {
@@ -1521,7 +1533,7 @@ async function main() {
       data: {
         jobName: '示例任务',
         jobGroup: 'DEFAULT',
-        invokeTarget: 'demoTask.execute()',
+        invokeTarget: 'log:示例任务执行成功',
         cronExpression: '0/30 * * * * *',
         misfirePolicy: '3',
         concurrent: '1',
@@ -1538,14 +1550,14 @@ async function main() {
         {
           jobName: '示例任务',
           jobGroup: 'DEFAULT',
-          invokeTarget: 'demoTask.execute()',
+          invokeTarget: 'log:示例任务执行成功',
           jobMessage: '执行成功',
           status: '0',
         },
         {
           jobName: '示例任务',
           jobGroup: 'DEFAULT',
-          invokeTarget: 'demoTask.execute()',
+          invokeTarget: 'log:示例任务执行成功',
           jobMessage: '执行失败：模拟异常',
           status: '1',
           exceptionInfo: 'MockError: something wrong',

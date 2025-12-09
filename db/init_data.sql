@@ -298,7 +298,7 @@ ON CONFLICT DO NOTHING;
 
 -- 11. 初始化定时任务
 INSERT INTO sys_job (job_name, job_group, invoke_target, cron_expression, misfire_policy, concurrent, status, create_time)
-VALUES ('示例任务', 'DEFAULT', 'demoTask.execute()', '0/30 * * * * *', '3', '1', '0', NOW())
+VALUES ('示例任务', 'DEFAULT', 'log:示例任务执行成功', '0/30 * * * * *', '3', '1', '0', NOW())
 ON CONFLICT DO NOTHING;
 
 
@@ -436,6 +436,16 @@ ON CONFLICT DO NOTHING;
 
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
 SELECT '重置密码', '', '', 5, 'F', '1', '0', '#', 1, menu_id, 'system:user:resetPwd'
+FROM sys_menu WHERE path = 'user' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '用户导出', '', '', 6, 'F', '1', '0', '#', 1, menu_id, 'system:user:export'
+FROM sys_menu WHERE path = 'user' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '用户导入', '', '', 7, 'F', '1', '0', '#', 1, menu_id, 'system:user:import'
 FROM sys_menu WHERE path = 'user' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
 ON CONFLICT DO NOTHING;
 
@@ -708,8 +718,8 @@ ON CONFLICT DO NOTHING;
 -- 15. 任务日志样例
 INSERT INTO sys_job_log (job_name, job_group, invoke_target, job_message, status, exception_info, create_time)
 VALUES 
-  ('示例任务', 'DEFAULT', 'demoTask.execute()', '执行成功', '0', '', NOW()),
-  ('示例任务', 'DEFAULT', 'demoTask.execute()', '执行失败：模拟异常', '1', 'MockError: something wrong', NOW())
+  ('示例任务', 'DEFAULT', 'log:示例任务执行成功', '执行成功', '0', '', NOW()),
+  ('示例任务', 'DEFAULT', 'log:示例任务执行成功', '执行失败：模拟异常', '1', 'MockError: something wrong', NOW())
 ON CONFLICT DO NOTHING;
 
 

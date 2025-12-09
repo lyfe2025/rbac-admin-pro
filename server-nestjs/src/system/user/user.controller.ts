@@ -9,7 +9,12 @@ import {
   Query,
   UseGuards,
   Request,
+  Res,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -26,13 +31,41 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
 import { Log, BusinessType } from '../../common/decorators/log.decorator';
+import { ExcelService } from '../../common/excel/excel.service';
+
+// 用户导出列配置
+const USER_EXPORT_COLUMNS = [
+  { header: '用户编号', key: 'userId', width: 12 },
+  { header: '用户名', key: 'userName', width: 15 },
+  { header: '用户昵称', key: 'nickName', width: 15 },
+  { header: '部门', key: 'deptName', width: 20 },
+  { header: '手机号码', key: 'phonenumber', width: 15 },
+  { header: '邮箱', key: 'email', width: 25 },
+  { header: '性别', key: 'sex', width: 8 },
+  { header: '状态', key: 'status', width: 8 },
+  { header: '创建时间', key: 'createTime', width: 20 },
+];
+
+// 用户导入列映射（Excel列名 -> 字段名）
+const USER_IMPORT_COLUMN_MAP: Record<string, string> = {
+  用户名: 'userName',
+  用户昵称: 'nickName',
+  部门: 'deptName',
+  手机号码: 'phonenumber',
+  邮箱: 'email',
+  性别: 'sex',
+  状态: 'status',
+};
 
 @ApiTags('用户管理')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @Controller('system/user')
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(
+    private userService: UserService,
+    private excelService: ExcelService,
+  ) {}
 
   @Get('getInfo')
   @ApiOperation({ summary: '获取当前用户信息' })
@@ -143,5 +176,81 @@ export class UserController {
   @ApiResponse({ status: 200, description: '删除成功' })
   remove(@Param('userId') userId: string) {
     return this.userService.remove(userId);
+  }
+
+  @Get('export/excel')
+  @RequirePermission('system:user:export')
+  @Log('用户管理', BusinessType.EXPORT)
+  @ApiOperation({ summary: '导出用户数据' })
+  async exportExcel(@Query() query: QueryUserDto, @Res() res: Response) {
+    const data = await this.userService.getExportData(query);
+    const filename = `用户数据_${Date.now()}`;
+    await this.excelService.exportExcel(
+      res,
+      data,
+      USER_EXPORT_COLUMNS,
+      filename,
+      '用户列表',
+    );
+  }
+
+  @Get('import/template')
+  @RequirePermission('system:user:import')
+  @ApiOperation({ summary: '下载用户导入模板' })
+  async downloadTemplate(@Res() res: Response) {
+    const templateColumns = USER_EXPORT_COLUMNS.filter(
+      (c) => c.key !== 'userId' && c.key !== 'createTime',
+    );
+    const exampleData = [
+      {
+        userName: 'zhangsan',
+        nickName: '张三',
+        deptName: '研发部门',
+        phonenumber: '13800138000',
+        email: 'zhangsan@example.com',
+        sex: '男',
+        status: '正常',
+      },
+    ];
+    await this.excelService.generateTemplate(
+      res,
+      templateColumns,
+      '用户导入模板',
+      '用户列表',
+      exampleData,
+    );
+  }
+
+  @Post('import')
+  @RequirePermission('system:user:import')
+  @Log('用户管理', BusinessType.IMPORT)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: '导入用户数据' })
+  async importExcel(
+    @UploadedFile() file: Express.Multer.File,
+    @Query('updateSupport') updateSupport: string,
+  ) {
+    if (!file) {
+      return { code: 400, msg: '请选择要导入的文件' };
+    }
+    const users = await this.excelService.parseExcel<{
+      userName: string;
+      nickName: string;
+      deptName?: string;
+      phonenumber?: string;
+      email?: string;
+      sex?: string;
+      status?: string;
+    }>(file.buffer, USER_IMPORT_COLUMN_MAP);
+
+    if (users.length === 0) {
+      return { code: 400, msg: 'Excel 文件中没有数据' };
+    }
+
+    const result = await this.userService.importUsers(
+      users,
+      updateSupport === 'true',
+    );
+    return result;
   }
 }

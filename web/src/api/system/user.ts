@@ -92,3 +92,35 @@ export function updatePassword(oldPassword: string, newPassword: string) {
     data: { oldPassword, newPassword }
   })
 }
+
+/** 导出用户 Excel */
+export function exportUserExcel(query?: UserQuery) {
+  return request({
+    url: '/system/user/export/excel',
+    method: 'get',
+    params: query,
+    responseType: 'blob'
+  })
+}
+
+/** 下载用户导入模板 */
+export function downloadUserTemplate() {
+  return request({
+    url: '/system/user/import/template',
+    method: 'get',
+    responseType: 'blob'
+  })
+}
+
+/** 导入用户 Excel */
+export function importUserExcel(file: File, updateSupport = false) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request<{ data: { success: number; fail: number; errors: string[] } }>({
+    url: '/system/user/import',
+    method: 'post',
+    params: { updateSupport },
+    data: formData,
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }).then((res: any) => res.data)
+}

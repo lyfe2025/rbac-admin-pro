@@ -20,6 +20,7 @@ import { LoggerModule } from './common/logger/logger.module';
 import { HttpLoggerMiddleware } from './common/middleware/http-logger.middleware';
 import { UploadModule } from './common/upload/upload.module';
 import { MailModule } from './common/mail/mail.module';
+import { ExcelModule } from './common/excel/excel.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { MailModule } from './common/mail/mail.module';
     PostModule,
     UploadModule,
     MailModule,
+    ExcelModule,
   ],
   controllers: [AppController],
   providers: [
