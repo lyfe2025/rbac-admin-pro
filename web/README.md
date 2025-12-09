@@ -2,36 +2,32 @@
 
 基于 Vue 3 + TypeScript + Shadcn-Vue 的现代化后台管理前端。
 
-## 🛠️ 技术栈 (Tech Stack)
+## 技术栈
 
-- **Framework**: [Vue 3](https://vuejs.org/) (Script Setup)
-- **Build Tool**: [Vite 6](https://vitejs.dev/)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
-- **UI Components**: [Shadcn-Vue](https://www.shadcn-vue.com/) (Radix Vue + Tailwind CSS)
-- **State Management**: [Pinia](https://pinia.vuejs.org/)
-- **Router**: [Vue Router 4](https://router.vuejs.org/)
-- **Icons**: [Lucide Vue Next](https://lucide.dev/guide/packages/lucide-vue-next)
-- **HTTP Client**: [Axios](https://axios-http.com/)
+- **框架**: Vue 3.5 + Composition API (`<script setup lang="ts">`)
+- **构建**: Vite 7
+- **语言**: TypeScript 5.9
+- **UI 组件**: Shadcn-Vue 2 (Radix Vue + Reka UI)
+- **样式**: Tailwind CSS 3
+- **状态管理**: Pinia 3
+- **路由**: Vue Router 4
+- **HTTP**: Axios
+- **表单验证**: VeeValidate + Zod
+- **图标**: Lucide Vue Next
+- **富文本**: Tiptap
+- **工具库**: VueUse
 
-## ✨ 功能特性 (Features)
+## 功能特性
 
-- **🔐 完善的权限控制**: 
-  - 页面级权限 (路由守卫)
-  - 按钮级权限 (自定义指令 `v-hasPermi`)
-  - 动态路由生成 (基于后端 API)
-- **🎨 动态主题系统**: 
-  - 支持 7 种主题色切换
-  - 深色模式 (Dark Mode) 支持
-  - 实时圆角/样式定制
-  - 持久化存储配置
-- **📱 响应式布局**: 适配移动端与桌面端
-- **🧩 丰富的组件库**: 集成 Shadcn-Vue 全套组件
-- **📊 仪表盘**: 包含 KPI 卡片与图表展示
+- **权限控制**: 页面级路由守卫 + 按钮级指令 (`v-hasPermi`) + 动态路由
+- **主题系统**: 多主题色切换 + 深色模式 + 圆角定制 + 持久化
+- **响应式布局**: 适配移动端与桌面端
+- **丰富组件**: 集成 45+ Shadcn-Vue 组件
 
-## 🚀 开发指南 (Development)
+## 开发指南
 
-### 环境准备
-确保本地已安装 Node.js (推荐 v18+)。
+### 环境要求
+Node.js >= 18
 
 ### 安装依赖
 ```bash
@@ -42,39 +38,62 @@ npm install
 ```bash
 npm run dev
 ```
-访问 http://localhost:5173 即可预览。
+访问 http://localhost:5173
 
-### 构建生产环境
+### 常用命令
 ```bash
-npm run build
+npm run dev          # 开发服务器
+npm run build        # 生产构建
+npm run type-check   # TypeScript 检查
+npm run lint         # ESLint 检查
+npm run format       # Prettier 格式化
 ```
 
-### 代码检查
-```bash
-npm run type-check
+## 目录结构
+
 ```
-
-## 📂 目录结构 (Directory Structure)
-
-```text
 src/
-├── api/             # API 接口定义 (Mock 数据)
-├── assets/          # 静态资源
-├── components/      # 公共组件
-│   └── ui/          # Shadcn UI 组件
-├── directive/       # 自定义指令 (权限指令等)
-├── layout/          # 布局组件 (Sidebar, Header)
-├── router/          # 路由配置
-├── stores/          # Pinia 状态管理
-├── utils/           # 工具函数 (Request, Auth)
-└── views/           # 页面视图
-    ├── dashboard/   # 仪表盘
-    ├── system/      # 系统管理 (用户/角色/菜单)
-    ├── monitor/     # 系统监控
-    └── ...
+├── api/                 # API 接口
+│   ├── system/          # 系统管理 API
+│   ├── monitor/         # 监控模块 API
+│   └── tool/            # 工具模块 API
+├── components/
+│   ├── ui/              # Shadcn-Vue 组件 (45+)
+│   ├── common/          # 通用组件
+│   │   ├── IconPicker.vue
+│   │   ├── ImageUpload.vue
+│   │   ├── PasswordInput.vue
+│   │   ├── RichTextEditor.vue
+│   │   └── TablePagination.vue
+│   └── business/        # 业务组件
+│       ├── DeptTreeSelect.vue
+│       ├── UserDetailDialog.vue
+│       └── UserForm.vue
+├── directive/           # 自定义指令 (权限等)
+├── layout/              # 布局组件
+├── lib/                 # 工具库
+├── router/              # 路由配置
+├── stores/modules/      # Pinia 状态
+│   ├── app.ts           # 应用状态
+│   ├── user.ts          # 用户状态
+│   ├── menu.ts          # 菜单状态
+│   └── permission.ts    # 权限状态
+├── types/               # TypeScript 类型
+├── utils/               # 工具函数
+│   ├── request.ts       # Axios 封装
+│   ├── auth.ts          # 认证工具
+│   ├── format.ts        # 格式化工具
+│   └── error-handler.ts # 错误处理
+├── views/               # 页面视图
+│   ├── dashboard/       # 仪表盘
+│   ├── system/          # 系统管理
+│   ├── monitor/         # 系统监控
+│   ├── tool/            # 系统工具
+│   ├── login/           # 登录页
+│   └── error/           # 错误页
+└── permission.ts        # 路由权限控制
 ```
 
-## 🔌 后端接口 (API)
+## 后端接口
 
-当前项目默认使用 Mock 数据。
-如需对接真实后端，请修改 `src/utils/request.ts` 中的 `baseURL` 配置，并参考根目录下的 `docs/后端开发集成指南.md`。
+项目已对接 NestJS 后端服务，API 基础路径配置在 `src/utils/request.ts`。

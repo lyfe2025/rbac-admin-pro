@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import {
   Table,
   TableBody,
@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import TablePagination from '@/components/common/TablePagination.vue'
 import { formatDate } from '@/utils/format'
+import { sanitizeHtml } from '@/utils/sanitize'
 import { listNotice, getNotice, delNotice, addNotice, updateNotice, type SysNotice } from '@/api/system/notice'
 
 const { toast } = useToast()
@@ -66,8 +67,8 @@ const previewNotice = ref<SysNotice | null>(null)
 const isEdit = ref(false)
 const submitLoading = ref(false)
 
-const form = reactive<Partial<SysNotice>>({
-  noticeId: undefined,
+const form = reactive({
+  noticeId: undefined as string | undefined,
   noticeTitle: '',
   noticeType: '1',
   noticeContent: '',
@@ -175,6 +176,11 @@ function getNoticeTypeLabel(type: string) {
   }
   return map[type] || '未知'
 }
+
+// 清洗后的预览内容，防止 XSS 攻击
+const sanitizedPreviewContent = computed(() => {
+  return sanitizeHtml(previewNotice.value?.noticeContent)
+})
 
 onMounted(() => {
   getList()
@@ -386,7 +392,7 @@ onMounted(() => {
             <span class="text-muted-foreground">{{ previewNotice?.createBy }} 发布于 {{ formatDate(previewNotice?.createTime) }}</span>
           </DialogDescription>
         </DialogHeader>
-        <div class="py-4 prose prose-sm dark:prose-invert max-w-none" v-html="previewNotice?.noticeContent" />
+        <div class="py-4 prose prose-sm dark:prose-invert max-w-none" v-html="sanitizedPreviewContent" />
         <DialogFooter>
           <Button variant="outline" @click="showPreviewDialog = false">关闭</Button>
         </DialogFooter>

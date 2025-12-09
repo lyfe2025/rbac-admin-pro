@@ -5,6 +5,7 @@ import { QueryNoticeDto } from './dto/query-notice.dto';
 import { CreateNoticeDto } from './dto/create-notice.dto';
 import { UpdateNoticeDto } from './dto/update-notice.dto';
 import { LoggerService } from '../../common/logger/logger.service';
+import { sanitizeHtmlContent } from '../../common/utils/sanitize-html.util';
 
 @Injectable()
 export class NoticeService {
@@ -40,8 +41,11 @@ export class NoticeService {
   async create(dto: CreateNoticeDto) {
     this.logger.log(`发布通知公告: ${dto.noticeTitle}`, 'NoticeService');
 
+    // 清洗 HTML 内容，防止 XSS 攻击
+    const sanitizedContent = sanitizeHtmlContent(dto.noticeContent);
+
     const result = await this.prisma.sysNotice.create({
-      data: { ...dto, createTime: new Date() },
+      data: { ...dto, noticeContent: sanitizedContent, createTime: new Date() },
     });
 
     this.logger.log(
@@ -60,9 +64,15 @@ export class NoticeService {
       throw new BadRequestException('公告不存在');
     }
 
+    // 清洗 HTML 内容，防止 XSS 攻击
+    const updateData = { ...dto, updateTime: new Date() };
+    if (dto.noticeContent) {
+      updateData.noticeContent = sanitizeHtmlContent(dto.noticeContent);
+    }
+
     const result = await this.prisma.sysNotice.update({
       where: { noticeId: BigInt(noticeId) },
-      data: { ...dto, updateTime: new Date() },
+      data: updateData,
     });
 
     this.logger.log(
