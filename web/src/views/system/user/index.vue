@@ -273,7 +273,7 @@ async function handleUpdate(row: SysUser) {
     listPost({})
   ])
   
-  Object.assign(form, userRes.data)
+  Object.assign(form, userRes.user)
   form.postIds = userRes.postIds
   form.roleIds = userRes.roleIds
   // Password is not needed for update
@@ -313,7 +313,7 @@ async function handleDetail(row: SysUser) {
   // 获取完整的用户信息(包含角色和岗位)
   const userRes = await getUser(row.userId)
   currentUser.value = {
-    ...userRes.data,
+    ...userRes.user,
     roles: userRes.roles,
     posts: userRes.posts,
   } as any

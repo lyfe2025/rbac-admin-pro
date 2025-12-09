@@ -95,7 +95,7 @@ async function getList() {
   loading.value = true
   try {
     const res = await listMenu(queryParams)
-    menuList.value = toTreeMenu(res.data)
+    menuList.value = toTreeMenu(res)
     // Default expand first level
     if (expandedAll.value) {
       menuList.value.forEach(m => isExpanded.value[m.menuId] = true)
@@ -135,7 +135,7 @@ function toggleExpandAll() {
 
 async function getMenuTree() {
   const res = await listMenu({})
-  menuOptions.value = toTreeMenu(res.data)
+  menuOptions.value = toTreeMenu(res)
 }
 
 // Helper to flatten tree for table display with expansion control

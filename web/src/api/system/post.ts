@@ -4,10 +4,10 @@ import { type SysPost, type PostQuery, type PageResult } from './types'
 /** 岗位创建/更新参数 */
 export interface PostForm {
   postId?: string
-  postCode: string
-  postName: string
-  postSort: number
-  status: string
+  postCode?: string
+  postName?: string
+  postSort?: number
+  status?: string
   remark?: string
 }
 
@@ -16,7 +16,7 @@ export function listPost(query: PostQuery) {
     url: '/system/post',
     method: 'get',
     params: query
-  }).then((res) => res.data)
+  }).then((res) => res.data.data)
 }
 
 export function getPost(postId: string) {

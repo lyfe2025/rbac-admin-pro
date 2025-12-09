@@ -12,8 +12,8 @@ export type { SysDictType as DictType, SysDictData as DictData } from './types'
 /** 字典类型创建/更新参数 */
 export interface DictTypeForm {
   dictId?: string
-  dictName: string
-  dictType: string
+  dictName?: string
+  dictType?: string
   status?: string
   remark?: string
 }
@@ -22,9 +22,9 @@ export interface DictTypeForm {
 export interface DictDataForm {
   dictCode?: string
   dictSort?: number
-  dictLabel: string
-  dictValue: string
-  dictType: string
+  dictLabel?: string
+  dictValue?: string
+  dictType?: string
   cssClass?: string
   listClass?: string
   isDefault?: string
@@ -37,7 +37,7 @@ export function listType(query: DictTypeQuery) {
     url: '/system/dict/type',
     method: 'get',
     params: query
-  }).then((res) => res.data)
+  }).then((res) => res.data.data)
 }
 
 export function getType(dictId: string) {
@@ -77,7 +77,7 @@ export function listData(query: DictDataQuery) {
     url: '/system/dict/data',
     method: 'get',
     params: query
-  }).then((res) => res.data)
+  }).then((res) => res.data.data)
 }
 
 export function getData(dictCode: string) {

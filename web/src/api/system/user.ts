@@ -4,9 +4,9 @@ import { type SysUser, type UserQuery, type PageResult } from './types'
 /** 用户创建/更新参数 */
 export interface UserForm {
   userId?: string
-  deptId?: string | number
-  userName: string
-  nickName: string
+  deptId?: string | number | null
+  userName?: string
+  nickName?: string
   password?: string
   phonenumber?: string
   email?: string
@@ -22,14 +22,14 @@ export function listUser(query: UserQuery) {
     url: '/system/user',
     method: 'get',
     params: query
-  }).then((res) => res.data)
+  }).then((res) => res.data.data)
 }
 
 export function getUser(userId: string) {
-  return request<{ data: { user: SysUser; roleIds: string[]; postIds: string[] } }>({
+  return request<{ data: { user: SysUser; roleIds: string[]; postIds: string[]; roles?: any[]; posts?: any[] } }>({
     url: `/system/user/${userId}`,
     method: 'get'
-  }).then((res) => res.data)
+  }).then((res) => res.data.data)
 }
 
 export function addUser(data: UserForm) {

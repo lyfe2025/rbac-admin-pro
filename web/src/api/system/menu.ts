@@ -4,14 +4,14 @@ import { type SysMenu, type MenuQuery } from './types'
 /** 菜单创建/更新参数 */
 export interface MenuForm {
   menuId?: string
-  parentId?: string | number
-  menuName: string
-  orderNum: number
+  parentId?: string | number | null
+  menuName?: string
+  orderNum?: number
   path?: string
   component?: string
   isFrame?: number
   isCache?: number
-  menuType: string
+  menuType?: string
   visible?: string
   status?: string
   perms?: string
@@ -23,7 +23,7 @@ export function listMenu(query?: MenuQuery) {
     url: '/system/menu',
     method: 'get',
     params: query
-  })
+  }).then((res) => res.data.data)
 }
 
 export function getMenu(menuId: string) {

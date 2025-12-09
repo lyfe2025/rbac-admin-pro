@@ -63,7 +63,7 @@ export class CacheService {
       iter.on('data', (ks: string[]) => keys.push(...ks));
       iter.on('end', () => {
         if (keys.length) {
-          for (const k of keys) client.del(k);
+          for (const k of keys) void client.del(k);
         }
         resolve();
       });

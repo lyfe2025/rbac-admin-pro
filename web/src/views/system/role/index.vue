@@ -153,11 +153,11 @@ async function getMenuTree() {
   if (menuList.value.length > 0) return
   const res = await listMenu({})
   // 保存扁平列表用于ID到名称的映射
-  flatMenuList.value = res.data
+  flatMenuList.value = res
   // 将扁平列表转换为树形结构
-  menuList.value = buildMenuTree(res.data)
+  menuList.value = buildMenuTree(res)
   // 收集所有菜单ID
-  allMenuIds.value = res.data.map((menu: SysMenu) => menu.menuId)
+  allMenuIds.value = res.map((menu: SysMenu) => menu.menuId)
 }
 
 // 全选菜单

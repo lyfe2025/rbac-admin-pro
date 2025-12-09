@@ -96,7 +96,7 @@ async function getData() {
       'sys.storage.',
     ]
     const results = await Promise.all(prefixes.map((p) => listConfig({ configKey: p })))
-    configList.value = results.flatMap((r) => r.rows)
+    configList.value = results.flatMap((r) => r.rows ?? [])
     // 重置 configMap
     configMap.value = {}
     configList.value.forEach((item: SysConfig) => {

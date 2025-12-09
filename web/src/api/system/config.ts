@@ -6,10 +6,10 @@ export type { SysConfig } from './types'
 /** 参数配置创建/更新参数 */
 export interface ConfigForm {
   configId?: string
-  configName: string
-  configKey: string
-  configValue: string
-  configType: string
+  configName?: string
+  configKey?: string
+  configValue?: string
+  configType?: string
   remark?: string
 }
 
@@ -18,7 +18,7 @@ export function listConfig(query: ConfigQuery) {
     url: '/system/config',
     method: 'get',
     params: query
-  }).then((res) => res.data)
+  }).then((res) => res.data.data)
 }
 
 export function getConfig(configId: string) {

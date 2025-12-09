@@ -126,7 +126,7 @@ export class SecurityConfigService {
   clearLoginFailure(username: string): void {
     const client = this.redis.getClient();
     const failKey = `${this.LOGIN_FAIL_PREFIX}${username}`;
-    client.del(failKey);
+    void client.del(failKey);
   }
 
   /**
@@ -150,8 +150,8 @@ export class SecurityConfigService {
     const client = this.redis.getClient();
     const lockKey = `${this.ACCOUNT_LOCK_PREFIX}${username}`;
     const failKey = `${this.LOGIN_FAIL_PREFIX}${username}`;
-    client.del(lockKey);
-    client.del(failKey);
+    void client.del(lockKey);
+    void client.del(failKey);
     this.logger.log(`账户 ${username} 已被管理员解锁`, 'SecurityConfigService');
   }
 
