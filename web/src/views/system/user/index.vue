@@ -618,24 +618,24 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-6 space-y-6">
+  <div class="p-4 sm:p-6 space-y-4 sm:space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <h2 class="text-2xl font-bold tracking-tight">用户管理</h2>
-        <p class="text-muted-foreground">
+        <h2 class="text-xl sm:text-2xl font-bold tracking-tight">用户管理</h2>
+        <p class="text-sm text-muted-foreground">
           管理系统用户、分配角色和部门
         </p>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
         <Button 
           variant="outline" 
           size="sm"
           :disabled="!hasSelectedRows"
           @click="handleBatchDelete"
         >
-          <Trash2 class="mr-2 h-4 w-4" />
-          批量删除
+          <Trash2 class="h-4 w-4 sm:mr-2" />
+          <span class="hidden sm:inline">批量删除</span>
         </Button>
         <Button 
           variant="outline" 
@@ -643,8 +643,8 @@ onMounted(async () => {
           :disabled="!hasSelectedRows"
           @click="handleBatchStatus('0')"
         >
-          <CheckSquare class="mr-2 h-4 w-4" />
-          批量启用
+          <CheckSquare class="h-4 w-4 sm:mr-2" />
+          <span class="hidden sm:inline">批量启用</span>
         </Button>
         <Button 
           variant="outline" 
@@ -652,21 +652,21 @@ onMounted(async () => {
           :disabled="!hasSelectedRows"
           @click="handleBatchStatus('1')"
         >
-          <XSquare class="mr-2 h-4 w-4" />
-          批量停用
+          <XSquare class="h-4 w-4 sm:mr-2" />
+          <span class="hidden sm:inline">批量停用</span>
         </Button>
-        <Button variant="outline" @click="handleImport">
-          <FileUp class="mr-2 h-4 w-4" />
-          导入
+        <Button variant="outline" size="sm" @click="handleImport">
+          <FileUp class="h-4 w-4 sm:mr-2" />
+          <span class="hidden sm:inline">导入</span>
         </Button>
-        <Button variant="outline" :disabled="exportLoading" @click="handleExport">
-          <Loader2 v-if="exportLoading" class="mr-2 h-4 w-4 animate-spin" />
-          <FileDown v-else class="mr-2 h-4 w-4" />
-          导出
+        <Button variant="outline" size="sm" :disabled="exportLoading" @click="handleExport">
+          <Loader2 v-if="exportLoading" class="h-4 w-4 sm:mr-2 animate-spin" />
+          <FileDown v-else class="h-4 w-4 sm:mr-2" />
+          <span class="hidden sm:inline">导出</span>
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="icon" class="h-8 w-8 sm:h-9 sm:w-9">
               <Settings2 class="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -688,9 +688,9 @@ onMounted(async () => {
             </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Button @click="handleAdd">
-          <Plus class="mr-2 h-4 w-4" />
-          新增用户
+        <Button size="sm" @click="handleAdd">
+          <Plus class="h-4 w-4 sm:mr-2" />
+          <span class="hidden sm:inline">新增用户</span>
         </Button>
       </div>
     </div>
@@ -698,26 +698,26 @@ onMounted(async () => {
     <!-- Filters -->
     <div class="space-y-4">
       <!-- 基础搜索 -->
-      <div class="flex flex-wrap gap-4 items-center bg-background/95 p-4 border rounded-lg backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div class="flex items-center gap-2">
-          <span class="text-sm font-medium">用户名</span>
+      <div class="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 sm:items-center bg-background/95 p-3 sm:p-4 border rounded-lg backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+          <span class="text-sm font-medium whitespace-nowrap">用户名</span>
           <Input 
             v-model="queryParams.userName" 
             placeholder="请输入用户名" 
-            class="w-[150px]"
+            class="w-full sm:w-[150px]"
             @keyup.enter="handleQuery"
           />
         </div>
-        <div class="flex items-center gap-2">
-          <span class="text-sm font-medium">手机号码</span>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+          <span class="text-sm font-medium whitespace-nowrap">手机号码</span>
           <Input 
             v-model="queryParams.phonenumber" 
             placeholder="请输入手机号码" 
-            class="w-[150px]"
+            class="w-full sm:w-[150px]"
             @keyup.enter="handleQuery"
           />
         </div>
-        <div class="flex gap-2 ml-auto">
+        <div class="flex gap-2 sm:ml-auto">
           <Button variant="outline" size="sm" @click="toggleAdvancedSearch">
             <Filter class="w-4 h-4 mr-2" />
             {{ showAdvancedSearch ? '收起' : '高级搜索' }}
@@ -774,8 +774,8 @@ onMounted(async () => {
     </div>
 
     <!-- Table -->
-    <div class="border rounded-md bg-card">
-      <Table>
+    <div class="border rounded-md bg-card overflow-x-auto">
+      <Table class="min-w-[800px]">
         <TableHeader>
           <TableRow>
             <TableHead class="w-[50px]">

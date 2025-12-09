@@ -389,7 +389,8 @@ const handleOpenEditDialog = (userId: string) => {
     <!-- Main Content -->
     <div 
       class="flex flex-col sm:py-4 transition-all duration-300"
-      :style="{ paddingLeft: (isNormalMode || isMixedMode) ? `${isCollapsed ? themeStore.sidebarCollapsedWidth : themeStore.sidebarExpandedWidth}px` : '0' }"
+      :class="{ 'sm:pl-[var(--sidebar-width)]': isNormalMode || isMixedMode }"
+      :style="{ '--sidebar-width': (isNormalMode || isMixedMode) ? `${isCollapsed ? themeStore.sidebarCollapsedWidth : themeStore.sidebarExpandedWidth}px` : '0' } as any"
     >
        <header class="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
           <!-- Mobile Toggle -->
@@ -400,9 +401,10 @@ const handleOpenEditDialog = (userId: string) => {
                 <span class="sr-only">Toggle Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" class="w-64">
-               <nav class="flex flex-col gap-4 px-2 mt-5">
-                <div class="flex items-center gap-2 px-2 mb-2">
+            <SheetContent side="left" class="w-64 p-0 flex flex-col h-full">
+               <nav class="flex flex-col h-full">
+                <!-- Logo -->
+                <div class="flex items-center gap-2 px-4 py-4 border-b">
                   <router-link to="/" class="flex items-center gap-2">
                     <template v-if="siteLogo">
                       <img :src="siteLogo" :alt="siteName" class="h-8 max-w-[160px] object-contain" />
@@ -416,7 +418,9 @@ const handleOpenEditDialog = (userId: string) => {
                   </router-link>
                 </div>
 
-                <div class="space-y-1">
+                <!-- 菜单区域 -->
+                <div class="flex-1 overflow-y-auto px-2 py-4 space-y-1">
+                  <!-- 仪表盘 -->
                   <router-link
                     to="/dashboard"
                     :class="cn(
@@ -428,96 +432,69 @@ const handleOpenEditDialog = (userId: string) => {
                     <span>仪表盘</span>
                   </router-link>
 
-                  <Accordion type="single" collapsible class="w-full" default-value="system">
-                  <AccordionItem value="system" class="border-b-0">
-                    <AccordionTrigger class="py-2 hover:no-underline hover:text-primary text-muted-foreground px-3 rounded-lg hover:bg-muted/50">
-                      <div class="flex items-center gap-3">
-                        <Settings class="h-4 w-4" />
-                        系统管理
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent class="pb-0 pl-4 space-y-1 mt-1">
-                      <router-link to="/system/user" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/system/user') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <User class="h-4 w-4" /> 用户管理
-                      </router-link>
-                      <router-link to="/system/role" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/system/role') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <Shield class="h-4 w-4" /> 角色管理
-                      </router-link>
-                      <router-link to="/system/menu" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/system/menu') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <Menu class="h-4 w-4" /> 菜单管理
-                      </router-link>
-                      <router-link to="/system/dept" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/system/dept') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <Network class="h-4 w-4" /> 部门管理
-                      </router-link>
-                      <router-link to="/system/post" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/system/post') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <Briefcase class="h-4 w-4" /> 岗位管理
-                      </router-link>
-                      <router-link to="/system/dict" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/system/dict') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <Book class="h-4 w-4" /> 字典管理
-                      </router-link>
-                      <router-link to="/system/config" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/system/config') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <Settings class="h-4 w-4" /> 参数管理
-                      </router-link>
-                      <router-link to="/system/setting" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/system/setting') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <Settings2 class="h-4 w-4" /> 系统设置
-                      </router-link>
-                      <router-link to="/system/notice" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/system/notice') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <Bell class="h-4 w-4" /> 通知公告
-                      </router-link>
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="monitor" class="border-b-0">
-                    <AccordionTrigger class="py-2 hover:no-underline hover:text-primary text-muted-foreground px-3 rounded-lg hover:bg-muted/50">
-                      <div class="flex items-center gap-3">
-                        <Monitor class="h-4 w-4" />
-                        系统监控
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent class="pb-0 pl-4 space-y-1 mt-1">
-                      <router-link to="/monitor/online" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/monitor/online') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <Users class="h-4 w-4" /> 在线用户
-                      </router-link>
-                      <router-link to="/monitor/job" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/monitor/job') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <Clock class="h-4 w-4" /> 定时任务
-                      </router-link>
-                      <router-link to="/monitor/server" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/monitor/server') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <Server class="h-4 w-4" /> 服务监控
-                      </router-link>
-                      <router-link to="/monitor/cache" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/monitor/cache') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <Database class="h-4 w-4" /> 缓存监控
-                      </router-link>
-                      <router-link to="/monitor/druid" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/monitor/druid') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <Database class="h-4 w-4" /> 数据库监控
-                      </router-link>
-                      <router-link to="/monitor/operlog" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/monitor/operlog') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <FileText class="h-4 w-4" /> 操作日志
-                      </router-link>
-                      <router-link to="/monitor/logininfor" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/monitor/logininfor') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <LogIn class="h-4 w-4" /> 登录日志
-                      </router-link>
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="tool" class="border-b-0">
-                    <AccordionTrigger class="py-2 hover:no-underline hover:text-primary text-muted-foreground px-3 rounded-lg hover:bg-muted/50">
-                      <div class="flex items-center gap-3">
-                        <PenTool class="h-4 w-4" />
-                        系统工具
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent class="pb-0 pl-4 space-y-1 mt-1">
-                      <router-link to="/tool/build" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/tool/build') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <LayoutIcon class="h-4 w-4" /> 表单构建
-                      </router-link>
-                      <router-link to="/tool/swagger" :class="cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', isActive('/tool/swagger') ? 'bg-muted text-primary' : 'text-muted-foreground')">
-                        <Link class="h-4 w-4" /> 系统接口
-                      </router-link>
-                    </AccordionContent>
-                  </AccordionItem>
+                  <!-- 动态菜单 -->
+                  <Accordion type="single" collapsible class="w-full" default-value="item-0">
+                    <AccordionItem 
+                      v-for="(item, index) in menuStore.menuList" 
+                      :key="item.path" 
+                      :value="`item-${index}`" 
+                      class="border-b-0"
+                    >
+                      <AccordionTrigger class="py-2 hover:no-underline hover:text-primary text-muted-foreground px-3 rounded-lg hover:bg-muted/50">
+                        <div class="flex items-center gap-3">
+                          <component :is="getIcon(item.meta?.icon)" class="h-4 w-4" />
+                          {{ item.meta?.title }}
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent class="pb-0 pl-4 space-y-1 mt-1">
+                        <router-link 
+                          v-for="child in item.children" 
+                          :key="child.path"
+                          :to="child.path.startsWith('/') ? child.path : `${item.path}/${child.path}`" 
+                          :class="cn(
+                            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary', 
+                            isActive(child.path.startsWith('/') ? child.path : `${item.path}/${child.path}`) ? 'bg-muted text-primary' : 'text-muted-foreground'
+                          )"
+                        >
+                          <component :is="getIcon(child.meta?.icon)" class="h-4 w-4" />
+                          {{ child.meta?.title }}
+                        </router-link>
+                      </AccordionContent>
+                    </AccordionItem>
                   </Accordion>
                 </div>
 
+                <!-- 用户信息 -->
+                <div class="mt-auto shrink-0 border-t p-4">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                      <Button variant="ghost" class="flex items-center gap-3 w-full h-auto py-2 px-2 justify-between">
+                        <div class="flex items-center gap-3 overflow-hidden">
+                          <Avatar class="h-9 w-9 rounded-lg">
+                            <AvatarImage :src="getAvatarUrl(userStore.avatar)" :alt="userStore.name" />
+                            <AvatarFallback class="rounded-lg">{{ userStore.name ? userStore.name.slice(0, 2).toUpperCase() : 'AD' }}</AvatarFallback>
+                          </Avatar>
+                          <div class="flex-1 min-w-0 text-left">
+                            <p class="text-sm font-medium truncate">{{ userStore.name || 'Admin' }}</p>
+                            <p class="text-xs text-muted-foreground truncate">{{ userStore.email || '暂无邮箱' }}</p>
+                          </div>
+                        </div>
+                        <ChevronsUpDown class="h-4 w-4 text-muted-foreground shrink-0" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent class="w-[--radix-dropdown-menu-trigger-width] min-w-48 rounded-lg" side="top" align="start" :side-offset="4">
+                      <DropdownMenuItem @click="handleProfile">
+                        <User class="mr-2 h-4 w-4" />
+                        个人中心
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem class="text-destructive focus:text-destructive" @click="handleLogoutClick">
+                        <LogOut class="mr-2 h-4 w-4" />
+                        退出登录
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </nav>
             </SheetContent>
           </Sheet>

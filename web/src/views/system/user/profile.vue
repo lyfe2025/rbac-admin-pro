@@ -146,9 +146,9 @@ const handleChangePassword = async () => {
 </script>
 
 <template>
-  <div class="p-6 space-y-6">
+  <div class="p-4 sm:p-6 space-y-4 sm:space-y-6">
     <div>
-      <h2 class="text-2xl font-bold tracking-tight">个人中心</h2>
+      <h2 class="text-xl sm:text-2xl font-bold tracking-tight">个人中心</h2>
       <p class="text-muted-foreground">管理您的账户信息和安全设置</p>
     </div>
 

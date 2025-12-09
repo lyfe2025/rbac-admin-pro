@@ -293,10 +293,10 @@ onMounted(() => {
 
 
 <template>
-  <div class="p-6 space-y-6">
-    <div class="flex items-center justify-between">
+  <div class="p-4 sm:p-6 space-y-4 sm:space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <h2 class="text-2xl font-bold tracking-tight">系统设置</h2>
+        <h2 class="text-xl sm:text-2xl font-bold tracking-tight">系统设置</h2>
         <p class="text-muted-foreground">管理系统的各项配置参数</p>
       </div>
       <div class="flex gap-2">
@@ -398,14 +398,14 @@ onMounted(() => {
             <CardDescription>配置用户登录相关的安全选项</CardDescription>
           </CardHeader>
           <CardContent class="space-y-6">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div class="space-y-0.5">
                 <Label class="text-base flex items-center gap-2"><KeyRound class="h-4 w-4" />登录验证码</Label>
                 <p class="text-sm text-muted-foreground">开启后，用户登录时需要输入图形验证码</p>
               </div>
               <Switch v-model:checked="captchaEnabled" />
             </div>
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div class="space-y-0.5">
                 <Label class="text-base flex items-center gap-2"><Shield class="h-4 w-4" />两步验证</Label>
                 <p class="text-sm text-muted-foreground">开启后，用户可以绑定手机或邮箱进行二次验证</p>

@@ -134,6 +134,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @ApiOperation({ summary: '用户登出' })
   async logout(@Req() req: Request) {
     const auth = req.headers['authorization'];
     const token = auth?.startsWith('Bearer ') ? auth.substring(7) : '';

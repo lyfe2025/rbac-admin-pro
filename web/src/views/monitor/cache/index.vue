@@ -80,11 +80,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="p-6 space-y-6">
+  <div class="p-4 sm:p-6 space-y-4 sm:space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <h2 class="text-2xl font-bold tracking-tight">缓存监控</h2>
+        <h2 class="text-xl sm:text-2xl font-bold tracking-tight">缓存监控</h2>
         <p class="text-muted-foreground">监控 Redis 缓存服务器状态</p>
       </div>
       <div class="flex items-center gap-2">
@@ -128,7 +128,7 @@ onUnmounted(() => {
             <Server class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ cache.redis_version }}</div>
+            <div class="text-xl sm:text-2xl font-bold">{{ cache.redis_version }}</div>
             <p class="text-xs text-muted-foreground">Mode: {{ cache.redis_mode }}</p>
           </CardContent>
         </Card>
@@ -138,7 +138,7 @@ onUnmounted(() => {
             <Clock class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ cache.uptime_in_days }} 天</div>
+            <div class="text-xl sm:text-2xl font-bold">{{ cache.uptime_in_days }} 天</div>
             <p class="text-xs text-muted-foreground">Port: {{ cache.tcp_port }}</p>
           </CardContent>
         </Card>
@@ -148,7 +148,7 @@ onUnmounted(() => {
             <Activity class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ cache.connected_clients }}</div>
+            <div class="text-xl sm:text-2xl font-bold">{{ cache.connected_clients }}</div>
             <p class="text-xs text-muted-foreground">DB Size: {{ cache.dbSize }}</p>
           </CardContent>
         </Card>
@@ -158,7 +158,7 @@ onUnmounted(() => {
             <Database class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ cache.used_memory_human }}</div>
+            <div class="text-xl sm:text-2xl font-bold">{{ cache.used_memory_human }}</div>
             <p class="text-xs text-muted-foreground">
               峰值: {{ cache.used_memory_peak_human || '-' }}
             </p>

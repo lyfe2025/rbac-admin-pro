@@ -9,6 +9,7 @@ import {
   Body,
   UseGuards,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/permission.decorator';
@@ -17,14 +18,13 @@ import { QueryConfigDto } from './dto/query-config.dto';
 import { CreateConfigDto } from './dto/create-config.dto';
 import { UpdateConfigDto } from './dto/update-config.dto';
 
+@ApiTags('参数配置')
 @Controller('system/config')
 export class ConfigController {
   constructor(private readonly service: ConfigService) {}
 
-  /**
-   * 获取网站公开配置（无需登录）
-   */
   @Get('site')
+  @ApiOperation({ summary: '获取网站公开配置（无需登录）' })
   async getSiteConfig(): Promise<{
     name: string;
     description: string;
@@ -38,44 +38,56 @@ export class ConfigController {
   }
 
   @UseGuards(JwtAuthGuard, PermissionGuard)
+  @ApiBearerAuth('JWT-auth')
   @RequirePermission('system:config:list')
   @Get()
+  @ApiOperation({ summary: '查询参数配置列表' })
   list(@Query() query: QueryConfigDto) {
     return this.service.findAll(query);
   }
 
   @UseGuards(JwtAuthGuard, PermissionGuard)
+  @ApiBearerAuth('JWT-auth')
   @RequirePermission('system:config:query')
   @Get(':configId')
+  @ApiOperation({ summary: '查询参数配置详情' })
   get(@Param('configId') configId: string) {
     return this.service.findOne(configId);
   }
 
   @UseGuards(JwtAuthGuard, PermissionGuard)
+  @ApiBearerAuth('JWT-auth')
   @RequirePermission('system:config:add')
   @Post()
+  @ApiOperation({ summary: '新增参数配置' })
   create(@Body() dto: CreateConfigDto) {
     return this.service.create(dto);
   }
 
   @UseGuards(JwtAuthGuard, PermissionGuard)
+  @ApiBearerAuth('JWT-auth')
   @RequirePermission('system:config:edit')
   @Put(':configId')
+  @ApiOperation({ summary: '修改参数配置' })
   update(@Param('configId') configId: string, @Body() dto: UpdateConfigDto) {
     return this.service.update(configId, dto);
   }
 
   @UseGuards(JwtAuthGuard, PermissionGuard)
+  @ApiBearerAuth('JWT-auth')
   @RequirePermission('system:config:remove')
   @Delete()
+  @ApiOperation({ summary: '删除参数配置' })
   remove(@Query('ids') ids: string) {
     const configIds = ids ? ids.split(',') : [];
     return this.service.remove(configIds);
   }
 
   @UseGuards(JwtAuthGuard, PermissionGuard)
+  @ApiBearerAuth('JWT-auth')
   @RequirePermission('system:config:edit')
   @Get('refreshCache')
+  @ApiOperation({ summary: '刷新参数缓存' })
   refresh() {
     return this.service.refreshCache();
   }

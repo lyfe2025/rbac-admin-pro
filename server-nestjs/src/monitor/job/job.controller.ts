@@ -18,7 +18,7 @@ import { QueryJobDto } from './dto/query-job.dto';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 
-@ApiTags('系统监控 - 定时任务')
+@ApiTags('定时任务')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @Controller('monitor/job')

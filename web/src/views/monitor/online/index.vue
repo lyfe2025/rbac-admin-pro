@@ -222,11 +222,11 @@ onUnmounted(() => {
 
 
 <template>
-  <div class="p-6 space-y-6">
+  <div class="p-4 sm:p-6 space-y-4 sm:space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <h2 class="text-2xl font-bold tracking-tight">在线用户</h2>
+        <h2 class="text-xl sm:text-2xl font-bold tracking-tight">在线用户</h2>
         <p class="text-muted-foreground">监控当前系统活跃用户</p>
       </div>
       <div class="flex gap-2">
@@ -289,7 +289,7 @@ onUnmounted(() => {
     </div>
 
     <!-- Table -->
-    <div class="border rounded-md bg-card">
+    <div class="border rounded-md bg-card overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>

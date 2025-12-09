@@ -78,7 +78,7 @@ async function bootstrap() {
   // 配置 Swagger 文档
   const config = new DocumentBuilder()
     .setTitle('RBAC Admin Pro API')
-    .setDescription('企业级全栈后台管理系统 API 文档')
+    .setDescription('基于 RBAC 权限模型的企业级后台管理系统')
     .setVersion('1.0')
     .addBearerAuth(
       {
@@ -91,22 +91,36 @@ async function bootstrap() {
       },
       'JWT-auth',
     )
+    .addTag('系统', '系统信息与错误码')
     .addTag('认证', '用户认证相关接口')
     .addTag('用户管理', '系统用户管理')
     .addTag('角色管理', '角色权限管理')
     .addTag('菜单管理', '菜单权限管理')
     .addTag('部门管理', '组织部门管理')
     .addTag('岗位管理', '岗位信息管理')
-    .addTag('字典管理', '数据字典管理')
+    .addTag('字典类型', '字典类型管理')
+    .addTag('字典数据', '字典数据管理')
     .addTag('参数配置', '系统参数配置')
     .addTag('通知公告', '系统通知公告')
-    .addTag('监控管理', '系统监控相关')
+    .addTag('操作日志', '操作日志记录')
+    .addTag('登录日志', '登录日志记录')
+    .addTag('在线用户', '在线用户管理')
+    .addTag('服务器监控', '服务器状态监控')
+    .addTag('缓存监控', 'Redis 缓存监控')
+    .addTag('数据库监控', '数据库状态监控')
+    .addTag('定时任务', '定时任务管理')
+    .addTag('文件上传', '文件上传服务')
+    .addTag('邮件服务', '邮件发送服务')
+    .addTag('路由菜单', '前端路由获取')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true, // 持久化认证信息
+      docExpansion: 'list', // 默认展开所有接口列表（list=展开接口 full=展开全部 none=全部折叠）
+      defaultModelsExpandDepth: 2, // Schema 模型默认展开深度
+      defaultModelExpandDepth: 2, // 单个模型默认展开深度
     },
   });
 

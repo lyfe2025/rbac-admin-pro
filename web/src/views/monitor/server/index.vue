@@ -96,11 +96,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="p-6 space-y-6">
+  <div class="p-4 sm:p-6 space-y-4 sm:space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <h2 class="text-2xl font-bold tracking-tight">服务监控</h2>
+        <h2 class="text-xl sm:text-2xl font-bold tracking-tight">服务监控</h2>
         <p class="text-muted-foreground">
           监控服务器 CPU、内存、Node.js 进程等运行状态
         </p>
@@ -138,7 +138,7 @@ onUnmounted(() => {
             <Cpu class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ server.cpu.cpuNum }} 核心</div>
+            <div class="text-xl sm:text-2xl font-bold">{{ server.cpu.cpuNum }} 核心</div>
             <p class="text-xs text-muted-foreground mt-1">
               用户: {{ Number(server.cpu.used).toFixed(1) }}% | 系统: {{ Number(server.cpu.sys).toFixed(1) }}%
             </p>
@@ -161,7 +161,7 @@ onUnmounted(() => {
             <Database class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ Number(server.mem.total).toFixed(1) }} GB</div>
+            <div class="text-xl sm:text-2xl font-bold">{{ Number(server.mem.total).toFixed(1) }} GB</div>
             <p class="text-xs text-muted-foreground mt-1">
               已用: {{ Number(server.mem.used).toFixed(1) }} GB | 剩余: {{ Number(server.mem.free).toFixed(1) }} GB
             </p>
@@ -272,7 +272,7 @@ onUnmounted(() => {
         <CardContent>
           <div class="space-y-6">
             <div v-for="(file, index) in server.sysFiles" :key="index" class="space-y-2">
-              <div class="flex items-center justify-between">
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div class="flex items-center gap-2">
                   <HardDrive class="h-4 w-4 text-muted-foreground" />
                   <span class="font-medium text-sm">{{ file.dirName }}</span>

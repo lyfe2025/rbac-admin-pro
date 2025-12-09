@@ -16,8 +16,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 <template>
   <div class="flex min-h-screen w-full flex-col">
-    <main class="flex flex-1 flex-col gap-4 md:gap-8 md:p-8">
-      <div class="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+    <main class="flex flex-1 flex-col gap-4 p-4 sm:p-6 md:gap-8 md:p-8">
+      <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">

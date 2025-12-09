@@ -6,7 +6,7 @@ import { RequirePermission } from '../../common/decorators/permission.decorator'
 import { LogininforService } from './logininfor.service';
 import { QueryLogininforDto } from './dto/query-logininfor.dto';
 
-@ApiTags('系统监控 - 登录日志')
+@ApiTags('登录日志')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @Controller('monitor/logininfor')

@@ -173,11 +173,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-6 space-y-6">
+  <div class="p-4 sm:p-6 space-y-4 sm:space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <h2 class="text-2xl font-bold tracking-tight">参数设置</h2>
+        <h2 class="text-xl sm:text-2xl font-bold tracking-tight">参数设置</h2>
         <p class="text-muted-foreground">
           管理系统全局配置参数
         </p>
@@ -195,7 +195,7 @@ onMounted(() => {
     </div>
 
     <!-- Filters -->
-    <div class="flex flex-wrap gap-4 items-center bg-background/95 p-4 border rounded-lg backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div class="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 sm:items-center bg-background/95 p-4 border rounded-lg backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div class="flex items-center gap-2">
         <span class="text-sm font-medium">参数名称</span>
         <Input 
@@ -239,7 +239,7 @@ onMounted(() => {
     </div>
 
     <!-- Table -->
-    <div class="border rounded-md bg-card">
+    <div class="border rounded-md bg-card overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>

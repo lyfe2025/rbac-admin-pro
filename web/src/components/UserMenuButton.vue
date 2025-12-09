@@ -48,7 +48,7 @@ const confirmLogout = async () => {
 <template>
   <DropdownMenu>
     <DropdownMenuTrigger as-child>
-      <Button variant="ghost" class="sm:hidden p-0 h-8 w-8 rounded-lg">
+      <Button variant="ghost" class="hidden p-0 h-8 w-8 rounded-lg">
         <Avatar class="h-8 w-8 rounded-lg">
           <AvatarImage :src="userStore.avatar" :alt="userStore.name" />
           <AvatarFallback class="rounded-lg">{{ userStore.name ? userStore.name.slice(0, 2).toUpperCase() : 'AD' }}</AvatarFallback>

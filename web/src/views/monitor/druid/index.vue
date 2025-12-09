@@ -88,11 +88,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="p-6 space-y-6">
+  <div class="p-4 sm:p-6 space-y-4 sm:space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <h2 class="text-2xl font-bold tracking-tight">数据库监控</h2>
+        <h2 class="text-xl sm:text-2xl font-bold tracking-tight">数据库监控</h2>
         <p class="text-muted-foreground">PostgreSQL 数据库连接与性能监控</p>
       </div>
       <div class="flex items-center gap-2">
@@ -127,7 +127,7 @@ onUnmounted(() => {
             <Server class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ data.database.version.replace('PostgreSQL ', '') }}</div>
+            <div class="text-xl sm:text-2xl font-bold">{{ data.database.version.replace('PostgreSQL ', '') }}</div>
             <p class="text-xs text-muted-foreground">{{ data.database.name }}</p>
           </CardContent>
         </Card>
@@ -137,7 +137,7 @@ onUnmounted(() => {
             <HardDrive class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ data.database.size }}</div>
+            <div class="text-xl sm:text-2xl font-bold">{{ data.database.size }}</div>
             <p class="text-xs text-muted-foreground">{{ data.tables.length }} 张表</p>
           </CardContent>
         </Card>
@@ -147,7 +147,7 @@ onUnmounted(() => {
             <Activity class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ data.connections.active }}</div>
+            <div class="text-xl sm:text-2xl font-bold">{{ data.connections.active }}</div>
             <p class="text-xs text-muted-foreground">
               空闲: {{ data.connections.idle }} / 总计: {{ data.connections.total }}
             </p>
@@ -159,7 +159,7 @@ onUnmounted(() => {
             <Database class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ data.connections.usage }}%</div>
+            <div class="text-xl sm:text-2xl font-bold">{{ data.connections.usage }}%</div>
             <Progress :model-value="data.connections.usage" class="mt-2" :class="connectionUsageColor" />
             <p class="text-xs text-muted-foreground mt-1">
               {{ data.connections.total }} / {{ data.connections.max }}
