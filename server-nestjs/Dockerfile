@@ -30,9 +30,6 @@ RUN DATABASE_URL="postgresql://temp:temp@localhost:5432/temp" pnpm prisma genera
 # 构建应用
 RUN pnpm build
 
-# 清理 devDependencies 减小镜像体积
-RUN pnpm prune --prod
-
 # 暴露端口
 EXPOSE 3000
 
