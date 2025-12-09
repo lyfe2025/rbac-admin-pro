@@ -47,9 +47,11 @@ WORKDIR /app
 # 复制 package 文件并安装生产依赖
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/prisma ./prisma
-RUN pnpm install --prod && DATABASE_URL="postgresql://temp:temp@localhost:5432/temp" pnpm prisma generate
+RUN pnpm install --prod
 
-# 从构建阶段复制编译产物
+# 从构建阶段复制 Prisma Client 和编译产物
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 
 # 创建日志目录

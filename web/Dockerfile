@@ -11,11 +11,11 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 # 设置工作目录
 WORKDIR /app
 
-# 复制 package 文件
-COPY package.json pnpm-lock.yaml ./
+# 复制 package 文件（monorepo 的 lock 文件在根目录，这里不使用）
+COPY package.json ./
 
 # 安装依赖
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 # 复制源代码
 COPY . .
