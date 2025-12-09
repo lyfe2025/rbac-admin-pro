@@ -1,5 +1,5 @@
 # ============================================================================
-# RBAC Admin Pro - 后端 Dockerfile (多阶段构建)
+# RBAC Admin Pro - 后端 Dockerfile (适配 Zeabur monorepo 部署)
 # ============================================================================
 
 # ==================== 构建阶段 ====================
@@ -12,12 +12,12 @@ RUN apk add --no-cache python3 make g++ && \
 # 设置工作目录
 WORKDIR /app
 
-# 复制 package 文件
-COPY package.json pnpm-lock.yaml ./
+# 复制 package 文件（不使用 --frozen-lockfile，因为没有 lock 文件）
+COPY package.json ./
 COPY prisma ./prisma/
 
 # 安装依赖
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 # 复制源代码
 COPY . .
@@ -44,10 +44,10 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nestjs -u 1001
 # 设置工作目录
 WORKDIR /app
 
-# 复制 package 文件并安装生产依赖（减小镜像体积）
-COPY --from=builder /app/package.json /app/pnpm-lock.yaml ./
+# 复制 package 文件并安装生产依赖
+COPY --from=builder /app/package.json ./
 COPY --from=builder /app/prisma ./prisma
-RUN pnpm install --frozen-lockfile --prod && pnpm prisma generate
+RUN pnpm install --prod && pnpm prisma generate
 
 # 从构建阶段复制编译产物
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
