@@ -22,8 +22,8 @@ RUN pnpm install
 # 复制源代码
 COPY . .
 
-# 生成 Prisma Client
-RUN pnpm prisma generate
+# 生成 Prisma Client（构建时使用临时 URL，运行时会被环境变量覆盖）
+RUN DATABASE_URL="postgresql://temp:temp@localhost:5432/temp" pnpm prisma generate
 
 # 构建应用
 RUN pnpm build
@@ -47,7 +47,7 @@ WORKDIR /app
 # 复制 package 文件并安装生产依赖
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/prisma ./prisma
-RUN pnpm install --prod && pnpm prisma generate
+RUN pnpm install --prod && DATABASE_URL="postgresql://temp:temp@localhost:5432/temp" pnpm prisma generate
 
 # 从构建阶段复制编译产物
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
