@@ -5,20 +5,23 @@
 # ==================== 构建阶段 ====================
 FROM node:20-alpine AS builder
 
+# 启用 pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
 # 设置工作目录
 WORKDIR /app
 
 # 复制 package 文件
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml ./
 
 # 安装依赖
-RUN npm ci --only=production=false
+RUN pnpm install --frozen-lockfile
 
 # 复制源代码
 COPY . .
 
 # 构建应用
-RUN npm run build
+RUN pnpm build
 
 # ==================== 生产阶段 ====================
 FROM nginx:alpine

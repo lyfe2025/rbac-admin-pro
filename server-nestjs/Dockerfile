@@ -5,33 +5,35 @@
 # ==================== 构建阶段 ====================
 FROM node:20-alpine AS builder
 
-# 安装必要的构建工具
-RUN apk add --no-cache python3 make g++
+# 安装必要的构建工具和 pnpm
+RUN apk add --no-cache python3 make g++ && \
+    corepack enable && corepack prepare pnpm@latest --activate
 
 # 设置工作目录
 WORKDIR /app
 
 # 复制 package 文件
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml ./
 COPY prisma ./prisma/
 
 # 安装依赖
-RUN npm ci
+RUN pnpm install --frozen-lockfile
 
 # 复制源代码
 COPY . .
 
 # 生成 Prisma Client
-RUN npx prisma generate
+RUN pnpm prisma generate
 
 # 构建应用
-RUN npm run build
+RUN pnpm build
 
 # ==================== 生产阶段 ====================
 FROM node:20-alpine
 
-# 安装 tzdata 用于时区设置
-RUN apk add --no-cache tzdata
+# 安装 tzdata 用于时区设置，启用 pnpm
+RUN apk add --no-cache tzdata && \
+    corepack enable && corepack prepare pnpm@latest --activate
 
 # 设置时区为上海
 ENV TZ=Asia/Shanghai
@@ -43,9 +45,9 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nestjs -u 1001
 WORKDIR /app
 
 # 复制 package 文件并安装生产依赖（减小镜像体积）
-COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/package.json /app/pnpm-lock.yaml ./
 COPY --from=builder /app/prisma ./prisma
-RUN npm ci --omit=dev && npx prisma generate
+RUN pnpm install --frozen-lockfile --prod && pnpm prisma generate
 
 # 从构建阶段复制编译产物
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
