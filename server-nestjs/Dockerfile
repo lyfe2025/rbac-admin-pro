@@ -25,8 +25,8 @@ COPY . .
 # 生成 Prisma Client（构建时使用临时 URL，运行时会被环境变量覆盖）
 RUN DATABASE_URL="postgresql://temp:temp@localhost:5432/temp" pnpm prisma generate
 
-# 构建应用
-RUN pnpm build
+# 构建应用并验证
+RUN pnpm build && ls -la dist/
 
 # ==================== 生产阶段 ====================
 FROM node:20-alpine
