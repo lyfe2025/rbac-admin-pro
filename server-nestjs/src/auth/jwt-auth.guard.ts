@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtService } from '@nestjs/jwt';
@@ -16,17 +16,39 @@ interface JwtPayload {
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
+  private readonly logger = new Logger(JwtAuthGuard.name);
+
   constructor(private readonly moduleRef: ModuleRef) {
     super();
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const ok = (await super.canActivate(context)) as boolean;
-    const req = context
-      .switchToHttp()
-      .getRequest<{ headers: Record<string, string>; user?: JwtPayload }>();
-    const res = context.switchToHttp().getResponse<Response>();
+    const req = context.switchToHttp().getRequest<{
+      headers: Record<string, string>;
+      user?: JwtPayload;
+      url?: string;
+    }>();
     const auth = req.headers?.['authorization'] || '';
+
+    // 调试日志：检查 Authorization header 是否存在
+    if (!auth) {
+      this.logger.warn(`[${req.url}] 请求缺少 Authorization header`);
+    } else {
+      this.logger.debug(
+        `[${req.url}] Authorization header 存在，长度: ${auth.length}`,
+      );
+    }
+
+    let ok: boolean;
+    try {
+      ok = (await super.canActivate(context)) as boolean;
+    } catch (error) {
+      const err = error as Error;
+      this.logger.error(`[${req.url}] JWT 验证失败: ${err.message}`);
+      throw error;
+    }
+
+    const res = context.switchToHttp().getResponse<Response>();
     const token = auth.startsWith('Bearer ') ? auth.substring(7) : '';
 
     const blacklist = this.moduleRef.get(TokenBlacklistService, {
