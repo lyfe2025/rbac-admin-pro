@@ -20,6 +20,7 @@ import { listConfig, updateConfig, addConfig, type SysConfig } from '@/api/syste
 import { testMail } from '@/api/system/mail'
 import { getLockedAccounts, unlockAccount, type LockedAccount } from '@/api/system/locked'
 import { useAppStore } from '@/stores/modules/app'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   Save,
   RefreshCw,
@@ -32,6 +33,8 @@ import {
   Send,
   Lock,
   Unlock,
+  HelpCircle,
+  ChevronDown,
 } from 'lucide-vue-next'
 
 const { toast } = useToast()
@@ -633,7 +636,26 @@ onMounted(() => {
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div class="grid gap-2">
-                <Label>SMTP 服务器</Label>
+                <Label class="flex items-center gap-2">
+                  SMTP 服务器
+                  <Collapsible class="inline">
+                    <CollapsibleTrigger as-child>
+                      <button type="button" class="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors">
+                        <HelpCircle class="h-4 w-4" />
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent class="absolute z-10 mt-2 w-80 rounded-lg border bg-popover p-3 text-sm shadow-md">
+                      <p class="font-medium mb-2">常用邮箱 SMTP 配置：</p>
+                      <ul class="text-muted-foreground space-y-1 text-xs">
+                        <li><span class="text-foreground">QQ：</span>smtp.qq.com:465，<a href="https://service.mail.qq.com/detail/0/75" target="_blank" class="text-primary hover:underline">获取授权码</a></li>
+                        <li><span class="text-foreground">163：</span>smtp.163.com:465</li>
+                        <li><span class="text-foreground">Gmail：</span>smtp.gmail.com:465，<a href="https://support.google.com/accounts/answer/185833" target="_blank" class="text-primary hover:underline">应用密码</a></li>
+                        <li><span class="text-foreground">Outlook：</span>smtp.office365.com:587</li>
+                        <li><span class="text-foreground">阿里企业：</span>smtp.qiye.aliyun.com:465</li>
+                      </ul>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </Label>
                 <Input v-model="form['sys.mail.host']" placeholder="smtp.qq.com" />
               </div>
               <div class="grid gap-2">
@@ -696,7 +718,7 @@ onMounted(() => {
         <Card>
           <CardHeader>
             <CardTitle>文件存储</CardTitle>
-            <CardDescription>配置系统文件的存储方式</CardDescription>
+            <CardDescription>配置系统文件的存储方式，支持本地存储和多种云存储服务</CardDescription>
           </CardHeader>
           <CardContent class="space-y-4">
             <div class="grid gap-2">
@@ -717,10 +739,50 @@ onMounted(() => {
             <div v-if="form['sys.storage.type'] === 'local'" class="grid gap-2">
               <Label>存储路径</Label>
               <Input v-model="form['sys.storage.local.path']" placeholder="./uploads" />
-              <p class="text-xs text-muted-foreground">文件存储的本地目录路径</p>
+              <p class="text-xs text-muted-foreground">文件存储的本地目录路径，相对于后端项目根目录</p>
             </div>
 
             <div v-else class="space-y-4">
+              <!-- 云存储配置说明 - 可折叠 -->
+              <Collapsible>
+                <CollapsibleTrigger as-child>
+                  <button type="button" class="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group">
+                    <HelpCircle class="h-4 w-4" />
+                    <span>如何获取 {{ form['sys.storage.type'].toUpperCase() }} 配置？</span>
+                    <ChevronDown class="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div class="rounded-lg bg-muted/50 p-3 text-sm mt-2">
+                    <ul v-if="form['sys.storage.type'] === 's3'" class="text-muted-foreground space-y-1 text-xs">
+                      <li>1. 登录 <a href="https://console.aws.amazon.com/s3" target="_blank" class="text-primary hover:underline">AWS S3 控制台</a> 创建存储桶</li>
+                      <li>2. Endpoint：<code class="bg-muted px-1 rounded">s3.{region}.amazonaws.com</code></li>
+                      <li>3. 在 <a href="https://console.aws.amazon.com/iam" target="_blank" class="text-primary hover:underline">IAM</a> 创建用户获取 AccessKey</li>
+                    </ul>
+                    <ul v-else-if="form['sys.storage.type'] === 'gcs'" class="text-muted-foreground space-y-1 text-xs">
+                      <li>1. 登录 <a href="https://console.cloud.google.com/storage" target="_blank" class="text-primary hover:underline">Google Cloud Console</a> 创建存储桶</li>
+                      <li>2. Endpoint：<code class="bg-muted px-1 rounded">storage.googleapis.com</code></li>
+                      <li>3. 创建服务账号，生成 HMAC 密钥</li>
+                    </ul>
+                    <ul v-else-if="form['sys.storage.type'] === 'oss'" class="text-muted-foreground space-y-1 text-xs">
+                      <li>1. 登录 <a href="https://oss.console.aliyun.com" target="_blank" class="text-primary hover:underline">阿里云 OSS 控制台</a> 创建 Bucket</li>
+                      <li>2. Endpoint：<code class="bg-muted px-1 rounded">oss-{region}.aliyuncs.com</code></li>
+                      <li>3. 在 <a href="https://ram.console.aliyun.com" target="_blank" class="text-primary hover:underline">RAM</a> 创建用户获取 AccessKey</li>
+                    </ul>
+                    <ul v-else-if="form['sys.storage.type'] === 'cos'" class="text-muted-foreground space-y-1 text-xs">
+                      <li>1. 登录 <a href="https://console.cloud.tencent.com/cos" target="_blank" class="text-primary hover:underline">腾讯云 COS 控制台</a> 创建存储桶</li>
+                      <li>2. Endpoint：<code class="bg-muted px-1 rounded">cos.{region}.myqcloud.com</code></li>
+                      <li>3. 在 <a href="https://console.cloud.tencent.com/cam" target="_blank" class="text-primary hover:underline">CAM</a> 创建子用户获取密钥</li>
+                    </ul>
+                    <ul v-else-if="form['sys.storage.type'] === 'r2'" class="text-muted-foreground space-y-1 text-xs">
+                      <li>1. 登录 <a href="https://dash.cloudflare.com" target="_blank" class="text-primary hover:underline">Cloudflare</a> → R2 创建存储桶</li>
+                      <li>2. Endpoint：<code class="bg-muted px-1 rounded">{account_id}.r2.cloudflarestorage.com</code></li>
+                      <li>3. 在 R2 API 令牌中创建密钥</li>
+                    </ul>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="grid gap-2">
                   <Label>服务端点 (Endpoint)</Label>
