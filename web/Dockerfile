@@ -35,14 +35,8 @@ ENV TZ=Asia/Shanghai
 # 从构建阶段复制构建产物
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# 复制 nginx 配置
-# 优先使用 Zeabur 配置，如果不存在则使用默认配置
-COPY nginx*.conf /tmp/
-RUN if [ -f /tmp/nginx.zeabur.conf ]; then \
-      cp /tmp/nginx.zeabur.conf /etc/nginx/conf.d/default.conf; \
-    else \
-      cp /tmp/nginx.conf /etc/nginx/conf.d/default.conf; \
-    fi
+# 复制 nginx 配置（使用默认配置，适用于 Docker Compose 部署）
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # 暴露端口
 EXPOSE 80

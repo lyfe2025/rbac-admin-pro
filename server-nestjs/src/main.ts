@@ -29,16 +29,21 @@ async function bootstrap() {
   app.useLogger(logger);
 
   // 配置静态文件服务 (用于访问上传的文件)
+  // 设置 CORS 头允许跨域访问
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/uploads/',
+    setHeaders: (res: { setHeader: (name: string, value: string) => void }) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    },
   });
 
   // 全局前缀
-  // app.setGlobalPrefix('api'); // 前端 .env 配置为 /api，如果我们不使用代理重写，可能需要这个配置
+  app.setGlobalPrefix('api');
 
-  // 增加请求体大小限制 (支持文件上传,如头像)
-  app.use(json({ limit: '10mb' }));
-  app.use(urlencoded({ limit: '10mb', extended: true }));
+  // 增加请求体大小限制 (支持文件上传,如 APK/IPA 包)
+  app.use(json({ limit: '100mb' }));
+  app.use(urlencoded({ limit: '100mb', extended: true }));
 
   // 全局参数校验管道
   app.useGlobalPipes(

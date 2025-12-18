@@ -18,8 +18,8 @@ export default defineConfig(({ mode }) => {
       proxy: {
         [env.VITE_APP_BASE_API]: {
           target: env.VITE_API_URL,
-          changeOrigin: true,
-          rewrite: (path) => path.replace(new RegExp('^' + env.VITE_APP_BASE_API), '')
+          changeOrigin: true
+          // 后端已设置 app.setGlobalPrefix('api')，无需 rewrite
         }
       }
     }
