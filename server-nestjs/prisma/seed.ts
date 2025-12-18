@@ -878,6 +878,17 @@ async function main() {
     });
   }
 
+  // 系统设置按钮
+  const settingMenu = await getMenuByPath(systemDir.menuId, 'setting');
+  if (settingMenu) {
+    await ensureButton({
+      menuName: '设置修改',
+      parentId: settingMenu.menuId,
+      perms: 'system:setting:edit',
+      orderNum: 1,
+    });
+  }
+
   const jobMenu = await getMenuByPath(monitorDir.menuId, 'job');
   if (jobMenu) {
     await ensureButton({
@@ -910,6 +921,18 @@ async function main() {
       perms: 'monitor:job:changeStatus',
       orderNum: 5,
     });
+    await ensureButton({
+      menuName: '立即执行',
+      parentId: jobMenu.menuId,
+      perms: 'monitor:job:run',
+      orderNum: 6,
+    });
+    await ensureButton({
+      menuName: '查看日志',
+      parentId: jobMenu.menuId,
+      perms: 'monitor:job:log',
+      orderNum: 7,
+    });
   }
   const cacheMenu = await getMenuByPath(monitorDir.menuId, 'cache');
   if (cacheMenu) {
@@ -929,28 +952,76 @@ async function main() {
   const onlineMenu = await getMenuByPath(monitorDir.menuId, 'online');
   if (onlineMenu) {
     await ensureButton({
+      menuName: '用户查询',
+      parentId: onlineMenu.menuId,
+      perms: 'monitor:online:query',
+      orderNum: 1,
+    });
+    await ensureButton({
       menuName: '强退用户',
       parentId: onlineMenu.menuId,
       perms: 'monitor:online:forceLogout',
-      orderNum: 1,
+      orderNum: 2,
     });
   }
   const operlogMenu = await getMenuByPath(monitorDir.menuId, 'operlog');
   if (operlogMenu) {
     await ensureButton({
+      menuName: '日志查询',
+      parentId: operlogMenu.menuId,
+      perms: 'monitor:operlog:query',
+      orderNum: 1,
+    });
+    await ensureButton({
       menuName: '日志删除',
       parentId: operlogMenu.menuId,
       perms: 'monitor:operlog:remove',
-      orderNum: 1,
+      orderNum: 2,
+    });
+    await ensureButton({
+      menuName: '日志导出',
+      parentId: operlogMenu.menuId,
+      perms: 'monitor:operlog:export',
+      orderNum: 3,
+    });
+    await ensureButton({
+      menuName: '日志清空',
+      parentId: operlogMenu.menuId,
+      perms: 'monitor:operlog:clear',
+      orderNum: 4,
     });
   }
   const logininforMenu = await getMenuByPath(monitorDir.menuId, 'logininfor');
   if (logininforMenu) {
     await ensureButton({
+      menuName: '日志查询',
+      parentId: logininforMenu.menuId,
+      perms: 'monitor:logininfor:query',
+      orderNum: 1,
+    });
+    await ensureButton({
       menuName: '日志删除',
       parentId: logininforMenu.menuId,
       perms: 'monitor:logininfor:remove',
-      orderNum: 1,
+      orderNum: 2,
+    });
+    await ensureButton({
+      menuName: '日志导出',
+      parentId: logininforMenu.menuId,
+      perms: 'monitor:logininfor:export',
+      orderNum: 3,
+    });
+    await ensureButton({
+      menuName: '日志清空',
+      parentId: logininforMenu.menuId,
+      perms: 'monitor:logininfor:clear',
+      orderNum: 4,
+    });
+    await ensureButton({
+      menuName: '账户解锁',
+      parentId: logininforMenu.menuId,
+      perms: 'monitor:logininfor:unlock',
+      orderNum: 5,
     });
   }
 

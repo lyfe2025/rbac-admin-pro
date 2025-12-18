@@ -781,3 +781,85 @@ BEGIN
   RAISE NOTICE '3. 可重复执行，使用 ON CONFLICT DO NOTHING';
   RAISE NOTICE '==============================================';
 END $$;
+
+
+-- =============================================
+-- 补充缺失的按钮权限
+-- =============================================
+
+-- 操作日志按钮补充
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '日志查询', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'monitor:operlog:query'
+FROM sys_menu WHERE path = 'operlog' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '日志导出', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'monitor:operlog:export'
+FROM sys_menu WHERE path = 'operlog' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '日志清空', '', '', 4, 'F', '1', '0', '#', 1, menu_id, 'monitor:operlog:clear'
+FROM sys_menu WHERE path = 'operlog' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+-- 登录日志按钮补充
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '日志查询', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'monitor:logininfor:query'
+FROM sys_menu WHERE path = 'logininfor' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '日志导出', '', '', 3, 'F', '1', '0', '#', 1, menu_id, 'monitor:logininfor:export'
+FROM sys_menu WHERE path = 'logininfor' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '日志清空', '', '', 4, 'F', '1', '0', '#', 1, menu_id, 'monitor:logininfor:clear'
+FROM sys_menu WHERE path = 'logininfor' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '账户解锁', '', '', 5, 'F', '1', '0', '#', 1, menu_id, 'monitor:logininfor:unlock'
+FROM sys_menu WHERE path = 'logininfor' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+-- 在线用户按钮补充
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '用户查询', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'monitor:online:query'
+FROM sys_menu WHERE path = 'online' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+-- 定时任务按钮补充
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '立即执行', '', '', 6, 'F', '1', '0', '#', 1, menu_id, 'monitor:job:run'
+FROM sys_menu WHERE path = 'job' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '查看日志', '', '', 7, 'F', '1', '0', '#', 1, menu_id, 'monitor:job:log'
+FROM sys_menu WHERE path = 'job' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+-- 系统设置按钮
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '设置修改', '', '', 1, 'F', '1', '0', '#', 1, menu_id, 'system:setting:edit'
+FROM sys_menu WHERE path = 'setting' AND parent_id = (SELECT menu_id FROM sys_menu WHERE path = 'system' AND parent_id IS NULL)
+ON CONFLICT DO NOTHING;
+
+-- 为超级管理员分配新增的按钮权限
+INSERT INTO sys_role_menu (role_id, menu_id)
+SELECT r.role_id, m.menu_id
+FROM sys_role r, sys_menu m
+WHERE r.role_key = 'admin' AND r.del_flag = '0'
+  AND m.menu_id NOT IN (SELECT menu_id FROM sys_role_menu WHERE role_id = r.role_id)
+ON CONFLICT DO NOTHING;
+
+-- 为监控管理员分配新增的监控模块按钮权限
+INSERT INTO sys_role_menu (role_id, menu_id)
+SELECT r.role_id, m.menu_id
+FROM sys_role r, sys_menu m
+WHERE r.role_key = 'monitor_admin' AND r.del_flag = '0'
+  AND m.perms LIKE 'monitor:%'
+  AND m.menu_id NOT IN (SELECT menu_id FROM sys_role_menu WHERE role_id = r.role_id)
+ON CONFLICT DO NOTHING;
