@@ -71,14 +71,63 @@ function filterAsyncRouter(asyncRouterMap: MenuItem[]): RouteRecordRaw[] {
   })
 }
 
+// 收集路由名称（用于移除动态路由）
+function collectRouteNames(routes: RouteRecordRaw[]): string[] {
+  const names: string[] = []
+  routes.forEach(route => {
+    if (route.name) {
+      names.push(route.name as string)
+    }
+    if (route.children) {
+      names.push(...collectRouteNames(route.children))
+    }
+  })
+  return names
+}
+
+// 已添加的动态路由名称
+let addedRouteNames: string[] = []
+
 export const useMenuStore = defineStore('menu', () => {
   const menuList = ref<MenuItem[]>([])
   const loading = ref(false)
-  const routesAdded = ref(false)
+
+  // 检查动态路由是否已注册到 Vue Router
+  function checkRoutesRegistered(): boolean {
+    if (addedRouteNames.length === 0) return false
+    // 检查第一个动态路由是否存在
+    const firstName = addedRouteNames[0]
+    if (!firstName) return false
+    return router.hasRoute(firstName)
+  }
+
+  // 注册动态路由
+  function registerRoutes(menus: MenuItem[]) {
+    // 先移除旧的动态路由
+    removeRoutes()
+    
+    const accessRoutes = filterAsyncRouter(menus)
+    addedRouteNames = collectRouteNames(accessRoutes)
+    
+    accessRoutes.forEach(route => {
+      router.addRoute(route)
+    })
+  }
+
+  // 移除动态路由
+  function removeRoutes() {
+    addedRouteNames.forEach(name => {
+      if (router.hasRoute(name)) {
+        router.removeRoute(name)
+      }
+    })
+    addedRouteNames = []
+  }
 
   // 获取菜单数据并注册路由
   async function fetchMenus() {
-    if (menuList.value.length > 0 && routesAdded.value) {
+    // 如果菜单数据存在且路由已注册，直接返回
+    if (menuList.value.length > 0 && checkRoutesRegistered()) {
       return menuList.value
     }
     
@@ -88,12 +137,8 @@ export const useMenuStore = defineStore('menu', () => {
       menuList.value = res.data || []
       
       // 动态注册路由
-      if (menuList.value.length > 0 && !routesAdded.value) {
-        const accessRoutes = filterAsyncRouter(menuList.value)
-        accessRoutes.forEach(route => {
-          router.addRoute(route)
-        })
-        routesAdded.value = true
+      if (menuList.value.length > 0) {
+        registerRoutes(menuList.value)
       }
       
       return menuList.value
@@ -107,14 +152,13 @@ export const useMenuStore = defineStore('menu', () => {
 
   // 清空菜单
   function clearMenus() {
+    removeRoutes()
     menuList.value = []
-    routesAdded.value = false
   }
 
   return {
     menuList,
     loading,
-    routesAdded,
     fetchMenus,
     clearMenus
   }

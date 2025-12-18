@@ -44,17 +44,19 @@ router.beforeEach(async (to, _from, next) => {
     } else {
       const hasRoles = userStore.roles && userStore.roles.length > 0
       if (hasRoles) {
-        // 已有角色信息,确保菜单已加载
+        // 已有角色信息，确保菜单和路由已加载
+        // fetchMenus 内部会检查路由是否真正注册到 Vue Router
         const menuStore = useMenuStore()
-        if (menuStore.menuList.length === 0) {
-          try {
-            await menuStore.fetchMenus()
-            // 路由已动态添加,需要重新导航
+        const prevMenuLength = menuStore.menuList.length
+        try {
+          await menuStore.fetchMenus()
+          // 如果之前没有菜单数据，或者路由被重新注册，需要重新导航
+          if (prevMenuLength === 0 || to.name === 'CatchAll') {
             next({ ...to, replace: true })
             return
-          } catch (error) {
-            console.error('加载菜单失败:', error)
           }
+        } catch (error) {
+          console.error('加载菜单失败:', error)
         }
         
         const requiredRoles = (to.meta && (to.meta as any).roles) as string[] | undefined
