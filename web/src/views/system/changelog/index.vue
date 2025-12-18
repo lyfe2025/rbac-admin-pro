@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import { Card, CardHeader, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Sparkles, Bug, Palette, RefreshCw, Rocket } from 'lucide-vue-next'
 
@@ -29,6 +29,8 @@ const changelog: ChangelogEntry[] = [
     date: '2024-12-18',
     description: '首个正式版本发布',
     changes: [
+      { type: 'feat', content: '添加更新日志菜单和页面' },
+      { type: 'feat', content: '添加 Prisma 数据库管理脚本 (db.sh)，支持本地开发和 Docker 环境' },
       { type: 'feat', content: '添加通用组件和优化表格页面' },
       { type: 'feat', content: '系统设置添加 SMTP 配置帮助提示和云存储配置说明' },
       { type: 'feat', content: '补充系统监控模块的按钮权限和系统设置按钮' },

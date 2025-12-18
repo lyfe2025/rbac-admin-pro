@@ -24,241 +24,201 @@
 
 ---
 
-## 功能特性
+## ✨ 功能特性
 
-### 权限管理
-- **用户管理** - 用户 CRUD、角色分配、部门分配、状态控制、密码重置
-- **角色管理** - 角色权限配置、菜单权限绑定、数据权限
-- **菜单管理** - 动态菜单配置、按钮级权限控制
-- **部门管理** - 树形组织架构、层级关系管理
-
-### 系统监控
-- **操作日志** - 用户操作审计记录
-- **登录日志** - 登录历史与安全审计
-- **在线用户** - 实时在线用户管理、强制下线
-- **服务监控** - 服务器状态、CPU、内存监控
-- **缓存监控** - Redis 缓存管理
-- **数据库监控** - 数据库连接状态监控
-
-### 系统功能
-- **岗位管理** - 职位定义与用户关联
-- **字典管理** - 系统字典类型与数据维护
-- **参数配置** - 系统级参数动态配置
-- **通知公告** - 系统公告发布与管理
-- **定时任务** - 任务调度管理
-
-### 安全特性
-- **JWT 认证** - 无状态 Token 认证
-- **双因素认证** - TOTP 二次验证
-- **验证码** - 图形验证码防护
-- **Token 黑名单** - 安全登出机制
+| 模块 | 功能 |
+|------|------|
+| **权限管理** | 用户管理、角色管理、菜单管理、部门管理、岗位管理 |
+| **系统功能** | 字典管理、参数配置、通知公告、定时任务 |
+| **系统监控** | 操作日志、登录日志、在线用户、服务监控、缓存监控 |
+| **安全特性** | JWT 认证、双因素认证 (TOTP)、图形验证码、Token 黑名单 |
 
 ---
 
-## 技术栈
+## 🛠 技术栈
 
-| 层级 | 技术 | 版本 |
-|------|------|------|
-| **前端** | Vue 3 + Composition API | 3.5 |
-| | Vite | 7 |
-| | TypeScript | 5.9 |
-| | shadcn-vue (Radix Vue + Reka UI) | 2 |
-| | Tailwind CSS | 3.4 |
-| | Pinia | 3 |
-| | VeeValidate + Zod | - |
-| **后端** | NestJS | 11 |
-| | Prisma ORM | 7 |
-| | PostgreSQL | 16 |
-| | Redis (ioredis) | - |
-| | JWT + Passport | - |
-| | Swagger | - |
-| | Winston 日志 | - |
+| 前端 | 后端 |
+|------|------|
+| Vue 3.5 + Composition API | NestJS 11 |
+| Vite 7 + TypeScript 5.9 | Prisma 7 ORM |
+| shadcn-vue + Tailwind CSS 3.4 | PostgreSQL 16 + Redis |
+| Pinia 3 + Vue Router 4 | JWT + Passport |
+| VeeValidate + Zod | Swagger + Winston |
 
 ---
 
-## 项目结构
+## 🚀 快速开始
 
-```
-rbac-admin-pro/
-├── web/                  # 前端 (Vue 3 + Vite)
-│   └── src/
-│       ├── api/          # API 接口 (system/monitor/tool)
-│       ├── components/   # 组件 (ui/common/business)
-│       ├── views/        # 页面
-│       ├── stores/       # Pinia 状态管理
-│       ├── router/       # 路由配置
-│       ├── directive/    # 自定义指令
-│       └── utils/        # 工具函数
-├── server-nestjs/        # 后端 (NestJS)
-│   ├── src/
-│   │   ├── auth/         # 认证模块 (JWT/验证码/双因素)
-│   │   ├── system/       # 系统管理 (user/role/dept/menu/dict/config/post/notice)
-│   │   ├── monitor/      # 监控模块 (operlog/logininfor/online/server/cache/job)
-│   │   ├── common/       # 公共模块 (decorators/guards/filters/interceptors)
-│   │   ├── prisma/       # Prisma 服务
-│   │   └── redis/        # Redis 服务
-│   └── prisma/           # 数据库 Schema & 迁移
-├── db/                   # 数据库脚本
-├── docs/                 # 项目文档
-└── docker-compose.yml    # Docker 编排
-```
-
----
-
-## 快速开始
-
-### 方式一：Docker 一键部署（推荐）
-
-适合快速体验或生产部署。
+### 方式一：Docker 一键部署
 
 ```bash
-# 1. 克隆项目
-git clone https://github.com/your-username/rbac-admin-pro.git
+# 克隆项目
+git clone https://github.com/lyfe2025/rbac-admin-pro.git
 cd rbac-admin-pro
 
-# 2. 配置环境变量
+# 配置环境变量
 cp .env.docker.example .env
-# 编辑 .env，修改 POSTGRES_PASSWORD 和 JWT_SECRET
+# 编辑 .env，设置 POSTGRES_PASSWORD 和 JWT_SECRET
 
-# 3. 启动所有服务
+# 启动所有服务
 docker-compose up -d
 ```
 
 | 服务 | 地址 |
 |------|------|
-| 前端 | http://localhost |
+| 前端 | http://localhost:8080 |
 | 后端 API | http://localhost:3000 |
-| Swagger 文档 | http://localhost:3000/api-docs |
+| Swagger | http://localhost:3000/api-docs |
 
----
+### 方式二：本地开发
 
-### 方式二：本地开发（pnpm workspace）
-
-适合开发调试，推荐使用 pnpm。
-
-#### 环境要求
-- Node.js >= 18
-- PostgreSQL 16
-- Redis
-- pnpm（推荐）/ npm
-
-#### 1. 启动基础服务
+**环境要求：** Node.js >= 18, PostgreSQL 16, Redis, pnpm
 
 ```bash
-# 使用 Docker 启动数据库和 Redis
+# 启动数据库
 docker-compose up -d postgres redis
-```
 
-#### 2. 安装依赖并初始化
-
-```bash
-# 安装 pnpm（如未安装）
-npm install -g pnpm
-
-# 在根目录安装所有依赖
+# 安装依赖
 pnpm install
 
+# 配置后端环境变量
+cp server-nestjs/.env.example server-nestjs/.env
+
 # 初始化数据库
-cp server-nestjs/.env.example server-nestjs/.env  # 配置数据库连接
-pnpm db:migrate                                    # 应用迁移
-pnpm db:seed                                       # 导入种子数据
-```
+pnpm db:migrate
+pnpm db:seed
 
-#### 3. 启动开发服务器
-
-```bash
-# 一键启动前后端
+# 启动开发服务器
 pnpm dev
-
-# 或分别启动
-pnpm dev:web      # 只启动前端 (http://localhost:5173)
-pnpm dev:server   # 只启动后端 (http://localhost:3000)
 ```
 
-#### 交互式控制台（可选）
+| 服务 | 地址 |
+|------|------|
+| 前端 | http://localhost:5173 |
+| 后端 API | http://localhost:3000 |
 
-```bash
-./monorepo.sh     # 交互式菜单（使用 npm）
-```
-
-`monorepo.sh` 提供交互式菜单，包含：一键启停、数据库迁移、Prisma Studio、代码检查、API 冒烟测试、数据库重置等功能。
+**默认账号：** `admin` / `admin123`
 
 ---
 
-**默认账号:** `admin` / `admin123`
+## 📦 项目结构
+
+```
+rbac-admin-pro/
+├── web/                  # 前端 Vue 3
+│   └── src/
+│       ├── api/          # API 接口
+│       ├── components/   # 组件 (ui/common/business)
+│       ├── views/        # 页面视图
+│       ├── stores/       # Pinia 状态
+│       └── router/       # 路由配置
+├── server-nestjs/        # 后端 NestJS
+│   ├── src/
+│   │   ├── auth/         # 认证模块
+│   │   ├── system/       # 系统管理
+│   │   ├── monitor/      # 监控模块
+│   │   └── common/       # 公共模块
+│   └── prisma/           # 数据库 Schema
+├── db/                   # SQL 脚本
+├── monorepo.sh           # 服务管理脚本
+└── db.sh                 # 数据库管理脚本
+```
 
 ---
 
-## 常用命令
+## 🔧 常用命令
 
-<details>
-<summary><b>根目录命令（pnpm workspace）</b></summary>
+
+### pnpm workspace（推荐）
 
 ```bash
 pnpm dev              # 同时启动前后端
-pnpm dev:web          # 只启动前端
-pnpm dev:server       # 只启动后端
-pnpm build            # 构建前后端
+pnpm build            # 构建所有
 pnpm lint             # 检查所有代码
-pnpm format           # 格式化所有代码
-pnpm type-check       # 前端类型检查
-pnpm validate         # 后端 lint + 类型检查
 pnpm db:migrate       # 数据库迁移
 pnpm db:seed          # 种子数据
 pnpm db:studio        # Prisma GUI
 ```
 
+### 交互式脚本
+
+项目提供两个交互式管理脚本：
+
+```bash
+./monorepo.sh         # 服务管理（启停、构建、Docker 部署）
+./db.sh               # 数据库管理（Prisma 迁移、备份恢复）
+```
+
+<details>
+<summary><b>monorepo.sh 功能菜单</b></summary>
+
+**本地开发**
+| 序号 | 功能 | 命令 |
+|------|------|------|
+| 1 | 一键启动前后端 | `pnpm dev` |
+| 2 | 一键停止前后端 | - |
+| 3 | 一键重启前后端 | - |
+| 4 | 同步数据库迁移 | `pnpm prisma migrate dev` |
+| 5 | 打开 Prisma Studio | `pnpm prisma studio` |
+| 6 | 前端类型检查 | `pnpm type-check` |
+| 7 | 后端代码校验 | `pnpm validate` |
+| 8 | API 冒烟测试 | - |
+| 9 | 重置数据库 (危险) | `pnpm prisma migrate reset` |
+
+**Docker 部署**
+| 序号 | 功能 | 命令 |
+|------|------|------|
+| 10 | 启动基础设施 | `docker-compose up -d postgres redis` |
+| 11 | 启动全部服务 | `docker-compose up -d` |
+| 12 | 构建并启动全部 | `docker-compose up -d --build` |
+| 13 | 仅构建后端镜像 | `docker-compose build server` |
+| 14 | 仅构建前端镜像 | `docker-compose build web` |
+| 15 | 停止全部服务 | `docker-compose down` |
+| 16 | 重启全部服务 | `docker-compose restart` |
+| 17 | 重启指定服务 | `docker-compose restart [service]` |
+| 18 | 查看服务状态 | `docker-compose ps` |
+| 19 | 查看服务日志 | `docker-compose logs -f` |
+
 </details>
 
 <details>
-<summary><b>前端命令 (web/)</b></summary>
+<summary><b>db.sh 功能菜单</b></summary>
 
-```bash
-npm run dev          # 启动开发服务器
-npm run build        # 生产构建
-npm run type-check   # TypeScript 类型检查
-npm run lint         # ESLint 检查
-npm run format       # Prettier 格式化
-```
+**本地开发**
+| 序号 | 功能 | 命令 |
+|------|------|------|
+| 1 | 生成 Prisma Client | `pnpm prisma generate` |
+| 2 | 创建开发迁移 | `pnpm prisma migrate dev --name xxx` |
+| 3 | 查看迁移状态 | `pnpm prisma migrate status` |
+| 4 | 重置数据库 (危险) | `pnpm prisma migrate reset` |
+| 5 | 推送 Schema | `pnpm prisma db push` |
+| 6 | 拉取数据库 Schema | `pnpm prisma db pull` |
+| 7 | 导入种子数据 | `pnpm prisma db seed` |
+| 8 | 启动 Prisma Studio | `pnpm prisma studio` |
+| 9 | 格式化 Schema | `pnpm prisma format` |
+| 10 | 验证 Schema | `pnpm prisma validate` |
 
-</details>
-
-<details>
-<summary><b>后端命令 (server-nestjs/)</b></summary>
-
-```bash
-npm run start:dev    # 启动开发服务器 (热重载)
-npm run build        # 编译构建
-npm run validate     # lint + 类型检查
-npm run format       # Prettier 格式化
-```
-
-</details>
-
-<details>
-<summary><b>数据库命令 (Prisma)</b></summary>
-
-```bash
-npx prisma migrate dev    # 创建并应用迁移
-npx prisma generate       # 重新生成客户端
-npx prisma studio         # 数据库 GUI
-npx prisma db seed        # 运行种子脚本
-```
+**Docker / 生产环境**
+| 序号 | 功能 | 命令 |
+|------|------|------|
+| 11 | 执行生产迁移 | `DATABASE_URL=... pnpm prisma migrate deploy` |
+| 12 | 查看迁移状态 | `DATABASE_URL=... pnpm prisma migrate status` |
+| 13 | 导入种子数据 | `DATABASE_URL=... pnpm prisma db seed` |
+| 14 | 执行 SQL 文件 | `docker exec -i rbac-postgres psql < file.sql` |
+| 15 | 备份数据库 | `docker exec rbac-postgres pg_dump > backup.sql` |
+| 16 | 恢复数据库 | `docker exec -i rbac-postgres psql < backup.sql` |
+| 17 | 连接 PostgreSQL | `docker exec -it rbac-postgres psql` |
 
 </details>
 
 ---
 
-## MCP Server 配置
+## 🔌 MCP Server 配置
 
-本项目前端使用 [shadcn-vue](https://www.shadcn-vue.com/) 组件库，支持通过 MCP (Model Context Protocol) 让 AI 助手更好地理解和使用组件。
-
-### 配置方法
-
-在 IDE 的 MCP 配置文件中添加以下配置：
+本项目前端使用 [shadcn-vue](https://www.shadcn-vue.com/) 组件库，支持通过 MCP 让 AI 助手更好地理解和使用组件。
 
 <details>
-<summary><b>Cursor / VS Code / Kiro</b></summary>
+<summary><b>配置方法</b></summary>
 
 编辑 `.cursor/mcp.json`、`.vscode/mcp.json` 或 `.kiro/settings/mcp.json`：
 
@@ -275,49 +235,19 @@ npx prisma db seed        # 运行种子脚本
 
 </details>
 
-<details>
-<summary><b>Claude Desktop</b></summary>
-
-编辑 `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) 或 `%APPDATA%\Claude\claude_desktop_config.json` (Windows)：
-
-```json
-{
-  "mcpServers": {
-    "shadcn-vue": {
-      "command": "npx",
-      "args": ["-y", "@shadcn-vue/mcp@latest"]
-    }
-  }
-}
-```
-
-</details>
-
-### 功能说明
-
-配置后，AI 助手可以：
-- 浏览和搜索 shadcn-vue 组件库
-- 获取组件使用示例和 API 文档
-- 智能推荐适合的组件
-- 生成符合项目规范的组件代码
-
-更多信息请参考：[shadcn-vue MCP 文档](https://www.shadcn-vue.com/docs/mcp)
-
 ---
 
-## 文档
+## 📚 文档
 
 - [文档中心](docs/README.md)
 - [环境配置说明](docs/指南/环境配置说明.md)
 - [Prisma 使用指南](docs/指南/Prisma使用指南.md)
-- [Swagger 使用指南](docs/指南/Swagger使用指南.md)
 - [Docker 部署指南](docs/指南/Docker部署指南.md)
 - [文件存储配置指南](docs/指南/文件存储配置指南.md)
 - [SMTP 邮件配置指南](docs/指南/SMTP邮件配置指南.md)
-- [pnpm 使用指南](docs/指南/pnpm使用指南.md)
 
 ---
 
-## License
+## 📄 License
 
 [MIT](LICENSE)

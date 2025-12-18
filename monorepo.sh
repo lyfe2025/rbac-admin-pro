@@ -17,13 +17,14 @@ FG_RED="${ESC}[31m"
 FG_YELLOW="${ESC}[33m"
 FG_BLUE="${ESC}[34m"
 FG_CYAN="${ESC}[36m"
+FG_GRAY="${ESC}[90m"
 
 # 允许通过环境变量覆盖端口（运行命令时可用 WEB_PORT=xxxx / SERVER_PORT=xxxx）
 OVERRIDE_WEB_PORT="${WEB_PORT:-}"
 OVERRIDE_SERVER_PORT="${SERVER_PORT:-}"
 
 if [ -n "$NO_COLOR" ] || [ ! -t 1 ]; then
-  BOLD=""; RESET=""; FG_GREEN=""; FG_RED=""; FG_YELLOW=""; FG_BLUE=""; FG_CYAN=""
+  BOLD=""; RESET=""; FG_GREEN=""; FG_RED=""; FG_YELLOW=""; FG_BLUE=""; FG_CYAN=""; FG_GRAY=""
 fi
 
 get_cols() {
@@ -172,7 +173,7 @@ fmt_uptime() {
   rest=${rest#*:}
   mm=${rest%%:*}
   ss=${rest#*:}
-  local total_hours=$((days*24+hh))
+  local total_hours=$((10#$days*24+10#$hh))
   echo "${total_hours} 小时 ${mm} 分钟"
 }
 
@@ -387,6 +388,116 @@ smoke_tests() {
   (cd "$SERVER_DIR" && bash test-menu.sh)
 }
 
+# ============================================================
+# Docker 部署命令
+# ============================================================
+
+check_docker() {
+  if ! command -v docker &> /dev/null; then
+    printf "${FG_RED}✗ Docker 未安装${RESET}\n"
+    return 1
+  fi
+  if ! docker info &> /dev/null; then
+    printf "${FG_RED}✗ Docker 未运行${RESET}\n"
+    return 1
+  fi
+  return 0
+}
+
+docker_infra_up() {
+  check_docker || return 1
+  printf "${FG_BLUE}执行: docker-compose up -d postgres redis${RESET}\n"
+  docker-compose up -d postgres redis
+  printf "${FG_GREEN}✓ 基础设施已启动 (PostgreSQL + Redis)${RESET}\n"
+}
+
+docker_up() {
+  check_docker || return 1
+  printf "${FG_BLUE}执行: docker-compose up -d${RESET}\n"
+  docker-compose up -d
+  printf "${FG_GREEN}✓ 全部服务已启动${RESET}\n"
+  docker-compose ps
+}
+
+docker_up_build() {
+  check_docker || return 1
+  printf "${FG_BLUE}执行: docker-compose up -d --build${RESET}\n"
+  docker-compose up -d --build
+  printf "${FG_GREEN}✓ 全部服务已构建并启动${RESET}\n"
+  docker-compose ps
+}
+
+docker_build_server() {
+  check_docker || return 1
+  printf "${FG_BLUE}执行: docker-compose build server${RESET}\n"
+  docker-compose build server
+  printf "${FG_GREEN}✓ 后端镜像构建完成${RESET}\n"
+}
+
+docker_build_web() {
+  check_docker || return 1
+  printf "${FG_BLUE}执行: docker-compose build web${RESET}\n"
+  docker-compose build web
+  printf "${FG_GREEN}✓ 前端镜像构建完成${RESET}\n"
+}
+
+docker_down() {
+  check_docker || return 1
+  printf "${FG_BLUE}执行: docker-compose down${RESET}\n"
+  docker-compose down
+  printf "${FG_GREEN}✓ 全部服务已停止${RESET}\n"
+}
+
+docker_restart() {
+  check_docker || return 1
+  printf "${FG_BLUE}执行: docker-compose restart${RESET}\n"
+  docker-compose restart
+  printf "${FG_GREEN}✓ 全部服务已重启${RESET}\n"
+  docker-compose ps
+}
+
+docker_ps() {
+  check_docker || return 1
+  printf "${FG_BLUE}执行: docker-compose ps${RESET}\n"
+  docker-compose ps
+}
+
+docker_logs() {
+  check_docker || return 1
+  echo "选择要查看的服务日志:"
+  echo "  1) 全部服务"
+  echo "  2) 后端 (server)"
+  echo "  3) 前端 (web)"
+  echo "  4) PostgreSQL"
+  echo "  5) Redis"
+  read -rp "请选择 [1-5]: " choice
+  case "$choice" in
+    1) printf "${FG_BLUE}执行: docker-compose logs -f${RESET}\n"; docker-compose logs -f ;;
+    2) printf "${FG_BLUE}执行: docker-compose logs -f server${RESET}\n"; docker-compose logs -f server ;;
+    3) printf "${FG_BLUE}执行: docker-compose logs -f web${RESET}\n"; docker-compose logs -f web ;;
+    4) printf "${FG_BLUE}执行: docker-compose logs -f postgres${RESET}\n"; docker-compose logs -f postgres ;;
+    5) printf "${FG_BLUE}执行: docker-compose logs -f redis${RESET}\n"; docker-compose logs -f redis ;;
+    *) printf "${FG_RED}无效选项${RESET}\n" ;;
+  esac
+}
+
+docker_restart_service() {
+  check_docker || return 1
+  echo "选择要重启的服务:"
+  echo "  1) 后端 (server)"
+  echo "  2) 前端 (web)"
+  echo "  3) PostgreSQL"
+  echo "  4) Redis"
+  read -rp "请选择 [1-4]: " choice
+  case "$choice" in
+    1) printf "${FG_BLUE}执行: docker-compose restart server${RESET}\n"; docker-compose restart server ;;
+    2) printf "${FG_BLUE}执行: docker-compose restart web${RESET}\n"; docker-compose restart web ;;
+    3) printf "${FG_BLUE}执行: docker-compose restart postgres${RESET}\n"; docker-compose restart postgres ;;
+    4) printf "${FG_BLUE}执行: docker-compose restart redis${RESET}\n"; docker-compose restart redis ;;
+    *) printf "${FG_RED}无效选项${RESET}\n" ;;
+  esac
+}
+
 print_menu() {
   local WEB_PORT SERVER_PORT wpid spid wstatus sstatus
   local WEB_INFO SERVER_INFO WEB_SRC SERVER_SRC WEB_LOG SERVER_LOG WEB_UP SERVER_UP
@@ -414,16 +525,30 @@ print_menu() {
   kv_line "Uptime" "$SERVER_UP"
   kv_line "Log" "$(shorten_source "$SERVER_LOG_PATH") (更新时间: $(log_mtime "$SERVER_LOG_PATH"))"
   hr
-  printf -- "${FG_CYAN}1${RESET}. 一键启动 前端+后端\n"
-  printf -- "${FG_CYAN}2${RESET}. 一键停止 前端+后端\n"
-  printf -- "${FG_CYAN}3${RESET}. 一键重启 前端+后端\n"
-  printf -- "${FG_CYAN}4${RESET}. 同步数据库迁移\n"
-  printf -- "${FG_CYAN}5${RESET}. 打开 Prisma Studio\n"
-  printf -- "${FG_CYAN}6${RESET}. 前端类型检查\n"
-  printf -- "${FG_CYAN}7${RESET}. 后端代码校验\n"
-  printf -- "${FG_CYAN}8${RESET}. 后端快速 API 冒烟测试\n"
-  printf -- "${FG_RED}9${RESET}. 重置数据库到初始状态 (危险)\n"
-  printf -- "${FG_CYAN}0${RESET}. 退出\n"
+  printf -- "${FG_CYAN}[本地开发]${RESET}\n"
+  printf -- "${FG_CYAN}1${RESET}.  一键启动 前端+后端              ${FG_GRAY}pnpm dev${RESET}\n"
+  printf -- "${FG_CYAN}2${RESET}.  一键停止 前端+后端\n"
+  printf -- "${FG_CYAN}3${RESET}.  一键重启 前端+后端\n"
+  printf -- "${FG_CYAN}4${RESET}.  同步数据库迁移                  ${FG_GRAY}pnpm prisma migrate dev${RESET}\n"
+  printf -- "${FG_CYAN}5${RESET}.  打开 Prisma Studio              ${FG_GRAY}pnpm prisma studio${RESET}\n"
+  printf -- "${FG_CYAN}6${RESET}.  前端类型检查                    ${FG_GRAY}pnpm type-check${RESET}\n"
+  printf -- "${FG_CYAN}7${RESET}.  后端代码校验                    ${FG_GRAY}pnpm validate${RESET}\n"
+  printf -- "${FG_CYAN}8${RESET}.  后端快速 API 冒烟测试\n"
+  printf -- "${FG_RED}9${RESET}.  重置数据库到初始状态 (危险)      ${FG_GRAY}pnpm prisma migrate reset${RESET}\n"
+  hr
+  printf -- "${FG_CYAN}[Docker 部署]${RESET}\n"
+  printf -- "${FG_CYAN}10${RESET}. 启动基础设施 (PG+Redis)         ${FG_GRAY}docker-compose up -d postgres redis${RESET}\n"
+  printf -- "${FG_CYAN}11${RESET}. 启动全部服务                    ${FG_GRAY}docker-compose up -d${RESET}\n"
+  printf -- "${FG_CYAN}12${RESET}. 构建并启动全部                  ${FG_GRAY}docker-compose up -d --build${RESET}\n"
+  printf -- "${FG_CYAN}13${RESET}. 仅构建后端镜像                  ${FG_GRAY}docker-compose build server${RESET}\n"
+  printf -- "${FG_CYAN}14${RESET}. 仅构建前端镜像                  ${FG_GRAY}docker-compose build web${RESET}\n"
+  printf -- "${FG_CYAN}15${RESET}. 停止全部服务                    ${FG_GRAY}docker-compose down${RESET}\n"
+  printf -- "${FG_CYAN}16${RESET}. 重启全部服务                    ${FG_GRAY}docker-compose restart${RESET}\n"
+  printf -- "${FG_CYAN}17${RESET}. 重启指定服务                    ${FG_GRAY}docker-compose restart [service]${RESET}\n"
+  printf -- "${FG_CYAN}18${RESET}. 查看服务状态                    ${FG_GRAY}docker-compose ps${RESET}\n"
+  printf -- "${FG_CYAN}19${RESET}. 查看服务日志                    ${FG_GRAY}docker-compose logs -f [service]${RESET}\n"
+  hr
+  printf -- "${FG_CYAN}0${RESET}.  退出\n"
 }
 
 run_by_id() {
@@ -437,6 +562,16 @@ run_by_id() {
     7) validate_server ;;
     8) smoke_tests ;;
     9) reset_db ;;
+    10) docker_infra_up ;;
+    11) docker_up ;;
+    12) docker_up_build ;;
+    13) docker_build_server ;;
+    14) docker_build_web ;;
+    15) docker_down ;;
+    16) docker_restart ;;
+    17) docker_restart_service ;;
+    18) docker_ps ;;
+    19) docker_logs ;;
     0) exit 0 ;;
     *) echo "无效的选项" ;;
   esac

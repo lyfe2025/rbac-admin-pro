@@ -562,11 +562,58 @@ npx prisma migrate dev --name <描述>
 
 ---
 
+## 交互式脚本 db.sh
+
+项目根目录提供了 `db.sh` 交互式脚本，封装了常用的 Prisma 命令：
+
+```bash
+./db.sh    # 启动交互式菜单
+```
+
+### 功能菜单
+
+**本地开发**
+| 序号 | 功能 | 命令 |
+|------|------|------|
+| 1 | 生成 Prisma Client | `pnpm prisma generate` |
+| 2 | 创建开发迁移 | `pnpm prisma migrate dev --name xxx` |
+| 3 | 查看迁移状态 | `pnpm prisma migrate status` |
+| 4 | 重置数据库 (危险) | `pnpm prisma migrate reset` |
+| 5 | 推送 Schema | `pnpm prisma db push` |
+| 6 | 拉取数据库 Schema | `pnpm prisma db pull` |
+| 7 | 导入种子数据 | `pnpm prisma db seed` |
+| 8 | 启动 Prisma Studio | `pnpm prisma studio` |
+| 9 | 格式化 Schema | `pnpm prisma format` |
+| 10 | 验证 Schema | `pnpm prisma validate` |
+
+**Docker / 生产环境**
+| 序号 | 功能 | 命令 |
+|------|------|------|
+| 11 | 执行生产迁移 | `DATABASE_URL=... pnpm prisma migrate deploy` |
+| 12 | 查看迁移状态 | `DATABASE_URL=... pnpm prisma migrate status` |
+| 13 | 导入种子数据 | `DATABASE_URL=... pnpm prisma db seed` |
+| 14 | 执行 SQL 文件 | `docker exec -i rbac-postgres psql < file.sql` |
+| 15 | 备份数据库 | `docker exec rbac-postgres pg_dump > backup.sql` |
+| 16 | 恢复数据库 | `docker exec -i rbac-postgres psql < backup.sql` |
+| 17 | 连接 PostgreSQL | `docker exec -it rbac-postgres psql` |
+
+### 命令行直接调用
+
+```bash
+./db.sh generate       # 生成 Prisma Client
+./db.sh migrate-dev    # 创建开发迁移
+./db.sh deploy         # 执行生产迁移
+./db.sh backup         # 备份数据库
+./db.sh --help         # 查看所有命令
+```
+
+---
+
 ## 命令速查表
 
 ### 📋 快速参考表
 
-⚠️ **重要:** 所有命令必须在 `server-nestjs` 目录下执行!
+⚠️ **重要:** 所有命令必须在 `server-nestjs` 目录下执行（或使用根目录的 `db.sh` 脚本）!
 
 | 命令 | 作用 | 使用场景 | 环境 |
 |------|------|---------|------|
