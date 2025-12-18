@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { Card, CardHeader, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Sparkles, Bug, Palette, RefreshCw, Rocket } from 'lucide-vue-next'
+import { Sparkles, Bug, Palette, RefreshCw, Rocket, FileText } from 'lucide-vue-next'
 
 interface ChangeItem {
-  type: 'feat' | 'fix' | 'style' | 'refactor' | 'perf'
+  type: 'feat' | 'fix' | 'style' | 'refactor' | 'perf' | 'docs'
   content: string
 }
 
@@ -21,6 +21,7 @@ const typeConfig = {
   style: { label: '样式', icon: Palette, variant: 'secondary' as const },
   refactor: { label: '重构', icon: RefreshCw, variant: 'outline' as const },
   perf: { label: '优化', icon: Rocket, variant: 'secondary' as const },
+  docs: { label: '文档', icon: FileText, variant: 'outline' as const },
 }
 
 const changelog: ChangelogEntry[] = [
@@ -31,6 +32,8 @@ const changelog: ChangelogEntry[] = [
     changes: [
       { type: 'feat', content: '添加更新日志菜单和页面' },
       { type: 'feat', content: '添加 Prisma 数据库管理脚本 (db.sh)，支持本地开发和 Docker 环境' },
+      { type: 'feat', content: '添加 Monorepo 交互式管理脚本 (monorepo.sh)' },
+      { type: 'docs', content: '更新 README 和项目文档，添加交互式脚本使用说明' },
       { type: 'feat', content: '添加通用组件和优化表格页面' },
       { type: 'feat', content: '系统设置添加 SMTP 配置帮助提示和云存储配置说明' },
       { type: 'feat', content: '补充系统监控模块的按钮权限和系统设置按钮' },
