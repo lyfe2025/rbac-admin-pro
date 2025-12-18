@@ -354,6 +354,11 @@ SELECT '通知公告', 'notice', 'system/notice/index', 9, 'C', '0', '0', 'megap
 FROM sys_menu WHERE path = 'system' AND parent_id IS NULL
 ON CONFLICT DO NOTHING;
 
+INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
+SELECT '更新日志', 'changelog', 'system/changelog/index', 10, 'C', '0', '0', 'scroll-text', 1, menu_id, NULL
+FROM sys_menu WHERE path = 'system' AND parent_id IS NULL
+ON CONFLICT DO NOTHING;
+
 -- 12.3 系统监控目录
 INSERT INTO sys_menu (menu_name, path, component, order_num, menu_type, visible, status, icon, is_frame, parent_id, perms)
 VALUES ('系统监控', 'monitor', 'Layout', 2, 'M', '0', '0', 'monitor', 1, NULL, NULL)

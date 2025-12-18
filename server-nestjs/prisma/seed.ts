@@ -494,6 +494,19 @@ async function main() {
     icon: 'megaphone',
     isFrame: 1,
   });
+  await ensureMenu({
+    menuName: '更新日志',
+    parentId: systemDir.menuId,
+    path: 'changelog',
+    component: 'system/changelog/index',
+    orderNum: 10,
+    menuType: 'C',
+    visible: '0',
+    status: '0',
+    perms: null,
+    icon: 'scroll-text',
+    isFrame: 1,
+  });
 
   const monitorDir = await ensureMenu({
     menuName: '系统监控',
