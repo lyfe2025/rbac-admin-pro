@@ -27,6 +27,7 @@ import { BusinessException } from '../common/exceptions';
 import { ErrorCode } from '../common/enums';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { SecurityConfigService } from './security-config.service';
+import { IpUtil } from '../common/utils/ip.util';
 
 @ApiTags('认证')
 @Controller('auth')
@@ -99,7 +100,7 @@ export class AuthController {
       await this.onlineService.add({
         token: res.token,
         userName: loginDto.username,
-        ipaddr: req.ip || '',
+        ipaddr: IpUtil.getClientIp(req),
         loginTime: new Date(),
         browser,
         os,
@@ -176,7 +177,7 @@ export class AuthController {
     await this.onlineService.add({
       token: res.token,
       userName: tokenPayload.username,
-      ipaddr: req.ip || '',
+      ipaddr: IpUtil.getClientIp(req),
       loginTime: new Date(),
       browser,
       os,
