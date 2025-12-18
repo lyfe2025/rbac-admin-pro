@@ -41,6 +41,9 @@ import { listOperLog, delOperLog, cleanOperLog } from '@/api/monitor/operlog'
 import type { SysOperLog } from '@/api/system/types'
 import { formatDate } from '@/utils/format'
 import TablePagination from '@/components/common/TablePagination.vue'
+import TableSkeleton from '@/components/common/TableSkeleton.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const { toast } = useToast()
 
@@ -221,7 +224,18 @@ onMounted(() => {
 
     <!-- Table -->
     <div class="border rounded-md bg-card overflow-x-auto">
-      <Table>
+      <!-- 骨架屏 -->
+      <TableSkeleton v-if="loading" :columns="8" :rows="10" :show-actions="false" />
+      
+      <!-- 空状态 -->
+      <EmptyState
+        v-else-if="logList.length === 0"
+        title="暂无操作日志"
+        description="系统操作日志将在此显示"
+      />
+      
+      <!-- 数据表格 -->
+      <Table v-else>
         <TableHeader>
           <TableRow>
             <TableHead>日志编号</TableHead>
@@ -255,11 +269,6 @@ onMounted(() => {
               <Button variant="ghost" size="icon" @click="handleView(item)">
                 <Eye class="w-4 h-4" />
               </Button>
-            </TableCell>
-          </TableRow>
-          <TableRow v-if="logList.length === 0">
-            <TableCell colspan="9" class="text-center h-24 text-muted-foreground">
-              暂无数据
             </TableCell>
           </TableRow>
         </TableBody>

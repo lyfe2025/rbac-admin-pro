@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import {
   Table,
   TableBody,
@@ -29,22 +29,27 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast/use-toast'
-import { Plus, Edit, Trash2, RefreshCw, Search, Loader2, RotateCw } from 'lucide-vue-next'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { Plus, Edit, Trash2, RefreshCw, Search, RotateCw } from 'lucide-vue-next'
 import TablePagination from '@/components/common/TablePagination.vue'
+import TableSkeleton from '@/components/common/TableSkeleton.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import LeaveConfirmDialog from '@/components/common/LeaveConfirmDialog.vue'
 import { formatDate } from '@/utils/format'
 import { listConfig, getConfig, delConfig, addConfig, updateConfig, refreshCache, type SysConfig } from '@/api/system/config'
+import { useUnsavedChanges } from '@/composables'
 
 const { toast } = useToast()
+
+// 未保存更改提示（同时支持路由离开和弹窗关闭）
+const {
+  isDirty,
+  markClean,
+  showLeaveDialog,
+  confirmLeave,
+  cancelLeave,
+  tryLeave
+} = useUnsavedChanges()
 
 // State
 const loading = ref(true)
@@ -72,6 +77,17 @@ const form = reactive<Partial<SysConfig>>({
   configType: 'Y',
   remark: ''
 })
+
+// 监听表单变化，标记脏状态（仅在弹窗打开时）
+watch(
+  () => ({ ...form }),
+  () => {
+    if (showDialog.value) {
+      isDirty.value = true
+    }
+  },
+  { deep: true }
+)
 
 // Fetch Data
 async function getList() {
@@ -149,12 +165,20 @@ async function handleSubmit() {
       await addConfig(form)
       toast({ title: "新增成功", description: "参数已创建" })
     }
+    markClean() // 保存成功后清除脏状态
     showDialog.value = false
     getList()
   } catch (error) {
     console.error('提交失败:', error)
   } finally {
     submitLoading.value = false
+  }
+}
+
+// 关闭弹窗时检查未保存更改
+async function handleCloseDialog() {
+  if (await tryLeave()) {
+    showDialog.value = false
   }
 }
 
@@ -165,6 +189,7 @@ function resetForm() {
   form.configValue = ''
   form.configType = 'Y'
   form.remark = ''
+  markClean() // 重置表单时清除脏状态
 }
 
 onMounted(() => {
@@ -240,7 +265,20 @@ onMounted(() => {
 
     <!-- Table -->
     <div class="border rounded-md bg-card overflow-x-auto">
-      <Table>
+      <!-- 骨架屏 -->
+      <TableSkeleton v-if="loading" :columns="7" :rows="10" />
+      
+      <!-- 空状态 -->
+      <EmptyState
+        v-else-if="configList.length === 0"
+        title="暂无参数数据"
+        description="点击新增参数按钮添加第一个系统参数"
+        action-text="新增参数"
+        @action="handleAdd"
+      />
+      
+      <!-- 数据表格 -->
+      <Table v-else>
         <TableHeader>
           <TableRow>
             <TableHead>参数主键</TableHead>
@@ -275,11 +313,6 @@ onMounted(() => {
               </Button>
             </TableCell>
           </TableRow>
-          <TableRow v-if="configList.length === 0">
-            <TableCell colspan="8" class="text-center h-24 text-muted-foreground">
-              暂无数据
-            </TableCell>
-          </TableRow>
         </TableBody>
       </Table>
     </div>
@@ -293,8 +326,8 @@ onMounted(() => {
     />
 
     <!-- Add/Edit Dialog -->
-    <Dialog v-model:open="showDialog">
-      <DialogContent class="sm:max-w-[600px]">
+    <Dialog :open="showDialog" @update:open="(val) => !val && handleCloseDialog()">
+      <DialogContent class="sm:max-w-[600px]" @escape-key-down.prevent="handleCloseDialog" @pointer-down-outside.prevent="handleCloseDialog">
         <DialogHeader>
           <DialogTitle>{{ isEdit ? '修改参数' : '新增参数' }}</DialogTitle>
           <DialogDescription>
@@ -334,7 +367,7 @@ onMounted(() => {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" @click="showDialog = false">取消</Button>
+          <Button variant="outline" @click="handleCloseDialog">取消</Button>
           <Button @click="handleSubmit" :disabled="submitLoading">
             确定
           </Button>
@@ -342,22 +375,21 @@ onMounted(() => {
       </DialogContent>
     </Dialog>
 
+    <!-- 未保存更改确认弹窗 -->
+    <LeaveConfirmDialog
+      v-model:open="showLeaveDialog"
+      @confirm="confirmLeave"
+      @cancel="cancelLeave"
+    />
+
     <!-- Delete Confirmation Dialog -->
-    <AlertDialog v-model:open="showDeleteDialog">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>确认删除?</AlertDialogTitle>
-          <AlertDialogDescription>
-            您确定要删除参数 "{{ configToDelete?.configName }}" 吗？此操作无法撤销。
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction @click="confirmDelete" class="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-            删除
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDialog
+      v-model:open="showDeleteDialog"
+      title="确认删除"
+      :description="`您确定要删除参数 &quot;${configToDelete?.configName}&quot; 吗？此操作无法撤销。`"
+      confirm-text="删除"
+      destructive
+      @confirm="confirmDelete"
+    />
   </div>
 </template>

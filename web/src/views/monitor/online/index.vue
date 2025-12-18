@@ -30,6 +30,9 @@ import {
 import { useToast } from '@/components/ui/toast/use-toast'
 import { LogOut, RefreshCw, Search, Loader2, Copy } from 'lucide-vue-next'
 import TablePagination from '@/components/common/TablePagination.vue'
+import TableSkeleton from '@/components/common/TableSkeleton.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { listOnline, forceLogout, type SysUserOnline } from '@/api/monitor/online'
 import { useUserStore } from '@/stores/modules/user'
 
@@ -290,7 +293,18 @@ onUnmounted(() => {
 
     <!-- Table -->
     <div class="border rounded-md bg-card overflow-x-auto">
-      <Table>
+      <!-- 骨架屏 -->
+      <TableSkeleton v-if="loading && onlineList.length === 0" :columns="8" :rows="10" show-checkbox />
+      
+      <!-- 空状态 -->
+      <EmptyState
+        v-else-if="!loading && onlineList.length === 0"
+        title="暂无在线用户"
+        description="当前没有活跃的在线用户"
+      />
+      
+      <!-- 数据表格 -->
+      <Table v-else>
         <TableHeader>
           <TableRow>
             <TableHead class="w-[50px]">
@@ -308,18 +322,7 @@ onUnmounted(() => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          <!-- Loading State -->
-          <TableRow v-if="loading && onlineList.length === 0">
-            <TableCell colspan="10" class="text-center h-24">
-              <div class="flex items-center justify-center gap-2 text-muted-foreground">
-                <Loader2 class="w-5 h-5 animate-spin" />
-                加载中...
-              </div>
-            </TableCell>
-          </TableRow>
-          <!-- Data Rows -->
           <TableRow
-            v-else
             v-for="item in onlineList"
             :key="item.tokenId"
             :class="{ 'bg-primary/5': isCurrentUser(item.userName) }"
@@ -383,12 +386,6 @@ onUnmounted(() => {
                 <LogOut class="w-4 h-4 mr-2" />
                 强退
               </Button>
-            </TableCell>
-          </TableRow>
-          <!-- Empty State -->
-          <TableRow v-if="!loading && onlineList.length === 0">
-            <TableCell colspan="10" class="text-center h-24 text-muted-foreground">
-              暂无在线用户
             </TableCell>
           </TableRow>
         </TableBody>

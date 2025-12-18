@@ -75,6 +75,10 @@ import DeptTreeSelect from '@/components/business/DeptTreeSelect.vue'
 import UserForm from '@/components/business/UserForm.vue'
 import UserDetailDialog from '@/components/business/UserDetailDialog.vue'
 import TablePagination from '@/components/common/TablePagination.vue'
+import TableSkeleton from '@/components/common/TableSkeleton.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import ExportButton from '@/components/common/ExportButton.vue'
 import { formatDate } from '@/utils/format'
 
 // State
@@ -659,11 +663,11 @@ onMounted(async () => {
           <FileUp class="h-4 w-4 sm:mr-2" />
           <span class="hidden sm:inline">导入</span>
         </Button>
-        <Button variant="outline" size="sm" :disabled="exportLoading" @click="handleExport">
-          <Loader2 v-if="exportLoading" class="h-4 w-4 sm:mr-2 animate-spin" />
-          <FileDown v-else class="h-4 w-4 sm:mr-2" />
-          <span class="hidden sm:inline">导出</span>
-        </Button>
+        <ExportButton
+          size="sm"
+          :disabled="exportLoading"
+          @export="handleExport"
+        />
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
             <Button variant="outline" size="icon" class="h-8 w-8 sm:h-9 sm:w-9">
@@ -775,7 +779,20 @@ onMounted(async () => {
 
     <!-- Table -->
     <div class="border rounded-md bg-card overflow-x-auto">
-      <Table class="min-w-[800px]">
+      <!-- 骨架屏 -->
+      <TableSkeleton v-if="loading" :columns="6" :rows="10" show-checkbox />
+      
+      <!-- 空状态 -->
+      <EmptyState
+        v-else-if="userList.length === 0"
+        title="暂无用户数据"
+        description="点击新增用户按钮添加第一个用户"
+        action-text="新增用户"
+        @action="handleAdd"
+      />
+      
+      <!-- 数据表格 -->
+      <Table v-else class="min-w-[800px]">
         <TableHeader>
           <TableRow>
             <TableHead class="w-[50px]">
@@ -835,11 +852,6 @@ onMounted(async () => {
               </Button>
             </TableCell>
           </TableRow>
-          <TableRow v-if="userList.length === 0">
-            <TableCell :colspan="visibleColumnCount" class="text-center h-24 text-muted-foreground">
-              暂无数据
-            </TableCell>
-          </TableRow>
         </TableBody>
       </Table>
     </div>
@@ -882,40 +894,25 @@ onMounted(async () => {
     </Dialog>
 
     <!-- Delete Confirmation Dialog -->
-    <AlertDialog v-model:open="showDeleteDialog">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>确认删除?</AlertDialogTitle>
-          <AlertDialogDescription>
-            您确定要删除用户 "{{ userToDelete?.userName }}" 吗？此操作无法撤销。
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction @click="confirmDelete" class="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-            删除
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDialog
+      v-model:open="showDeleteDialog"
+      title="确认删除"
+      :description="`您确定要删除用户 &quot;${userToDelete?.userName}&quot; 吗？此操作无法撤销。`"
+      confirm-text="删除"
+      destructive
+      @confirm="confirmDelete"
+    />
 
     <!-- Batch Delete Confirmation Dialog -->
-    <AlertDialog v-model:open="showBatchDeleteDialog">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>确认批量删除?</AlertDialogTitle>
-          <AlertDialogDescription>
-            您确定要删除选中的 {{ selectedRows.length }} 个用户吗？此操作无法撤销。
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction @click="confirmBatchDelete" class="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-            删除
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDialog
+      v-model:open="showBatchDeleteDialog"
+      title="确认批量删除"
+      :description="`您确定要删除选中的 ${selectedRows.length} 个用户吗？此操作无法撤销。`"
+      confirm-text="删除"
+      destructive
+      :confirm-input="selectedRows.length >= 5 ? '确认删除' : ''"
+      @confirm="confirmBatchDelete"
+    />
 
     <!-- User Detail Dialog -->
     <UserDetailDialog

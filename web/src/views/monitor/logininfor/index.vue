@@ -34,6 +34,9 @@ import { listLogininfor, delLogininfor, cleanLogininfor, type LogininforQuery } 
 import type { SysLoginLog } from '@/api/system/types'
 import { formatDate } from '@/utils/format'
 import TablePagination from '@/components/common/TablePagination.vue'
+import TableSkeleton from '@/components/common/TableSkeleton.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const { toast } = useToast()
 
@@ -199,7 +202,18 @@ onMounted(() => {
 
     <!-- Table -->
     <div class="border rounded-md bg-card overflow-x-auto">
-      <Table>
+      <!-- 骨架屏 -->
+      <TableSkeleton v-if="loading" :columns="8" :rows="10" :show-actions="false" />
+      
+      <!-- 空状态 -->
+      <EmptyState
+        v-else-if="logList.length === 0"
+        title="暂无登录日志"
+        description="系统登录日志将在此显示"
+      />
+      
+      <!-- 数据表格 -->
+      <Table v-else>
         <TableHeader>
           <TableRow>
             <TableHead>访问编号</TableHead>
@@ -228,11 +242,6 @@ onMounted(() => {
             </TableCell>
             <TableCell>{{ item.msg }}</TableCell>
             <TableCell>{{ formatDate(item.loginTime) }}</TableCell>
-          </TableRow>
-          <TableRow v-if="logList.length === 0">
-            <TableCell colspan="9" class="text-center h-24 text-muted-foreground">
-              暂无数据
-            </TableCell>
           </TableRow>
         </TableBody>
       </Table>

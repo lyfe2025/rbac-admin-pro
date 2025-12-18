@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import {
   Table,
   TableBody,
@@ -29,23 +29,28 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import RichTextEditor from '@/components/common/RichTextEditor.vue'
 import { useToast } from '@/components/ui/toast/use-toast'
-import { Plus, Edit, Trash2, RefreshCw, Search, Loader2, Eye } from 'lucide-vue-next'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { Plus, Edit, Trash2, RefreshCw, Search, Eye } from 'lucide-vue-next'
 import TablePagination from '@/components/common/TablePagination.vue'
+import TableSkeleton from '@/components/common/TableSkeleton.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import LeaveConfirmDialog from '@/components/common/LeaveConfirmDialog.vue'
 import { formatDate } from '@/utils/format'
 import { sanitizeHtml } from '@/utils/sanitize'
 import { listNotice, getNotice, delNotice, addNotice, updateNotice, type SysNotice } from '@/api/system/notice'
+import { useUnsavedChanges } from '@/composables'
 
 const { toast } = useToast()
+
+// 未保存更改提示（弹窗场景，禁用路由守卫）
+const { 
+  isDirty, 
+  markClean, 
+  showLeaveDialog, 
+  confirmLeave, 
+  cancelLeave, 
+  tryLeave 
+} = useUnsavedChanges({ enableRouteGuard: false })
 
 // State
 const loading = ref(true)
@@ -74,6 +79,17 @@ const form = reactive({
   noticeContent: '',
   status: '0'
 })
+
+// 监听表单变化，标记脏状态（仅在弹窗打开时）
+watch(
+  () => ({ ...form }),
+  () => {
+    if (showDialog.value) {
+      isDirty.value = true
+    }
+  },
+  { deep: true }
+)
 
 // Fetch Data
 async function getList() {
@@ -152,6 +168,7 @@ async function handleSubmit() {
       await addNotice(form)
       toast({ title: "新增成功", description: "公告已创建" })
     }
+    markClean() // 保存成功后清除脏状态
     showDialog.value = false
     getList()
   } catch (error) {
@@ -161,12 +178,20 @@ async function handleSubmit() {
   }
 }
 
+// 关闭弹窗时检查未保存更改
+async function handleCloseDialog() {
+  if (await tryLeave()) {
+    showDialog.value = false
+  }
+}
+
 function resetForm() {
   form.noticeId = undefined
   form.noticeTitle = ''
   form.noticeType = '1'
   form.noticeContent = ''
   form.status = '0'
+  markClean() // 重置表单时清除脏状态
 }
 
 function getNoticeTypeLabel(type: string) {
@@ -251,7 +276,20 @@ onMounted(() => {
 
     <!-- Table -->
     <div class="border rounded-md bg-card overflow-x-auto">
-      <Table>
+      <!-- 骨架屏 -->
+      <TableSkeleton v-if="loading" :columns="6" :rows="10" />
+      
+      <!-- 空状态 -->
+      <EmptyState
+        v-else-if="noticeList.length === 0"
+        title="暂无公告数据"
+        description="点击新增公告按钮发布第一条公告"
+        action-text="新增公告"
+        @action="handleAdd"
+      />
+      
+      <!-- 数据表格 -->
+      <Table v-else>
         <TableHeader>
           <TableRow>
             <TableHead>序号</TableHead>
@@ -289,11 +327,6 @@ onMounted(() => {
               </Button>
             </TableCell>
           </TableRow>
-          <TableRow v-if="noticeList.length === 0">
-            <TableCell colspan="7" class="text-center h-24 text-muted-foreground">
-              暂无数据
-            </TableCell>
-          </TableRow>
         </TableBody>
       </Table>
     </div>
@@ -307,8 +340,8 @@ onMounted(() => {
     />
 
     <!-- Add/Edit Dialog -->
-    <Dialog v-model:open="showDialog">
-      <DialogContent class="sm:max-w-[800px]">
+    <Dialog :open="showDialog" @update:open="(val) => !val && handleCloseDialog()">
+      <DialogContent class="sm:max-w-[800px]" @escape-key-down.prevent="handleCloseDialog" @pointer-down-outside.prevent="handleCloseDialog">
         <DialogHeader>
           <DialogTitle>{{ isEdit ? '修改公告' : '新增公告' }}</DialogTitle>
           <DialogDescription>
@@ -356,7 +389,7 @@ onMounted(() => {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" @click="showDialog = false">取消</Button>
+          <Button variant="outline" @click="handleCloseDialog">取消</Button>
           <Button @click="handleSubmit" :disabled="submitLoading">
             确定
           </Button>
@@ -364,23 +397,22 @@ onMounted(() => {
       </DialogContent>
     </Dialog>
 
+    <!-- 未保存更改确认弹窗 -->
+    <LeaveConfirmDialog
+      v-model:open="showLeaveDialog"
+      @confirm="confirmLeave"
+      @cancel="cancelLeave"
+    />
+
     <!-- Delete Confirmation Dialog -->
-    <AlertDialog v-model:open="showDeleteDialog">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>确认删除?</AlertDialogTitle>
-          <AlertDialogDescription>
-            您确定要删除公告 "{{ noticeToDelete?.noticeTitle }}" 吗？此操作无法撤销。
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction @click="confirmDelete" class="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-            删除
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDialog
+      v-model:open="showDeleteDialog"
+      title="确认删除"
+      :description="`您确定要删除公告 &quot;${noticeToDelete?.noticeTitle}&quot; 吗？此操作无法撤销。`"
+      confirm-text="删除"
+      destructive
+      @confirm="confirmDelete"
+    />
 
     <!-- Preview Dialog -->
     <Dialog v-model:open="showPreviewDialog">

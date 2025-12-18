@@ -12,6 +12,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import TablePagination from '@/components/common/TablePagination.vue'
+import TableSkeleton from '@/components/common/TableSkeleton.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { formatDate } from '@/utils/format'
 import {
   Table,
@@ -239,7 +242,20 @@ onMounted(() => {
 
     <!-- Table -->
     <div class="border rounded-md bg-card overflow-x-auto">
-      <Table>
+      <!-- 骨架屏 -->
+      <TableSkeleton v-if="loading" :columns="6" :rows="10" />
+      
+      <!-- 空状态 -->
+      <EmptyState
+        v-else-if="typeList.length === 0"
+        title="暂无字典数据"
+        description="点击新增字典按钮添加第一个字典类型"
+        action-text="新增字典"
+        @action="handleAdd"
+      />
+      
+      <!-- 数据表格 -->
+      <Table v-else>
         <TableHeader>
           <TableRow>
             <TableHead class="w-[100px]">字典编号</TableHead>
@@ -272,11 +288,6 @@ onMounted(() => {
               <Button variant="ghost" size="icon" class="text-destructive" @click="handleDelete(item)">
                 <Trash2 class="w-4 h-4" />
               </Button>
-            </TableCell>
-          </TableRow>
-          <TableRow v-if="typeList.length === 0">
-            <TableCell colspan="7" class="text-center h-24 text-muted-foreground">
-              暂无数据
             </TableCell>
           </TableRow>
         </TableBody>
@@ -334,21 +345,13 @@ onMounted(() => {
     </Dialog>
 
     <!-- Delete Confirmation Dialog -->
-    <AlertDialog v-model:open="showDeleteDialog">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>确认删除?</AlertDialogTitle>
-          <AlertDialogDescription>
-            您确定要删除字典类型 "{{ dictToDelete?.dictName }}" 吗？此操作无法撤销。
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction @click="confirmDelete" class="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-            删除
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDialog
+      v-model:open="showDeleteDialog"
+      title="确认删除"
+      :description="`您确定要删除字典类型 &quot;${dictToDelete?.dictName}&quot; 吗？此操作无法撤销。`"
+      confirm-text="删除"
+      destructive
+      @confirm="confirmDelete"
+    />
   </div>
 </template>

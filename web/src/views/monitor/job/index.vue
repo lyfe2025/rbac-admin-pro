@@ -49,6 +49,10 @@ import { Switch } from '@/components/ui/switch'
 import { useToast } from '@/components/ui/toast/use-toast'
 import { Trash2, Plus, RefreshCw, Search, Edit, Play, MoreHorizontal } from 'lucide-vue-next'
 import TablePagination from '@/components/common/TablePagination.vue'
+import TableSkeleton from '@/components/common/TableSkeleton.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import CronGenerator from '@/components/common/CronGenerator.vue'
 import { listJob, getJob, delJob, addJob, updateJob, runJob, changeJobStatus } from '@/api/monitor/job'
 import type { SysJob } from '@/api/system/types'
 
@@ -291,7 +295,20 @@ onMounted(() => {
 
     <!-- Table -->
     <div class="border rounded-md bg-card overflow-x-auto">
-      <Table>
+      <!-- 骨架屏 -->
+      <TableSkeleton v-if="loading" :columns="7" :rows="10" />
+      
+      <!-- 空状态 -->
+      <EmptyState
+        v-else-if="jobList.length === 0"
+        title="暂无定时任务"
+        description="点击新增任务按钮创建第一个定时任务"
+        action-text="新增任务"
+        @action="handleAdd"
+      />
+      
+      <!-- 数据表格 -->
+      <Table v-else>
         <TableHeader>
           <TableRow>
             <TableHead>任务编号</TableHead>
@@ -343,11 +360,6 @@ onMounted(() => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </TableCell>
-          </TableRow>
-          <TableRow v-if="jobList.length === 0">
-            <TableCell colspan="8" class="text-center h-24 text-muted-foreground">
-              暂无数据
             </TableCell>
           </TableRow>
         </TableBody>
@@ -414,7 +426,7 @@ onMounted(() => {
 
           <div class="grid gap-2">
              <Label for="cronExpression">Cron表达式 *</Label>
-             <Input id="cronExpression" v-model="form.cronExpression" placeholder="请输入Cron表达式" />
+             <CronGenerator v-model="form.cronExpression" />
           </div>
 
           <div class="grid grid-cols-2 gap-4">

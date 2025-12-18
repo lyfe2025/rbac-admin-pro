@@ -16,10 +16,12 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/components/ui/toast/use-toast'
 import ImageUpload from '@/components/common/ImageUpload.vue'
+import LeaveConfirmDialog from '@/components/common/LeaveConfirmDialog.vue'
 import { listConfig, updateConfig, addConfig, type SysConfig } from '@/api/system/config'
 import { testMail } from '@/api/system/mail'
 import { getLockedAccounts, unlockAccount, type LockedAccount } from '@/api/system/locked'
 import { useAppStore } from '@/stores/modules/app'
+import { useUnsavedChanges } from '@/composables'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   Save,
@@ -39,6 +41,9 @@ import {
 
 const { toast } = useToast()
 const appStore = useAppStore()
+
+// 未保存更改提示（页面级表单，启用路由守卫）
+const { isDirty, markClean, showLeaveDialog, confirmLeave, cancelLeave } = useUnsavedChanges()
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -86,6 +91,18 @@ const form = reactive({
 
 const configMap = ref<Record<string, SysConfig>>({})
 
+// 监听表单变化，标记脏状态（数据加载完成后才开始监听）
+const isDataLoaded = ref(false)
+watch(
+  () => ({ ...form }),
+  () => {
+    if (isDataLoaded.value) {
+      isDirty.value = true
+    }
+  },
+  { deep: true }
+)
+
 async function getData() {
   loading.value = true
   try {
@@ -110,6 +127,9 @@ async function getData() {
         ;(form as any)[item.configKey] = value
       }
     })
+    // 数据加载完成后，清除脏状态并开始监听
+    markClean()
+    isDataLoaded.value = true
   } finally {
     loading.value = false
   }
@@ -167,6 +187,7 @@ async function handleSubmit() {
       })
     } else {
       toast({ title: '保存成功', description: '系统设置已更新' })
+      markClean() // 保存成功后清除脏状态
       // 刷新网站配置使其立即生效
       await appStore.refreshSiteConfig()
     }
@@ -813,5 +834,12 @@ onMounted(() => {
 
 
     </Tabs>
+
+    <!-- 未保存更改确认弹窗 -->
+    <LeaveConfirmDialog
+      v-model:open="showLeaveDialog"
+      @confirm="confirmLeave"
+      @cancel="cancelLeave"
+    />
   </div>
 </template>
