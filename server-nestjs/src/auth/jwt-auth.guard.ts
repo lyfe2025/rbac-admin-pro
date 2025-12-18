@@ -5,7 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import { TokenBlacklistService } from './token-blacklist.service';
 import { SecurityConfigService } from './security-config.service';
 import type { ExecutionContext } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Response, Request } from 'express';
 
 interface JwtPayload {
   sub: string;
@@ -13,6 +13,9 @@ interface JwtPayload {
   iat: number;
   exp: number;
 }
+
+// 宽限期：token 过期后仍可刷新的时间（秒）
+const GRACE_PERIOD_SECONDS = 60;
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -23,12 +26,15 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const req = context.switchToHttp().getRequest<{
-      headers: Record<string, string>;
-      user?: JwtPayload;
-      url?: string;
-    }>();
+    const req = context.switchToHttp().getRequest<
+      Request & {
+        headers: Record<string, string>;
+        user?: JwtPayload;
+      }
+    >();
+    const res = context.switchToHttp().getResponse<Response>();
     const auth = req.headers?.['authorization'] || '';
+    const token = auth.startsWith('Bearer ') ? auth.substring(7) : '';
 
     // 调试日志：检查 Authorization header 是否存在
     if (!auth) {
@@ -37,6 +43,21 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       this.logger.debug(
         `[${req.url}] Authorization header 存在，长度: ${auth.length}`,
       );
+    }
+
+    // 检查 token 是否在黑名单中
+    const blacklist = this.moduleRef.get(TokenBlacklistService, {
+      strict: false,
+    });
+    if (blacklist && token && (await blacklist.isBlacklisted(token))) {
+      throw new UnauthorizedException('Token 已失效，请重新登录');
+    }
+
+    // 在验证前先解码 token，检查是否在宽限期内
+    const refreshedToken = await this.tryRefreshExpiredToken(token, res);
+    if (refreshedToken) {
+      // 用新 token 替换请求头，让后续验证通过
+      req.headers['authorization'] = `Bearer ${refreshedToken}`;
     }
 
     let ok: boolean;
@@ -48,20 +69,77 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       throw error;
     }
 
-    const res = context.switchToHttp().getResponse<Response>();
-    const token = auth.startsWith('Bearer ') ? auth.substring(7) : '';
-
-    const blacklist = this.moduleRef.get(TokenBlacklistService, {
-      strict: false,
-    });
-    if (blacklist && token && (await blacklist.isBlacklisted(token))) {
-      throw new UnauthorizedException('Token 已失效，请重新登录');
-    }
-
     // 滑动过期：检查 Token 是否快过期，如果是则刷新
     await this.checkAndRefreshToken(req.user, res);
 
     return ok;
+  }
+
+  /**
+   * 尝试刷新已过期的 Token（宽限期内）
+   * 如果 token 刚过期（在宽限期内），签发新 token 并返回
+   */
+  private async tryRefreshExpiredToken(
+    token: string,
+    res: Response,
+  ): Promise<string | null> {
+    if (!token) return null;
+
+    try {
+      const jwtService = this.moduleRef.get(JwtService, { strict: false });
+      const securityConfig = this.moduleRef.get(SecurityConfigService, {
+        strict: false,
+      });
+
+      if (!jwtService || !securityConfig) return null;
+
+      // 解码 token（不验证签名和过期时间）
+      const decoded: unknown = jwtService.decode(token);
+      if (
+        !decoded ||
+        typeof decoded !== 'object' ||
+        !('exp' in decoded) ||
+        !('sub' in decoded)
+      ) {
+        return null;
+      }
+      const payload = decoded as JwtPayload;
+      if (!payload.exp || !payload.sub) return null;
+
+      const now = Math.floor(Date.now() / 1000);
+      const expiredSeconds = now - payload.exp;
+
+      // 如果 token 已过期但在宽限期内，签发新 token
+      if (expiredSeconds > 0 && expiredSeconds <= GRACE_PERIOD_SECONDS) {
+        this.logger.debug(
+          `Token 已过期 ${expiredSeconds} 秒，在宽限期内，尝试刷新`,
+        );
+
+        // 验证 token 签名（忽略过期时间）
+        try {
+          jwtService.verify(token, { ignoreExpiration: true });
+        } catch {
+          // 签名无效，不刷新
+          return null;
+        }
+
+        const sessionTimeout = await securityConfig.getSessionTimeoutSeconds();
+        const newToken = jwtService.sign(
+          { sub: payload.sub, username: payload.username },
+          { expiresIn: sessionTimeout },
+        );
+
+        // 通过响应头返回新 Token
+        res.setHeader('X-New-Token', newToken);
+        this.logger.debug('Token 已在宽限期内刷新');
+
+        return newToken;
+      }
+    } catch (error) {
+      this.logger.debug(`尝试刷新过期 token 失败: ${(error as Error).message}`);
+    }
+
+    return null;
   }
 
   /**
@@ -73,6 +151,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     res: Response,
   ): Promise<void> {
     if (!user?.exp) return;
+
+    // 如果已经刷新过（宽限期刷新），跳过
+    if (res.getHeader('X-New-Token')) return;
 
     try {
       const jwtService = this.moduleRef.get(JwtService, { strict: false });
