@@ -38,6 +38,10 @@ export const useUserStore = defineStore('user', {
     },
     // 登录
     async login(userInfo: LoginData) {
+      // 登录前先清除旧 token，避免状态残留
+      removeToken()
+      this.token = ''
+      
       const res = await login(userInfo)
       const data = res.data as { token?: string; requireTwoFactor?: boolean; tempToken?: string }
       
