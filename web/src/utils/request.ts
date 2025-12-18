@@ -56,11 +56,10 @@ service.interceptors.response.use(
     
     // 判断是否需要跳转登录页 (使用业务错误码)
     if (shouldRedirectToLogin(code)) {
-      const errorMsg = msg || '无效的会话，或者会话已过期，请重新登录'
       // 先显示提示，延迟后再跳转登录页
       toast({
-        title: "登录已失效",
-        description: errorMsg,
+        title: "登录状态已过期",
+        description: "为保障账户安全，请重新登录",
         variant: "destructive",
         duration: 3000,
       })
@@ -72,7 +71,7 @@ service.interceptors.response.use(
           location.href = loginPath
         })
       }, 2000)
-      return Promise.reject(new Error(errorMsg))
+      return Promise.reject(new Error('登录状态已过期'))
     }
     
     // 判断系统内部错误
@@ -114,8 +113,8 @@ service.interceptors.response.use(
         title = "参数验证失败"
         message = errorMessage || "请求参数验证失败"
       } else if (httpStatus === 401) {
-        title = "登录已失效"
-        message = errorMessage || "无效的会话，或者会话已过期，请重新登录"
+        title = "登录状态已过期"
+        message = "为保障账户安全，请重新登录"
         // 先显示提示，延迟后再跳转登录页
         toast({
           title,

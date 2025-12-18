@@ -50,7 +50,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       strict: false,
     });
     if (blacklist && token && (await blacklist.isBlacklisted(token))) {
-      throw new UnauthorizedException('Token 已失效，请重新登录');
+      throw new UnauthorizedException('您的登录已失效，请重新登录');
     }
 
     // 在验证前先解码 token，检查是否在宽限期内
