@@ -50,10 +50,13 @@ function getIcon(iconName: string) {
       :value="`item-${index}`" 
       class="border-b-0"
     >
-      <AccordionTrigger class="py-2 hover:no-underline hover:text-primary text-muted-foreground px-3 rounded-lg hover:bg-muted/50">
+      <AccordionTrigger 
+        class="hover:no-underline hover:text-primary text-muted-foreground px-3 rounded-lg hover:bg-muted/50"
+        :style="menuItemStyle"
+      >
         <div class="flex items-center gap-3">
-          <component :is="getIcon(item.meta.icon)" class="h-4 w-4" />
-          {{ item.meta.title }}
+          <component :is="getIcon(item.meta.icon)" class="h-5 w-5" />
+          <span class="font-medium">{{ item.meta.title }}</span>
         </div>
       </AccordionTrigger>
       <AccordionContent class="pb-0 pl-4 space-y-1 mt-1">
