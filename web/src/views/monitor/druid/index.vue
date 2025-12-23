@@ -276,25 +276,37 @@ onUnmounted(() => {
           </div>
           <div v-else class="py-6 text-muted-foreground">
             <p class="mb-4 text-center">暂无慢查询数据，需要启用 pg_stat_statements 扩展</p>
-            <div class="bg-muted rounded-lg p-4 text-sm space-y-3">
-              <div>
-                <p class="font-medium text-foreground mb-1">1. 修改 postgresql.conf 配置文件：</p>
-                <code class="block p-2 bg-background rounded text-xs">
-                  shared_preload_libraries = 'pg_stat_statements'
-                </code>
+            <div class="bg-muted rounded-lg p-4 text-sm space-y-4">
+              <div class="border-b border-border pb-3">
+                <p class="font-medium text-foreground mb-2">💡 何时需要开启？</p>
+                <ul class="list-disc list-inside space-y-1 text-xs">
+                  <li>接口响应明显变慢，需要排查数据库瓶颈</li>
+                  <li>数据量较大（万级以上），想优化查询性能</li>
+                  <li>生产环境做性能调优和监控</li>
+                </ul>
+                <p class="text-xs mt-2 text-muted-foreground">开发环境或小规模使用通常无需开启，该扩展有轻微性能开销（约 1-3%）</p>
               </div>
-              <div>
-                <p class="font-medium text-foreground mb-1">2. 重启 PostgreSQL 服务</p>
-              </div>
-              <div>
-                <p class="font-medium text-foreground mb-1">3. 在数据库中执行：</p>
-                <code class="block p-2 bg-background rounded text-xs">
-                  CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
-                </code>
-              </div>
-              <div>
-                <p class="font-medium text-foreground mb-1">4. 如果使用 Docker，可在 docker-compose.yml 中添加：</p>
-                <code class="block p-2 bg-background rounded text-xs whitespace-pre">command: postgres -c shared_preload_libraries=pg_stat_statements</code>
+              <div class="space-y-3">
+                <p class="font-medium text-foreground">如需开启，请按以下步骤操作：</p>
+                <div>
+                  <p class="font-medium text-foreground mb-1">1. 修改 postgresql.conf 配置文件：</p>
+                  <code class="block p-2 bg-background rounded text-xs">
+                    shared_preload_libraries = 'pg_stat_statements'
+                  </code>
+                </div>
+                <div>
+                  <p class="font-medium text-foreground mb-1">2. 重启 PostgreSQL 服务</p>
+                </div>
+                <div>
+                  <p class="font-medium text-foreground mb-1">3. 在数据库中执行：</p>
+                  <code class="block p-2 bg-background rounded text-xs">
+                    CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+                  </code>
+                </div>
+                <div>
+                  <p class="font-medium text-foreground mb-1">4. 如果使用 Docker，可在 docker-compose.yml 中添加：</p>
+                  <code class="block p-2 bg-background rounded text-xs whitespace-pre">command: postgres -c shared_preload_libraries=pg_stat_statements</code>
+                </div>
               </div>
             </div>
           </div>
