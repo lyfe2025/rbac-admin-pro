@@ -113,23 +113,27 @@ service.interceptors.response.use(
         title = "参数验证失败"
         message = errorMessage || "请求参数验证失败"
       } else if (httpStatus === 401) {
-        title = "登录状态已过期"
-        message = "为保障账户安全，请重新登录"
-        // 先显示提示，延迟后再跳转登录页
-        toast({
-          title,
-          description: message,
-          variant: "destructive",
-          duration: 3000,
-        })
         const userStore = useUserStore()
         const appStore = useAppStore()
         const loginPath = appStore.siteConfig.loginPath || '/login'
-        setTimeout(() => {
-          userStore.logout().then(() => {
-            location.href = loginPath
+        
+        // 只有用户已成功登录过（使用中过期）才弹窗提示
+        if (userStore.isLoggedIn) {
+          title = "登录状态已过期"
+          message = "为保障账户安全，请重新登录"
+          toast({
+            title,
+            description: message,
+            variant: "destructive",
+            duration: 3000,
           })
-        }, 2000)
+          setTimeout(() => {
+            userStore.logout().then(() => {
+              location.href = loginPath
+            })
+          }, 2000)
+        }
+        // 冷启动验证失败时不弹窗，由路由守卫静默处理
         return Promise.reject(new Error(message))
       } else if (httpStatus === 403) {
         title = "权限不足"

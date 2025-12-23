@@ -18,6 +18,7 @@ interface UserState {
   roles: string[]
   roleList: RoleInfo[]
   permissions: string[]
+  isLoggedIn: boolean // 标记用户是否已成功登录（用于区分冷启动验证失败和使用中过期）
 }
 
 export const useUserStore = defineStore('user', {
@@ -29,7 +30,8 @@ export const useUserStore = defineStore('user', {
     email: '',
     roles: [],
     roleList: [],
-    permissions: []
+    permissions: [],
+    isLoggedIn: false
   }),
   actions: {
     // 登录（不自动设置 token，用于两步验证场景）
@@ -74,6 +76,7 @@ export const useUserStore = defineStore('user', {
       this.name = data.user.nickName || data.user.userName
       this.avatar = data.user.avatar || ''
       this.email = data.user.email || ''
+      this.isLoggedIn = true // 标记已成功登录
       return data
     },
     // 退出系统
@@ -86,6 +89,7 @@ export const useUserStore = defineStore('user', {
       this.token = ''
       this.roles = []
       this.permissions = []
+      this.isLoggedIn = false
       removeToken()
       
       // 清空菜单缓存
