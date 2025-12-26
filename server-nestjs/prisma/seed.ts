@@ -1190,12 +1190,14 @@ async function main() {
       dictLabel: '显示',
       dictValue: '0',
       dictSort: 1,
+      isDefault: 'N',
     },
     {
       dictType: 'sys_show_hide',
       dictLabel: '隐藏',
       dictValue: '1',
       dictSort: 2,
+      isDefault: 'N',
     },
     // 正常停用
     {
@@ -1203,24 +1205,51 @@ async function main() {
       dictLabel: '正常',
       dictValue: '0',
       dictSort: 1,
+      isDefault: 'Y',
     },
     {
       dictType: 'sys_normal_disable',
       dictLabel: '停用',
       dictValue: '1',
       dictSort: 2,
+      isDefault: 'N',
     },
     // 是否
-    { dictType: 'sys_yes_no', dictLabel: '是', dictValue: 'Y', dictSort: 1 },
-    { dictType: 'sys_yes_no', dictLabel: '否', dictValue: 'N', dictSort: 2 },
+    {
+      dictType: 'sys_yes_no',
+      dictLabel: '是',
+      dictValue: 'Y',
+      dictSort: 1,
+      isDefault: 'Y',
+    },
+    {
+      dictType: 'sys_yes_no',
+      dictLabel: '否',
+      dictValue: 'N',
+      dictSort: 2,
+      isDefault: 'N',
+    },
     // 性别
-    { dictType: 'sys_user_sex', dictLabel: '男', dictValue: '0', dictSort: 1 },
-    { dictType: 'sys_user_sex', dictLabel: '女', dictValue: '1', dictSort: 2 },
+    {
+      dictType: 'sys_user_sex',
+      dictLabel: '男',
+      dictValue: '0',
+      dictSort: 1,
+      isDefault: 'N',
+    },
+    {
+      dictType: 'sys_user_sex',
+      dictLabel: '女',
+      dictValue: '1',
+      dictSort: 2,
+      isDefault: 'N',
+    },
     {
       dictType: 'sys_user_sex',
       dictLabel: '未知',
       dictValue: '2',
       dictSort: 3,
+      isDefault: 'Y',
     },
     // 任务状态
     {
@@ -1228,12 +1257,14 @@ async function main() {
       dictLabel: '正常',
       dictValue: '0',
       dictSort: 1,
+      isDefault: 'Y',
     },
     {
       dictType: 'sys_job_status',
       dictLabel: '暂停',
       dictValue: '1',
       dictSort: 2,
+      isDefault: 'N',
     },
     // 任务分组
     {
@@ -1241,12 +1272,14 @@ async function main() {
       dictLabel: 'DEFAULT',
       dictValue: 'DEFAULT',
       dictSort: 1,
+      isDefault: 'Y',
     },
     {
       dictType: 'sys_job_group',
       dictLabel: 'SYSTEM',
       dictValue: 'SYSTEM',
       dictSort: 2,
+      isDefault: 'N',
     },
     // 通知类型
     {
@@ -1254,12 +1287,14 @@ async function main() {
       dictLabel: '通知',
       dictValue: '1',
       dictSort: 1,
+      isDefault: 'N',
     },
     {
       dictType: 'sys_notice_type',
       dictLabel: '公告',
       dictValue: '2',
       dictSort: 2,
+      isDefault: 'N',
     },
     // 通知状态
     {
@@ -1267,12 +1302,14 @@ async function main() {
       dictLabel: '正常',
       dictValue: '0',
       dictSort: 1,
+      isDefault: 'Y',
     },
     {
       dictType: 'sys_notice_status',
       dictLabel: '关闭',
       dictValue: '1',
       dictSort: 2,
+      isDefault: 'N',
     },
     // 操作类型
     {
@@ -1280,60 +1317,70 @@ async function main() {
       dictLabel: '其它',
       dictValue: '0',
       dictSort: 0,
+      isDefault: 'N',
     },
     {
       dictType: 'sys_oper_type',
       dictLabel: '新增',
       dictValue: '1',
       dictSort: 1,
+      isDefault: 'N',
     },
     {
       dictType: 'sys_oper_type',
       dictLabel: '修改',
       dictValue: '2',
       dictSort: 2,
+      isDefault: 'N',
     },
     {
       dictType: 'sys_oper_type',
       dictLabel: '删除',
       dictValue: '3',
       dictSort: 3,
+      isDefault: 'N',
     },
     {
       dictType: 'sys_oper_type',
       dictLabel: '授权',
       dictValue: '4',
       dictSort: 4,
+      isDefault: 'N',
     },
     {
       dictType: 'sys_oper_type',
       dictLabel: '导出',
       dictValue: '5',
       dictSort: 5,
+      isDefault: 'N',
     },
     {
       dictType: 'sys_oper_type',
       dictLabel: '导入',
       dictValue: '6',
       dictSort: 6,
+      isDefault: 'N',
     },
     {
       dictType: 'sys_oper_type',
       dictLabel: '强退',
       dictValue: '7',
       dictSort: 7,
+      isDefault: 'N',
     },
     {
       dictType: 'sys_oper_type',
       dictLabel: '生成代码',
       dictValue: '8',
       dictSort: 8,
+      isDefault: 'N',
     },
     {
       dictType: 'sys_oper_type',
       dictLabel: '清空数据',
       dictValue: '9',
       dictSort: 9,
+      isDefault: 'N',
     },
     // 通用状态
     {
@@ -1341,12 +1388,14 @@ async function main() {
       dictLabel: '成功',
       dictValue: '0',
       dictSort: 1,
+      isDefault: 'Y',
     },
     {
       dictType: 'sys_common_status',
       dictLabel: '失败',
       dictValue: '1',
       dictSort: 2,
+      isDefault: 'N',
     },
   ];
   for (const dd of dictDataToSeed) {
@@ -1360,6 +1409,7 @@ async function main() {
           dictLabel: dd.dictLabel,
           dictValue: dd.dictValue,
           dictSort: dd.dictSort,
+          isDefault: dd.isDefault,
           status: '0',
         },
       });

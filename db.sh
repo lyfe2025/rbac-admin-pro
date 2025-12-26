@@ -14,6 +14,9 @@ BACKUP_DIR="$ROOT/backups"
 # Docker 容器名称
 POSTGRES_CONTAINER="rbac-postgres"
 
+# Docker 宿主机端口（避免与本地 PostgreSQL 5432 冲突）
+DOCKER_PG_PORT=5433
+
 # 颜色定义
 ESC="$(printf '\033')"
 BOLD="${ESC}[1m"
@@ -116,7 +119,7 @@ get_docker_db_url() {
   if [ -f "$ROOT/.env" ]; then
     source "$ROOT/.env"
   fi
-  echo "postgresql://${POSTGRES_USER:-rbac_admin}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB:-rbac_admin}?schema=public"
+  echo "postgresql://${POSTGRES_USER:-rbac_admin}:${POSTGRES_PASSWORD}@localhost:${DOCKER_PG_PORT}/${POSTGRES_DB:-rbac_admin}?schema=public"
 }
 
 # ============================================================
@@ -239,7 +242,7 @@ cmd_docker_migrate_deploy() {
   if confirm "确定要在生产环境执行迁移吗？"; then
     local db_url
     db_url=$(get_docker_db_url)
-    print_info "执行: DATABASE_URL=\"...\" pnpm prisma migrate deploy"
+    print_info "执行: DATABASE_URL=\"$db_url\" pnpm prisma migrate deploy"
     cd "$SERVER_DIR"
     DATABASE_URL="$db_url" pnpm prisma migrate deploy
     print_success "生产迁移执行完成"
@@ -255,7 +258,7 @@ cmd_docker_migrate_status() {
   
   local db_url
   db_url=$(get_docker_db_url)
-  print_info "执行: DATABASE_URL=\"...\" pnpm prisma migrate status"
+  print_info "执行: DATABASE_URL=\"$db_url\" pnpm prisma migrate status"
   cd "$SERVER_DIR"
   DATABASE_URL="$db_url" pnpm prisma migrate status
 }
@@ -268,7 +271,7 @@ cmd_docker_seed() {
   if confirm "确定要导入种子数据吗？"; then
     local db_url
     db_url=$(get_docker_db_url)
-    print_info "执行: DATABASE_URL=\"...\" pnpm prisma db seed"
+    print_info "执行: DATABASE_URL=\"$db_url\" pnpm prisma db seed"
     cd "$SERVER_DIR"
     DATABASE_URL="$db_url" pnpm prisma db seed
     print_success "种子数据已导入"
@@ -334,17 +337,45 @@ cmd_docker_restore() {
     return 1
   fi
   
-  echo ""
-  echo "可用的备份文件:"
-  ls -la "$BACKUP_DIR"/*.sql 2>/dev/null || { print_error "没有找到备份文件"; return 1; }
-  echo ""
+  # 获取备份文件列表
+  local backup_files=()
+  while IFS= read -r -d '' file; do
+    backup_files+=("$file")
+  done < <(find "$BACKUP_DIR" -maxdepth 1 -name "*.sql" -type f -print0 | sort -z -r)
   
-  read -rp "$(printf "${FG_YELLOW}请输入要恢复的备份文件名: ${RESET}")" backup_name
-  local backup_file="$BACKUP_DIR/$backup_name"
-  
-  if [ ! -f "$backup_file" ]; then
-    print_error "备份文件不存在: $backup_file"
+  if [ ${#backup_files[@]} -eq 0 ]; then
+    print_error "没有找到备份文件"
     return 1
+  fi
+  
+  local backup_file
+  
+  if [ ${#backup_files[@]} -eq 1 ]; then
+    # 只有一个备份文件，直接使用
+    backup_file="${backup_files[0]}"
+    print_info "找到备份文件: $(basename "$backup_file")"
+  else
+    # 多个备份文件，显示列表让用户选择
+    echo ""
+    echo "可用的备份文件:"
+    local i=1
+    for f in "${backup_files[@]}"; do
+      local size
+      size=$(ls -lh "$f" | awk '{print $5}')
+      printf "${FG_CYAN}%d${RESET}. %s ${FG_GRAY}(%s)${RESET}\n" "$i" "$(basename "$f")" "$size"
+      ((i++))
+    done
+    echo ""
+    
+    local choice
+    read -rp "$(printf "${FG_YELLOW}请选择备份文件 [1-%d]: ${RESET}" "${#backup_files[@]}")" choice
+    
+    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt ${#backup_files[@]} ]; then
+      print_error "无效选择"
+      return 1
+    fi
+    
+    backup_file="${backup_files[$((choice-1))]}"
   fi
   
   if [ -f "$ROOT/.env" ]; then
@@ -352,6 +383,7 @@ cmd_docker_restore() {
   fi
   
   print_warning "此操作将覆盖当前数据库！"
+  print_info "备份文件: $(basename "$backup_file")"
   if confirm "确定要恢复数据库吗？"; then
     print_info "执行: docker exec -i $POSTGRES_CONTAINER psql -U ${POSTGRES_USER:-rbac_admin} -d ${POSTGRES_DB:-rbac_admin} < $backup_file"
     docker exec -i "$POSTGRES_CONTAINER" psql -U "${POSTGRES_USER:-rbac_admin}" -d "${POSTGRES_DB:-rbac_admin}" < "$backup_file"
@@ -396,10 +428,10 @@ print_menu() {
   printf "${FG_CYAN}10${RESET}. 验证 Schema                  ${FG_GRAY}pnpm prisma validate${RESET}\n"
   
   hr
-  printf "${FG_CYAN}[Docker / 生产环境]${RESET}\n"
-  printf "${FG_CYAN}11${RESET}. 执行生产迁移                 ${FG_GRAY}DATABASE_URL=... pnpm prisma migrate deploy${RESET}\n"
-  printf "${FG_CYAN}12${RESET}. 查看迁移状态 (Docker)        ${FG_GRAY}DATABASE_URL=... pnpm prisma migrate status${RESET}\n"
-  printf "${FG_CYAN}13${RESET}. 导入种子数据 (Docker)        ${FG_GRAY}DATABASE_URL=... pnpm prisma db seed${RESET}\n"
+  printf "${FG_CYAN}[Docker / 生产环境]${RESET} ${FG_GRAY}(宿主机端口: ${DOCKER_PG_PORT})${RESET}\n"
+  printf "${FG_CYAN}11${RESET}. 执行生产迁移                 ${FG_GRAY}DATABASE_URL=<url> pnpm prisma migrate deploy${RESET}\n"
+  printf "${FG_CYAN}12${RESET}. 查看迁移状态 (Docker)        ${FG_GRAY}DATABASE_URL=<url> pnpm prisma migrate status${RESET}\n"
+  printf "${FG_CYAN}13${RESET}. 导入种子数据 (Docker)        ${FG_GRAY}DATABASE_URL=<url> pnpm prisma db seed${RESET}\n"
   printf "${FG_CYAN}14${RESET}. 执行 SQL 文件                ${FG_GRAY}docker exec -i rbac-postgres psql < file.sql${RESET}\n"
   printf "${FG_CYAN}15${RESET}. 备份数据库                   ${FG_GRAY}docker exec rbac-postgres pg_dump > backup.sql${RESET}\n"
   printf "${FG_CYAN}16${RESET}. 恢复数据库                   ${FG_GRAY}docker exec -i rbac-postgres psql < backup.sql${RESET}\n"

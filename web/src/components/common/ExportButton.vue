@@ -75,7 +75,7 @@ const isSingleFormat = props.formats.length === 1
     :variant="variant"
     :size="size"
     :disabled="disabled || loading"
-    @click="handleExport(formats[0])"
+    @click="handleExport(formats[0]!)"
   >
     <Loader2Icon v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
     <CheckIcon v-else-if="success" class="mr-2 h-4 w-4 text-green-500" />
