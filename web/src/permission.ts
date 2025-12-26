@@ -12,16 +12,16 @@ const publicPages = ['/404', '/403']
 
 router.beforeEach(async (to, _from, next) => {
   NProgress.start()
-  
+
   // 错误页面直接放行
   if (publicPages.includes(to.path)) {
     next()
     return
   }
-  
+
   const userStore = useUserStore()
   const appStore = useAppStore()
-  
+
   // 确保网站配置已加载（包括登录路径）
   if (!appStore.siteConfigLoaded) {
     await appStore.loadSiteConfig()
@@ -32,7 +32,7 @@ router.beforeEach(async (to, _from, next) => {
       return
     }
   }
-  
+
   const hasToken = userStore.token
   // 从路由获取实际配置的登录路径
   const loginPath = getLoginPath()
@@ -50,15 +50,15 @@ router.beforeEach(async (to, _from, next) => {
         const prevMenuLength = menuStore.menuList.length
         try {
           await menuStore.fetchMenus()
-          // 如果之前没有菜单数据，或者路由被重新注册，需要重新导航
-          if (prevMenuLength === 0 || to.name === 'CatchAll') {
-            next({ ...to, replace: true })
+          // 如果之前没有菜单数据，需要重新导航让新路由生效
+          if (prevMenuLength === 0) {
+            next({ path: to.path, query: to.query, replace: true })
             return
           }
         } catch (error) {
           console.error('加载菜单失败:', error)
         }
-        
+
         const requiredRoles = (to.meta && (to.meta as any).roles) as string[] | undefined
         if (requiredRoles && !requiredRoles.some(r => userStore.roles.includes(r))) {
           next('/403')
@@ -76,13 +76,13 @@ router.beforeEach(async (to, _from, next) => {
         try {
           // 获取用户信息
           await userStore.getInfo()
-          
+
           // 获取动态菜单
           const menuStore = useMenuStore()
           await menuStore.fetchMenus()
-          
-          // 路由已动态添加,需要重新导航
-          next({ ...to, replace: true })
+
+          // 路由已动态添加，需要用 path 重新导航让新路由生效
+          next({ path: to.path, query: to.query, replace: true })
         } catch (error) {
           await userStore.logout()
           next(`${loginPath}?redirect=${to.path}`)

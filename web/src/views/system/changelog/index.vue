@@ -26,6 +26,18 @@ const typeConfig = {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: 'v1.0.1',
+    date: '2025-12-26',
+    description: 'Docker 部署优化和 Bug 修复',
+    changes: [
+      { type: 'fix', content: '修复页面刷新时动态路由失效导致 404 的问题' },
+      { type: 'fix', content: '修复 Swagger 接口文档在 Docker 环境下无法加载' },
+      { type: 'perf', content: '数据库改由 Prisma 统一管理，移除 SQL 文件初始化' },
+      { type: 'perf', content: 'db.sh 脚本优化：端口配置、备份恢复交互式选择' },
+      { type: 'perf', content: 'nginx 添加 /api-docs 代理支持 Swagger UI' },
+    ],
+  },
+  {
     version: 'v1.0.0',
     date: '2024-12-18',
     description: '首个正式版本发布',

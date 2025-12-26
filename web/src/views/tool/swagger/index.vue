@@ -3,7 +3,11 @@ import { computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { ExternalLink } from 'lucide-vue-next'
 
-const swaggerUrl = computed(() => `${import.meta.env.VITE_API_URL}/api-docs`)
+const swaggerUrl = computed(() => {
+  const apiUrl = import.meta.env.VITE_API_URL
+  // 如果没有配置 API URL，使用当前域名的 /api-docs 路径（通过 nginx 代理）
+  return apiUrl ? `${apiUrl}/api-docs` : '/api-docs'
+})
 
 function openSwagger() {
   window.open(swaggerUrl.value, '_blank')
