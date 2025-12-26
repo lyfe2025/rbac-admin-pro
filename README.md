@@ -54,15 +54,22 @@ cd rbac-admin-pro
 cp .env.docker.example .env
 # 编辑 .env，设置 POSTGRES_PASSWORD 和 JWT_SECRET
 
-# 启动所有服务
-docker-compose up -d
+# 启动数据库和 Redis
+docker-compose up -d postgres redis
+
+# 初始化数据库（首次部署）
+./db.sh  # 选择 11 执行迁移，选择 13 导入种子数据
+
+# 启动全部服务
+docker-compose up -d --build
 ```
 
 | 服务 | 地址 |
 |------|------|
 | 前端 | http://localhost:8080 |
 | 后端 API | http://localhost:3000 |
-| Swagger | http://localhost:3000/api-docs |
+| Swagger | http://localhost:8080/tool/swagger |
+| PostgreSQL | localhost:5433 |
 
 ### 方式二：本地开发
 
@@ -208,7 +215,7 @@ pnpm db:studio        # Prisma GUI
 <details>
 <summary><b>配置方法</b></summary>
 
-编辑 `.cursor/mcp.json`、`.vscode/mcp.json` 或 `.kiro/settings/mcp.json`：
+在 IDE 的 MCP 配置文件中添加：
 
 ```json
 {
@@ -220,6 +227,11 @@ pnpm db:studio        # Prisma GUI
   }
 }
 ```
+
+配置文件位置：
+- Kiro: `.kiro/settings/mcp.json`
+- Cursor: `.cursor/mcp.json`
+- VS Code: `.vscode/mcp.json`
 
 </details>
 
